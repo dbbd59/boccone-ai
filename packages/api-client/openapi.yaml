@@ -80,6 +80,125 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         "401":
           $ref: "#/components/responses/ErrorResponse"
+  /api/me/meals:
+    get:
+      operationId: getDailyMeals
+      tags:
+        - meals
+      summary: Get the authenticated user's meals for a day
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Meals and nutrition totals for a day
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyMealsResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      operationId: createMeal
+      tags:
+        - meals
+      summary: Create a manual meal for the authenticated user
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMealRequest"
+      responses:
+        "200":
+          description: Created meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/meals/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getMeal
+      tags:
+        - meals
+      summary: Get one authenticated user's meal
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    patch:
+      operationId: updateMeal
+      tags:
+        - meals
+      summary: Update one authenticated user's meal
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMealRequest"
+      responses:
+        "200":
+          description: Updated meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: removeMeal
+      tags:
+        - meals
+      summary: Remove one authenticated user's meal
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Meal removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealMutationResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
   /api/admin/users:
     get:
       operationId: listAdminUsers
@@ -296,6 +415,163 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AdminMutationResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/users/{id}/meals:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: listAdminUserMeals
+      tags:
+        - admin
+      summary: List a user's meals for administrators
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: User meals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMealsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      operationId: createAdminUserMeal
+      tags:
+        - admin
+      summary: Create a meal for a user
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMealRequest"
+      responses:
+        "200":
+          description: Created meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/users/{id}/meals/{mealId}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: mealId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getAdminUserMeal
+      tags:
+        - admin
+      summary: Get one user's meal for administrators
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    patch:
+      operationId: updateAdminUserMeal
+      tags:
+        - admin
+      summary: Update one user's meal for administrators
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMealRequest"
+      responses:
+        "200":
+          description: Updated meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: removeAdminUserMeal
+      tags:
+        - admin
+      summary: Remove one user's meal for administrators
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Meal removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealMutationResponse"
         "401":
           $ref: "#/components/responses/ErrorResponse"
         "403":
@@ -562,6 +838,180 @@ components:
       properties:
         targets:
           $ref: "#/components/schemas/DailyTargets"
+    MealCategory:
+      type: string
+      enum: [breakfast, lunch, dinner, snack]
+    CreateMealRequest:
+      type: object
+      required:
+        - name
+        - category
+        - date
+        - calories
+        - proteinGrams
+        - carbohydratesGrams
+        - fatGrams
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        category:
+          $ref: "#/components/schemas/MealCategory"
+        date:
+          type: string
+          format: date
+        calories:
+          type: integer
+          minimum: 0
+          maximum: 100000
+        proteinGrams:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        carbohydratesGrams:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        fatGrams:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+    UpdateMealRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        category:
+          $ref: "#/components/schemas/MealCategory"
+        date:
+          type: string
+          format: date
+        calories:
+          type: integer
+          minimum: 0
+          maximum: 100000
+        proteinGrams:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        carbohydratesGrams:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        fatGrams:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+    Meal:
+      allOf:
+        - $ref: "#/components/schemas/CreateMealRequest"
+        - type: object
+          required:
+            - id
+            - notes
+            - source
+            - createdAt
+            - updatedAt
+          properties:
+            id:
+              type: string
+            source:
+              type: string
+              enum: [manual]
+            notes:
+              type: string
+              maxLength: 2000
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    MealResponse:
+      type: object
+      required:
+        - meal
+      properties:
+        meal:
+          $ref: "#/components/schemas/Meal"
+    MealMutationResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+    MealTotals:
+      type: object
+      required:
+        - calories
+        - proteinGrams
+        - carbohydratesGrams
+        - fatGrams
+      properties:
+        calories:
+          type: integer
+          minimum: 0
+        proteinGrams:
+          type: integer
+          minimum: 0
+        carbohydratesGrams:
+          type: integer
+          minimum: 0
+        fatGrams:
+          type: integer
+          minimum: 0
+    DailyMealsResponse:
+      type: object
+      required:
+        - date
+        - meals
+        - totals
+      properties:
+        date:
+          type: string
+          format: date
+        meals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Meal"
+        totals:
+          $ref: "#/components/schemas/MealTotals"
+    AdminMealsResponse:
+      type: object
+      required:
+        - userId
+        - meals
+        - total
+        - limit
+        - offset
+      properties:
+        userId:
+          type: string
+        meals:
+          type: array
+          items:
+            $ref: "#/components/schemas/Meal"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
     AdminUser:
       type: object
       required:
@@ -699,6 +1149,9 @@ components:
         - user_removed
         - user_targets_updated
         - user_targets_removed
+        - user_meal_created
+        - user_meal_updated
+        - user_meal_removed
     AdminAuditPrincipal:
       type: object
       required:

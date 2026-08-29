@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 
-import type { AdminUser, DailyTargets } from "@boccone/api-client";
+import type { AdminUser, DailyTargets, Meal } from "@boccone/api-client";
 import { Button, Field, Input, Stack, Surface, Text } from "@boccone/ui-web";
 
 import { AdminDailyTargetsPanel } from "./AdminDailyTargetsPanel";
+import { AdminMealsPanel } from "./AdminMealsPanel";
 import {
   banUser,
   fetchAdminUser,
   fetchAdminUserDailyTargets,
+  fetchAdminUserMeals,
   removeUser,
   setUserRole,
   unbanUser,
@@ -32,6 +34,8 @@ export function UserDetail({
   const [user, setUser] = useState<AdminUser | null>(null);
   const [targets, setTargets] = useState<DailyTargets | null>(null);
   const [targetsLoading, setTargetsLoading] = useState(false);
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [mealsLoading, setMealsLoading] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"user" | "admin">("user");
@@ -47,17 +51,24 @@ export function UserDetail({
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(null);
       setTargets(null);
+      setMeals([]);
       return;
     }
     let mounted = true;
     setLoading(true);
     setTargetsLoading(true);
+    setMealsLoading(true);
     setError(null);
-    void Promise.all([fetchAdminUser(userId), fetchAdminUserDailyTargets(userId)])
-      .then(([nextUser, nextTargets]) => {
+    void Promise.all([
+      fetchAdminUser(userId),
+      fetchAdminUserDailyTargets(userId),
+      fetchAdminUserMeals(userId),
+    ])
+      .then(([nextUser, nextTargets, nextMeals]) => {
         if (!mounted) return;
         setUser(nextUser);
         setTargets(nextTargets);
+        setMeals(nextMeals.meals);
         setName(nextUser.name);
         setEmail(nextUser.email);
         setRole(nextUser.role);
@@ -70,6 +81,7 @@ export function UserDetail({
         if (mounted) {
           setLoading(false);
           setTargetsLoading(false);
+          setMealsLoading(false);
         }
       });
     return () => {
@@ -240,6 +252,15 @@ export function UserDetail({
           targets={targets}
           userId={currentUser.id}
           onChanged={setTargets}
+        />
+        <AdminMealsPanel
+          loading={mealsLoading}
+          meals={meals}
+          userId={currentUser.id}
+          onChanged={(nextMeals) => {
+            setMeals(nextMeals);
+            onChanged(currentUser);
+          }}
         />
         <div className="admin-action-block">
           <Text as="h3" variant="headingSm">

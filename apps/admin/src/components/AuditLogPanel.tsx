@@ -16,6 +16,9 @@ const ACTION_LABELS: Record<AdminAuditAction, string> = {
   user_removed: "Removed user",
   user_targets_updated: "Updated daily targets",
   user_targets_removed: "Removed daily targets",
+  user_meal_created: "Created meal",
+  user_meal_updated: "Updated meal",
+  user_meal_removed: "Removed meal",
 };
 
 const FIELD_LABELS: Record<string, string> = {

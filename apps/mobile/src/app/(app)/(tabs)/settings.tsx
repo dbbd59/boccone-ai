@@ -14,11 +14,11 @@ import {
   useTheme,
 } from "@boccone/ui-mobile";
 
-import { LanguageSelector } from "../../components/LanguageSelector";
-import { DailyTargetsForm } from "../../components/DailyTargetsForm";
-import { useI18n } from "../../i18n/context";
-import { lightImpactFeedback } from "../../lib/haptics";
-import { useSession } from "../../session-context";
+import { LanguageSelector } from "../../../components/LanguageSelector";
+import { DailyTargetsForm } from "../../../components/DailyTargetsForm";
+import { useI18n } from "../../../i18n/context";
+import { lightImpactFeedback } from "../../../lib/haptics";
+import { useSession } from "../../../session-context";
 
 const MODES: ColorMode[] = ["system", "light", "dark"];
 

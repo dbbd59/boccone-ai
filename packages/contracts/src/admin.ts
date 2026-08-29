@@ -53,6 +53,9 @@ export const adminAuditActionSchema = z.enum([
   "user_removed",
   "user_targets_updated",
   "user_targets_removed",
+  "user_meal_created",
+  "user_meal_updated",
+  "user_meal_removed",
 ]);
 
 export type AdminAuditAction = z.infer<typeof adminAuditActionSchema>;

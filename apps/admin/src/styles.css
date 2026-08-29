@@ -473,6 +473,74 @@ select:focus-visible {
   gap: var(--bc-space-3);
 }
 
+.admin-meals-panel {
+  display: grid;
+  gap: var(--bc-space-4);
+  padding-top: var(--bc-space-4);
+  border-top: 1px solid var(--bc-border-subtle);
+}
+
+.admin-meal-list {
+  display: grid;
+  border-top: 1px solid var(--bc-border-subtle);
+}
+
+.admin-meal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--bc-space-4);
+  padding: var(--bc-space-3) 0;
+  border-bottom: 1px solid var(--bc-border-subtle);
+}
+
+.admin-meal-row > div:first-child {
+  min-width: 0;
+}
+
+.admin-meal-row p {
+  margin: 0;
+}
+
+.admin-meal-actions,
+.admin-meal-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bc-space-2);
+  flex: 0 0 auto;
+}
+
+.admin-meal-form {
+  display: grid;
+  gap: var(--bc-space-3);
+  padding-top: var(--bc-space-2);
+}
+
+.admin-meal-form h4 {
+  margin: 0;
+}
+
+.admin-meal-form .bc-field:last-child {
+  grid-column: 1 / -1;
+}
+
+.admin-meal-form textarea {
+  width: 100%;
+  min-height: calc(var(--bc-space-12) * 2);
+  resize: vertical;
+  border: 1px solid var(--bc-border-default);
+  border-radius: var(--bc-radius-md);
+  padding: var(--bc-space-3);
+  color: var(--bc-fg-default);
+  background: var(--bc-bg-elevated);
+  font: inherit;
+}
+
+.admin-meal-form textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--bc-focus) 45%, transparent);
+  outline-offset: 3px;
+}
+
 .admin-action-block,
 .admin-danger-zone {
   display: grid;
@@ -669,5 +737,11 @@ select:focus-visible {
   .admin-audit-row {
     flex-direction: column;
     gap: var(--bc-space-2);
+  }
+  .admin-meal-row {
+    flex-direction: column;
+  }
+  .admin-meal-actions {
+    width: 100%;
   }
 }

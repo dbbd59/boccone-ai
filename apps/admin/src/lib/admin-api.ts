@@ -1,16 +1,20 @@
 import {
   banAdminUser,
   createAdminUser,
+  createAdminUserMeal,
   getAdminUserDailyTargets,
   getAdminUser,
+  listAdminUserMeals,
   listAdminAuditLogs,
   listAdminUsers,
   removeAdminUserDailyTargets,
   removeAdminUser,
+  removeAdminUserMeal,
   setAdminUserRole,
   unbanAdminUser,
   updateAdminUserDailyTargets,
   updateAdminUser,
+  updateAdminUserMeal,
   type AdminAuditLogsResponse,
   type AdminUser,
   type DailyTargets,
@@ -19,6 +23,10 @@ import {
   type AdminUserRoleRequest,
   type AdminUserUpdateRequest,
   type AdminUsersResponse,
+  type CreateMealRequest,
+  type Meal,
+  type UpdateMealRequest,
+  type AdminMealsResponse,
 } from "@boccone/api-client";
 
 import { apiClient } from "./api-client";
@@ -64,6 +72,45 @@ export async function updateAdminTargets(
 export async function removeAdminTargets(userId: string): Promise<void> {
   const result = await removeAdminUserDailyTargets({ client: apiClient, path: { id: userId } });
   unwrap(result, "Unable to remove user targets");
+}
+
+export async function fetchAdminUserMeals(userId: string): Promise<AdminMealsResponse> {
+  const result = await listAdminUserMeals({
+    client: apiClient,
+    path: { id: userId },
+    query: { limit: 50, offset: 0 },
+  });
+  return unwrap(result, "Unable to load user meals");
+}
+
+export async function createAdminMeal(userId: string, data: CreateMealRequest): Promise<Meal> {
+  const result = await createAdminUserMeal({
+    client: apiClient,
+    path: { id: userId },
+    body: data,
+  });
+  return unwrap(result, "Unable to create user meal").meal;
+}
+
+export async function updateAdminMeal(
+  userId: string,
+  mealId: string,
+  data: UpdateMealRequest,
+): Promise<Meal> {
+  const result = await updateAdminUserMeal({
+    client: apiClient,
+    path: { id: userId, mealId },
+    body: data,
+  });
+  return unwrap(result, "Unable to update user meal").meal;
+}
+
+export async function removeAdminMeal(userId: string, mealId: string): Promise<void> {
+  const result = await removeAdminUserMeal({
+    client: apiClient,
+    path: { id: userId, mealId },
+  });
+  unwrap(result, "Unable to remove user meal");
 }
 
 export async function createUser(data: AdminUserCreateRequest): Promise<AdminUser> {

@@ -15,7 +15,7 @@
 Boccone AI is being built for people who want a calmer, more transparent way to understand what they eat. The product direction combines self-defined nutrition targets, manual and AI-assisted meal logging, a diary, simple statistics, and an assistant grounded in a user’s own history.
 
 > [!IMPORTANT]
-> Boccone AI is in early development. The current repository delivers the monorepo, API, authentication foundation, database migrations, shared contracts, an OpenAPI-generated client, UI primitives, initial mobile/admin auth surfaces, and authenticated daily nutrition targets. Meal logging, diary history, statistics, known meals, and AI orchestration are planned product slices, not finished features.
+> Boccone AI is in early development. The current repository delivers the monorepo, API, authentication foundation, database migrations, shared contracts, an OpenAPI-generated client, UI primitives, initial mobile/admin auth surfaces, authenticated daily nutrition targets, and manual meal logging with Today aggregation. Diary history, statistics, known meals, and AI orchestration are planned product slices, not finished features.
 
 ## Product direction
 
@@ -58,10 +58,10 @@ The implemented foundation is intentionally small and explicit:
 - **API** — Elysia on Bun with request IDs, structured redacted logging, CORS, shared error responses, health checks, and modular dependency injection for tests.
 - **Authentication** — Better Auth with email/password, optional Google and Apple OAuth, password-reset hooks, session-cookie identity, a simple <code>user</code>/<code>admin</code> role model, and rate limiting.
 - **Authorization** — protected <code>/api/me</code> and <code>/api/admin/*</code> routes resolve identity from the server-side session; client-supplied user IDs are ignored.
-- **Database** — PostgreSQL via Drizzle ORM and <code>postgres-js</code>, with versioned migrations for Better Auth’s user, session, account, verification, and admin-audit tables.
-- **Contracts** — Zod schemas define public health, user, admin-user, and error response shapes. Raw database rows do not form the public API.
+- **Database** — PostgreSQL via Drizzle ORM and <code>postgres-js</code>, with versioned migrations for Better Auth’s user, session, account, verification, admin-audit, daily-target, and confirmed-meal tables. Meal photos and provider payloads are not persisted.
+- **Contracts** — Zod schemas define public health, user, admin-user, daily-target, meal, and error response shapes. Raw database rows do not form the public API.
 - **API client** — the checked-in OpenAPI description generates fetch, Zod, and TanStack Query artifacts in <code>packages/api-client</code>; clients share one typed HTTP boundary.
-- **Clients** — an Expo Router mobile auth shell with persisted English/Italian localization, native Home/Settings navigation, system/light/dark appearance, and authenticated daily-target editing in Settings; plus a Vite/React admin surface for sign-in, server-side admin access checks, user search, user detail/edit, role changes, ban/unban, removal, audit-log inspection, and daily-target inspection/edit/delete. The admin surface is English-only for now.
+- **Clients** — an Expo Router mobile app with persisted English/Italian localization, native Home/Settings navigation, system/light/dark appearance, a Today meal summary, manual add/edit/delete meal flow, and daily-target editing in Settings; plus a Vite/React admin surface for sign-in, server-side admin access checks, user search, user detail/edit, role changes, ban/unban, removal, audit-log inspection, daily-target CRUD, and meal CRUD. The admin surface is English-only for now.
 - **UI foundation** — a layered design system (<a href="docs/design-system.md">docs/design-system.md</a>): <code>design-tokens</code> (semantic light/dark themes, spacing, typography, motion, WCAG-tested contrast, and material roles) plus mirrored React Native and web primitives (<code>Text</code>, <code>Button</code>, <code>Input</code>, <code>Field</code>, <code>Screen</code>, <code>Surface</code>, <code>GlassSurface</code>, <code>Stack</code>, <code>Alert</code>, …). Native iOS 26 Liquid Glass is guarded at runtime with tokenized fallbacks for older iOS, Android, and web; a dev-only showcase remains available at <code>/dev/design-system</code> on mobile.
 
 ## Architecture
@@ -201,25 +201,35 @@ Do not put server secrets in either client environment.
 
 The API currently exposes these application routes:
 
-| Method              | Path                                       | Auth          | Description                                                                                        |
-| ------------------- | ------------------------------------------ | ------------- | -------------------------------------------------------------------------------------------------- |
-| <code>GET</code>    | <code>/api/health</code>                   | Public        | Returns service status, version, request ID, and timestamp.                                        |
-| <code>ALL</code>    | <code>/api/auth/*</code>                   | Better Auth   | Email/password, password reset, and configured social-auth handlers.                               |
-| <code>GET</code>    | <code>/api/me</code>                       | Session       | Returns the authenticated user’s public contract.                                                  |
-| <code>GET</code>    | <code>/api/me/targets</code>               | Session       | Returns the authenticated user’s optional daily calorie and macro targets.                         |
-| <code>PUT</code>    | <code>/api/me/targets</code>               | Session       | Replaces the authenticated user’s daily targets; each value may be cleared with <code>null</code>. |
-| <code>GET</code>    | <code>/api/admin/users</code>              | Admin session | Lists users with optional email <code>search</code>, <code>limit</code>, and <code>offset</code>.  |
-| <code>GET</code>    | <code>/api/admin/users/{id}</code>         | Admin session | Returns one operational user record.                                                               |
-| <code>GET</code>    | <code>/api/admin/users/{id}/targets</code> | Admin session | Inspects one user’s daily targets.                                                                 |
-| <code>PUT</code>    | <code>/api/admin/users/{id}/targets</code> | Admin session | Replaces one user’s daily targets; null clears individual values.                                  |
-| <code>DELETE</code> | <code>/api/admin/users/{id}/targets</code> | Admin session | Removes one user’s daily-target record.                                                            |
-| <code>POST</code>   | <code>/api/admin/users</code>              | Admin session | Creates a user through Better Auth’s admin API.                                                    |
-| <code>PATCH</code>  | <code>/api/admin/users/{id}</code>         | Admin session | Updates a user’s name and/or email.                                                                |
-| <code>POST</code>   | <code>/api/admin/users/{id}/role</code>    | Admin session | Changes a user between the explicit <code>user</code> and <code>admin</code> roles.                |
-| <code>POST</code>   | <code>/api/admin/users/{id}/ban</code>     | Admin session | Bans a user with an optional reason and duration.                                                  |
-| <code>POST</code>   | <code>/api/admin/users/{id}/unban</code>   | Admin session | Removes the user ban.                                                                              |
-| <code>DELETE</code> | <code>/api/admin/users/{id}</code>         | Admin session | Removes the account and linked auth data.                                                          |
-| <code>GET</code>    | <code>/api/admin/audit-logs</code>         | Admin session | Lists paginated admin account/application-data actions with actor and target details.              |
+| Method              | Path                                              | Auth          | Description                                                                                        |
+| ------------------- | ------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
+| <code>GET</code>    | <code>/api/health</code>                          | Public        | Returns service status, version, request ID, and timestamp.                                        |
+| <code>ALL</code>    | <code>/api/auth/*</code>                          | Better Auth   | Email/password, password reset, and configured social-auth handlers.                               |
+| <code>GET</code>    | <code>/api/me</code>                              | Session       | Returns the authenticated user’s public contract.                                                  |
+| <code>GET</code>    | <code>/api/me/targets</code>                      | Session       | Returns the authenticated user’s optional daily calorie and macro targets.                         |
+| <code>PUT</code>    | <code>/api/me/targets</code>                      | Session       | Replaces the authenticated user’s daily targets; each value may be cleared with <code>null</code>. |
+| <code>GET</code>    | <code>/api/me/meals?date=YYYY-MM-DD</code>        | Session       | Returns manually logged meals and nutrition totals for one calendar day.                           |
+| <code>POST</code>   | <code>/api/me/meals</code>                        | Session       | Creates a manually logged meal.                                                                    |
+| <code>GET</code>    | <code>/api/me/meals/{id}</code>                   | Session       | Returns one meal owned by the authenticated user.                                                  |
+| <code>PATCH</code>  | <code>/api/me/meals/{id}</code>                   | Session       | Updates one meal owned by the authenticated user.                                                  |
+| <code>DELETE</code> | <code>/api/me/meals/{id}</code>                   | Session       | Removes one meal owned by the authenticated user.                                                  |
+| <code>GET</code>    | <code>/api/admin/users</code>                     | Admin session | Lists users with optional email <code>search</code>, <code>limit</code>, and <code>offset</code>.  |
+| <code>GET</code>    | <code>/api/admin/users/{id}</code>                | Admin session | Returns one operational user record.                                                               |
+| <code>GET</code>    | <code>/api/admin/users/{id}/targets</code>        | Admin session | Inspects one user’s daily targets.                                                                 |
+| <code>PUT</code>    | <code>/api/admin/users/{id}/targets</code>        | Admin session | Replaces one user’s daily targets; null clears individual values.                                  |
+| <code>DELETE</code> | <code>/api/admin/users/{id}/targets</code>        | Admin session | Removes one user’s daily-target record.                                                            |
+| <code>GET</code>    | <code>/api/admin/users/{id}/meals</code>          | Admin session | Lists up to 50 manually logged meals for one user.                                                 |
+| <code>POST</code>   | <code>/api/admin/users/{id}/meals</code>          | Admin session | Creates a meal for one user and records an audit action.                                           |
+| <code>GET</code>    | <code>/api/admin/users/{id}/meals/{mealId}</code> | Admin session | Returns one meal for one user.                                                                     |
+| <code>PATCH</code>  | <code>/api/admin/users/{id}/meals/{mealId}</code> | Admin session | Updates one meal and records an audit action.                                                      |
+| <code>DELETE</code> | <code>/api/admin/users/{id}/meals/{mealId}</code> | Admin session | Removes one meal and records an audit action.                                                      |
+| <code>POST</code>   | <code>/api/admin/users</code>                     | Admin session | Creates a user through Better Auth’s admin API.                                                    |
+| <code>PATCH</code>  | <code>/api/admin/users/{id}</code>                | Admin session | Updates a user’s name and/or email.                                                                |
+| <code>POST</code>   | <code>/api/admin/users/{id}/role</code>           | Admin session | Changes a user between the explicit <code>user</code> and <code>admin</code> roles.                |
+| <code>POST</code>   | <code>/api/admin/users/{id}/ban</code>            | Admin session | Bans a user with an optional reason and duration.                                                  |
+| <code>POST</code>   | <code>/api/admin/users/{id}/unban</code>          | Admin session | Removes the user ban.                                                                              |
+| <code>DELETE</code> | <code>/api/admin/users/{id}</code>                | Admin session | Removes the account and linked auth data.                                                          |
+| <code>GET</code>    | <code>/api/admin/audit-logs</code>                | Admin session | Lists paginated admin account/application-data actions with actor and target details.              |
 
 The machine-readable API description is [packages/api-client/openapi.yaml](packages/api-client/openapi.yaml). It drives the generated fetch, Zod, and TanStack Query client artifacts.
 

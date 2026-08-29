@@ -11,21 +11,31 @@ import { client } from "../client.gen";
 import {
   banAdminUser,
   createAdminUser,
+  createAdminUserMeal,
+  createMeal,
   getAdminUser,
   getAdminUserDailyTargets,
+  getAdminUserMeal,
   getCurrentUser,
+  getDailyMeals,
   getDailyTargets,
   getHealth,
+  getMeal,
   listAdminAuditLogs,
+  listAdminUserMeals,
   listAdminUsers,
   type Options,
   removeAdminUser,
   removeAdminUserDailyTargets,
+  removeAdminUserMeal,
+  removeMeal,
   setAdminUserRole,
   unbanAdminUser,
   updateAdminUser,
   updateAdminUserDailyTargets,
+  updateAdminUserMeal,
   updateDailyTargets,
+  updateMeal,
 } from "../sdk.gen";
 import type {
   BanAdminUserData,
@@ -33,25 +43,43 @@ import type {
   BanAdminUserResponse,
   CreateAdminUserData,
   CreateAdminUserError,
+  CreateAdminUserMealData,
+  CreateAdminUserMealError,
+  CreateAdminUserMealResponse,
   CreateAdminUserResponse,
+  CreateMealData,
+  CreateMealError,
+  CreateMealResponse,
   GetAdminUserDailyTargetsData,
   GetAdminUserDailyTargetsError,
   GetAdminUserDailyTargetsResponse,
   GetAdminUserData,
   GetAdminUserError,
+  GetAdminUserMealData,
+  GetAdminUserMealError,
+  GetAdminUserMealResponse,
   GetAdminUserResponse,
   GetCurrentUserData,
   GetCurrentUserError,
   GetCurrentUserResponse,
+  GetDailyMealsData,
+  GetDailyMealsError,
+  GetDailyMealsResponse,
   GetDailyTargetsData,
   GetDailyTargetsError,
   GetDailyTargetsResponse,
   GetHealthData,
   GetHealthError,
   GetHealthResponse,
+  GetMealData,
+  GetMealError,
+  GetMealResponse,
   ListAdminAuditLogsData,
   ListAdminAuditLogsError,
   ListAdminAuditLogsResponse,
+  ListAdminUserMealsData,
+  ListAdminUserMealsError,
+  ListAdminUserMealsResponse,
   ListAdminUsersData,
   ListAdminUsersError,
   ListAdminUsersResponse,
@@ -60,7 +88,13 @@ import type {
   RemoveAdminUserDailyTargetsResponse,
   RemoveAdminUserData,
   RemoveAdminUserError,
+  RemoveAdminUserMealData,
+  RemoveAdminUserMealError,
+  RemoveAdminUserMealResponse,
   RemoveAdminUserResponse,
+  RemoveMealData,
+  RemoveMealError,
+  RemoveMealResponse,
   SetAdminUserRoleData,
   SetAdminUserRoleError,
   SetAdminUserRoleResponse,
@@ -72,10 +106,16 @@ import type {
   UpdateAdminUserDailyTargetsResponse,
   UpdateAdminUserData,
   UpdateAdminUserError,
+  UpdateAdminUserMealData,
+  UpdateAdminUserMealError,
+  UpdateAdminUserMealResponse,
   UpdateAdminUserResponse,
   UpdateDailyTargetsData,
   UpdateDailyTargetsError,
   UpdateDailyTargetsResponse,
+  UpdateMealData,
+  UpdateMealError,
+  UpdateMealResponse,
 } from "../types.gen";
 
 export type QueryKey<TOptions extends Options> = [
@@ -209,6 +249,120 @@ export const updateDailyTargetsMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await updateDailyTargets({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getDailyMealsQueryKey = (options: Options<GetDailyMealsData>) =>
+  createQueryKey("getDailyMeals", options);
+
+/**
+ * Get the authenticated user's meals for a day
+ */
+export const getDailyMealsOptions = (options: Options<GetDailyMealsData>) =>
+  queryOptions<
+    GetDailyMealsResponse,
+    GetDailyMealsError,
+    GetDailyMealsResponse,
+    ReturnType<typeof getDailyMealsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getDailyMeals({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getDailyMealsQueryKey(options),
+  });
+
+/**
+ * Create a manual meal for the authenticated user
+ */
+export const createMealMutation = (
+  options?: Partial<Options<CreateMealData>>,
+): UseMutationOptions<CreateMealResponse, CreateMealError, Options<CreateMealData>> => {
+  const mutationOptions: UseMutationOptions<
+    CreateMealResponse,
+    CreateMealError,
+    Options<CreateMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createMeal({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Remove one authenticated user's meal
+ */
+export const removeMealMutation = (
+  options?: Partial<Options<RemoveMealData>>,
+): UseMutationOptions<RemoveMealResponse, RemoveMealError, Options<RemoveMealData>> => {
+  const mutationOptions: UseMutationOptions<
+    RemoveMealResponse,
+    RemoveMealError,
+    Options<RemoveMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await removeMeal({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getMealQueryKey = (options: Options<GetMealData>) =>
+  createQueryKey("getMeal", options);
+
+/**
+ * Get one authenticated user's meal
+ */
+export const getMealOptions = (options: Options<GetMealData>) =>
+  queryOptions<GetMealResponse, GetMealError, GetMealResponse, ReturnType<typeof getMealQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getMeal({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getMealQueryKey(options),
+  });
+
+/**
+ * Update one authenticated user's meal
+ */
+export const updateMealMutation = (
+  options?: Partial<Options<UpdateMealData>>,
+): UseMutationOptions<UpdateMealResponse, UpdateMealError, Options<UpdateMealData>> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateMealResponse,
+    UpdateMealError,
+    Options<UpdateMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateMeal({
         ...options,
         ...fnOptions,
         throwOnError: true,
@@ -498,6 +652,183 @@ export const updateAdminUserDailyTargetsMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await updateAdminUserDailyTargets({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listAdminUserMealsQueryKey = (options: Options<ListAdminUserMealsData>) =>
+  createQueryKey("listAdminUserMeals", options);
+
+/**
+ * List a user's meals for administrators
+ */
+export const listAdminUserMealsOptions = (options: Options<ListAdminUserMealsData>) =>
+  queryOptions<
+    ListAdminUserMealsResponse,
+    ListAdminUserMealsError,
+    ListAdminUserMealsResponse,
+    ReturnType<typeof listAdminUserMealsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listAdminUserMeals({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listAdminUserMealsQueryKey(options),
+  });
+
+export const listAdminUserMealsInfiniteQueryKey = (
+  options: Options<ListAdminUserMealsData>,
+): QueryKey<Options<ListAdminUserMealsData>> => createQueryKey("listAdminUserMeals", options, true);
+
+/**
+ * List a user's meals for administrators
+ */
+export const listAdminUserMealsInfiniteOptions = (options: Options<ListAdminUserMealsData>) => {
+  const opts = infiniteQueryOptions<
+    ListAdminUserMealsResponse,
+    ListAdminUserMealsError,
+    InfiniteData<ListAdminUserMealsResponse>,
+    QueryKey<Options<ListAdminUserMealsData>>,
+    | number
+    | Pick<QueryKey<Options<ListAdminUserMealsData>>[0], "body" | "headers" | "path" | "query">
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListAdminUserMealsData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  offset: pageParam,
+                },
+              };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await listAdminUserMeals({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        });
+        return data;
+      },
+      queryKey: listAdminUserMealsInfiniteQueryKey(options),
+    },
+  );
+  return opts as Omit<typeof opts, "initialData">;
+};
+
+/**
+ * Create a meal for a user
+ */
+export const createAdminUserMealMutation = (
+  options?: Partial<Options<CreateAdminUserMealData>>,
+): UseMutationOptions<
+  CreateAdminUserMealResponse,
+  CreateAdminUserMealError,
+  Options<CreateAdminUserMealData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateAdminUserMealResponse,
+    CreateAdminUserMealError,
+    Options<CreateAdminUserMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createAdminUserMeal({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Remove one user's meal for administrators
+ */
+export const removeAdminUserMealMutation = (
+  options?: Partial<Options<RemoveAdminUserMealData>>,
+): UseMutationOptions<
+  RemoveAdminUserMealResponse,
+  RemoveAdminUserMealError,
+  Options<RemoveAdminUserMealData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RemoveAdminUserMealResponse,
+    RemoveAdminUserMealError,
+    Options<RemoveAdminUserMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await removeAdminUserMeal({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getAdminUserMealQueryKey = (options: Options<GetAdminUserMealData>) =>
+  createQueryKey("getAdminUserMeal", options);
+
+/**
+ * Get one user's meal for administrators
+ */
+export const getAdminUserMealOptions = (options: Options<GetAdminUserMealData>) =>
+  queryOptions<
+    GetAdminUserMealResponse,
+    GetAdminUserMealError,
+    GetAdminUserMealResponse,
+    ReturnType<typeof getAdminUserMealQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAdminUserMeal({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAdminUserMealQueryKey(options),
+  });
+
+/**
+ * Update one user's meal for administrators
+ */
+export const updateAdminUserMealMutation = (
+  options?: Partial<Options<UpdateAdminUserMealData>>,
+): UseMutationOptions<
+  UpdateAdminUserMealResponse,
+  UpdateAdminUserMealError,
+  Options<UpdateAdminUserMealData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateAdminUserMealResponse,
+    UpdateAdminUserMealError,
+    Options<UpdateAdminUserMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateAdminUserMeal({
         ...options,
         ...fnOptions,
         throwOnError: true,

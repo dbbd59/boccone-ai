@@ -50,6 +50,69 @@ export const zDailyTargetsResponse = z.object({
   targets: zDailyTargets,
 });
 
+export const zMealCategory = z.enum(["breakfast", "lunch", "dinner", "snack"]);
+
+export const zCreateMealRequest = z.object({
+  name: z.string().min(1).max(160),
+  category: zMealCategory,
+  date: z.iso.date(),
+  calories: z.int().gte(0).lte(100000),
+  proteinGrams: z.int().gte(0).lte(10000),
+  carbohydratesGrams: z.int().gte(0).lte(10000),
+  fatGrams: z.int().gte(0).lte(10000),
+  notes: z.string().max(2000).nullish(),
+});
+
+export const zUpdateMealRequest = z.object({
+  name: z.string().min(1).max(160).optional(),
+  category: zMealCategory.optional(),
+  date: z.iso.date().optional(),
+  calories: z.int().gte(0).lte(100000).optional(),
+  proteinGrams: z.int().gte(0).lte(10000).optional(),
+  carbohydratesGrams: z.int().gte(0).lte(10000).optional(),
+  fatGrams: z.int().gte(0).lte(10000).optional(),
+  notes: z.string().max(2000).nullish(),
+});
+
+export const zMeal = zCreateMealRequest.and(
+  z.object({
+    id: z.string(),
+    source: z.enum(["manual"]),
+    notes: z.string().max(2000).nullable(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+  }),
+);
+
+export const zMealResponse = z.object({
+  meal: zMeal,
+});
+
+export const zMealMutationResponse = z.object({
+  success: z.literal(true),
+});
+
+export const zMealTotals = z.object({
+  calories: z.int().gte(0),
+  proteinGrams: z.int().gte(0),
+  carbohydratesGrams: z.int().gte(0),
+  fatGrams: z.int().gte(0),
+});
+
+export const zDailyMealsResponse = z.object({
+  date: z.iso.date(),
+  meals: z.array(zMeal),
+  totals: zMealTotals,
+});
+
+export const zAdminMealsResponse = z.object({
+  userId: z.string(),
+  meals: z.array(zMeal),
+  total: z.int(),
+  limit: z.int(),
+  offset: z.int(),
+});
+
 export const zAdminUser = z.object({
   id: z.string(),
   name: z.string(),
@@ -108,6 +171,9 @@ export const zAdminAuditAction = z.enum([
   "user_removed",
   "user_targets_updated",
   "user_targets_removed",
+  "user_meal_created",
+  "user_meal_updated",
+  "user_meal_removed",
 ]);
 
 export const zAdminAuditPrincipal = z.object({
@@ -155,6 +221,51 @@ export const zUpdateDailyTargetsBody = zDailyTargets;
  * Updated daily nutrition targets
  */
 export const zUpdateDailyTargetsResponse = zDailyTargetsResponse;
+
+export const zGetDailyMealsQuery = z.object({
+  date: z.iso.date(),
+});
+
+/**
+ * Meals and nutrition totals for a day
+ */
+export const zGetDailyMealsResponse = zDailyMealsResponse;
+
+export const zCreateMealBody = zCreateMealRequest;
+
+/**
+ * Created meal
+ */
+export const zCreateMealResponse = zMealResponse;
+
+export const zRemoveMealPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Meal removed
+ */
+export const zRemoveMealResponse = zMealMutationResponse;
+
+export const zGetMealPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Meal
+ */
+export const zGetMealResponse = zMealResponse;
+
+export const zUpdateMealBody = zUpdateMealRequest;
+
+export const zUpdateMealPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Updated meal
+ */
+export const zUpdateMealResponse = zMealResponse;
 
 export const zListAdminUsersQuery = z.object({
   search: z.string().min(1).max(255).optional(),
@@ -231,6 +342,64 @@ export const zUpdateAdminUserDailyTargetsPath = z.object({
  * Updated user daily nutrition targets
  */
 export const zUpdateAdminUserDailyTargetsResponse = zDailyTargetsResponse;
+
+export const zListAdminUserMealsPath = z.object({
+  id: z.string(),
+});
+
+export const zListAdminUserMealsQuery = z.object({
+  date: z.iso.date().optional(),
+  limit: z.int().gte(1).lte(100).optional().default(50),
+  offset: z.int().gte(0).optional().default(0),
+});
+
+/**
+ * User meals
+ */
+export const zListAdminUserMealsResponse = zAdminMealsResponse;
+
+export const zCreateAdminUserMealBody = zCreateMealRequest;
+
+export const zCreateAdminUserMealPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Created meal
+ */
+export const zCreateAdminUserMealResponse = zMealResponse;
+
+export const zRemoveAdminUserMealPath = z.object({
+  id: z.string(),
+  mealId: z.string(),
+});
+
+/**
+ * Meal removed
+ */
+export const zRemoveAdminUserMealResponse = zMealMutationResponse;
+
+export const zGetAdminUserMealPath = z.object({
+  id: z.string(),
+  mealId: z.string(),
+});
+
+/**
+ * Meal
+ */
+export const zGetAdminUserMealResponse = zMealResponse;
+
+export const zUpdateAdminUserMealBody = zUpdateMealRequest;
+
+export const zUpdateAdminUserMealPath = z.object({
+  id: z.string(),
+  mealId: z.string(),
+});
+
+/**
+ * Updated meal
+ */
+export const zUpdateAdminUserMealResponse = zMealResponse;
 
 export const zSetAdminUserRoleBody = zAdminUserRoleRequest;
 

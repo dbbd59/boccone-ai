@@ -51,6 +51,67 @@ export type DailyTargetsResponse = {
   targets: DailyTargets;
 };
 
+export type MealCategory = "breakfast" | "lunch" | "dinner" | "snack";
+
+export type CreateMealRequest = {
+  name: string;
+  category: MealCategory;
+  date: string;
+  calories: number;
+  proteinGrams: number;
+  carbohydratesGrams: number;
+  fatGrams: number;
+  notes?: string | null;
+};
+
+export type UpdateMealRequest = {
+  name?: string;
+  category?: MealCategory;
+  date?: string;
+  calories?: number;
+  proteinGrams?: number;
+  carbohydratesGrams?: number;
+  fatGrams?: number;
+  notes?: string | null;
+};
+
+export type Meal = CreateMealRequest & {
+  id: string;
+  source: "manual";
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MealResponse = {
+  meal: Meal;
+};
+
+export type MealMutationResponse = {
+  success: true;
+};
+
+export type MealTotals = {
+  calories: number;
+  proteinGrams: number;
+  carbohydratesGrams: number;
+  fatGrams: number;
+};
+
+export type DailyMealsResponse = {
+  date: string;
+  meals: Array<Meal>;
+  totals: MealTotals;
+};
+
+export type AdminMealsResponse = {
+  userId: string;
+  meals: Array<Meal>;
+  total: number;
+  limit: number;
+  offset: number;
+};
+
 export type AdminUser = {
   id: string;
   name: string;
@@ -108,7 +169,10 @@ export type AdminAuditAction =
   | "user_unbanned"
   | "user_removed"
   | "user_targets_updated"
-  | "user_targets_removed";
+  | "user_targets_removed"
+  | "user_meal_created"
+  | "user_meal_updated"
+  | "user_meal_removed";
 
 export type AdminAuditPrincipal = {
   id: string;
@@ -240,6 +304,163 @@ export type UpdateDailyTargetsResponses = {
 
 export type UpdateDailyTargetsResponse =
   UpdateDailyTargetsResponses[keyof UpdateDailyTargetsResponses];
+
+export type GetDailyMealsData = {
+  body?: never;
+  path?: never;
+  query: {
+    date: string;
+  };
+  url: "/api/me/meals";
+};
+
+export type GetDailyMealsErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type GetDailyMealsError = GetDailyMealsErrors[keyof GetDailyMealsErrors];
+
+export type GetDailyMealsResponses = {
+  /**
+   * Meals and nutrition totals for a day
+   */
+  200: DailyMealsResponse;
+};
+
+export type GetDailyMealsResponse = GetDailyMealsResponses[keyof GetDailyMealsResponses];
+
+export type CreateMealData = {
+  body: CreateMealRequest;
+  path?: never;
+  query?: never;
+  url: "/api/me/meals";
+};
+
+export type CreateMealErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type CreateMealError = CreateMealErrors[keyof CreateMealErrors];
+
+export type CreateMealResponses = {
+  /**
+   * Created meal
+   */
+  200: MealResponse;
+};
+
+export type CreateMealResponse = CreateMealResponses[keyof CreateMealResponses];
+
+export type RemoveMealData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/me/meals/{id}";
+};
+
+export type RemoveMealErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type RemoveMealError = RemoveMealErrors[keyof RemoveMealErrors];
+
+export type RemoveMealResponses = {
+  /**
+   * Meal removed
+   */
+  200: MealMutationResponse;
+};
+
+export type RemoveMealResponse = RemoveMealResponses[keyof RemoveMealResponses];
+
+export type GetMealData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/me/meals/{id}";
+};
+
+export type GetMealErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type GetMealError = GetMealErrors[keyof GetMealErrors];
+
+export type GetMealResponses = {
+  /**
+   * Meal
+   */
+  200: MealResponse;
+};
+
+export type GetMealResponse = GetMealResponses[keyof GetMealResponses];
+
+export type UpdateMealData = {
+  body: UpdateMealRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/me/meals/{id}";
+};
+
+export type UpdateMealErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type UpdateMealError = UpdateMealErrors[keyof UpdateMealErrors];
+
+export type UpdateMealResponses = {
+  /**
+   * Updated meal
+   */
+  200: MealResponse;
+};
+
+export type UpdateMealResponse = UpdateMealResponses[keyof UpdateMealResponses];
 
 export type ListAdminUsersData = {
   body?: never;
@@ -538,6 +759,200 @@ export type UpdateAdminUserDailyTargetsResponses = {
 
 export type UpdateAdminUserDailyTargetsResponse =
   UpdateAdminUserDailyTargetsResponses[keyof UpdateAdminUserDailyTargetsResponses];
+
+export type ListAdminUserMealsData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: {
+    date?: string;
+    limit?: number;
+    offset?: number;
+  };
+  url: "/api/admin/users/{id}/meals";
+};
+
+export type ListAdminUserMealsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type ListAdminUserMealsError = ListAdminUserMealsErrors[keyof ListAdminUserMealsErrors];
+
+export type ListAdminUserMealsResponses = {
+  /**
+   * User meals
+   */
+  200: AdminMealsResponse;
+};
+
+export type ListAdminUserMealsResponse =
+  ListAdminUserMealsResponses[keyof ListAdminUserMealsResponses];
+
+export type CreateAdminUserMealData = {
+  body: CreateMealRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/meals";
+};
+
+export type CreateAdminUserMealErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type CreateAdminUserMealError = CreateAdminUserMealErrors[keyof CreateAdminUserMealErrors];
+
+export type CreateAdminUserMealResponses = {
+  /**
+   * Created meal
+   */
+  200: MealResponse;
+};
+
+export type CreateAdminUserMealResponse =
+  CreateAdminUserMealResponses[keyof CreateAdminUserMealResponses];
+
+export type RemoveAdminUserMealData = {
+  body?: never;
+  path: {
+    id: string;
+    mealId: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/meals/{mealId}";
+};
+
+export type RemoveAdminUserMealErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type RemoveAdminUserMealError = RemoveAdminUserMealErrors[keyof RemoveAdminUserMealErrors];
+
+export type RemoveAdminUserMealResponses = {
+  /**
+   * Meal removed
+   */
+  200: MealMutationResponse;
+};
+
+export type RemoveAdminUserMealResponse =
+  RemoveAdminUserMealResponses[keyof RemoveAdminUserMealResponses];
+
+export type GetAdminUserMealData = {
+  body?: never;
+  path: {
+    id: string;
+    mealId: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/meals/{mealId}";
+};
+
+export type GetAdminUserMealErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type GetAdminUserMealError = GetAdminUserMealErrors[keyof GetAdminUserMealErrors];
+
+export type GetAdminUserMealResponses = {
+  /**
+   * Meal
+   */
+  200: MealResponse;
+};
+
+export type GetAdminUserMealResponse = GetAdminUserMealResponses[keyof GetAdminUserMealResponses];
+
+export type UpdateAdminUserMealData = {
+  body: UpdateMealRequest;
+  path: {
+    id: string;
+    mealId: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/meals/{mealId}";
+};
+
+export type UpdateAdminUserMealErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type UpdateAdminUserMealError = UpdateAdminUserMealErrors[keyof UpdateAdminUserMealErrors];
+
+export type UpdateAdminUserMealResponses = {
+  /**
+   * Updated meal
+   */
+  200: MealResponse;
+};
+
+export type UpdateAdminUserMealResponse =
+  UpdateAdminUserMealResponses[keyof UpdateAdminUserMealResponses];
 
 export type SetAdminUserRoleData = {
   body: AdminUserRoleRequest;

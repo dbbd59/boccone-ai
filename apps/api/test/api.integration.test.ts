@@ -2,11 +2,14 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import {
   adminAuditLogsResponseSchema,
+  adminMealsResponseSchema,
   adminMutationResponseSchema,
   adminUserResponseSchema,
   adminUsersResponseSchema,
+  dailyMealsResponseSchema,
   dailyTargetsResponseSchema,
   healthResponseSchema,
+  mealResponseSchema,
   meResponseSchema,
 } from "@boccone/contracts";
 import { eq, user } from "@boccone/db";
@@ -603,5 +606,143 @@ describe("daily targets", () => {
       adminWithKnownEmail.jar,
     );
     expect(missingResponse.status).toBe(404);
+  });
+});
+
+describe("manual meals", () => {
+  test("a user can create, read, update, aggregate, and remove a meal", async () => {
+    const user = await signUpAndSignIn(uniqueEmail("meal-owner"));
+    const date = "2026-08-29";
+    const createResponse = await requestWithCookie("/api/me/meals", user.jar, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Pasta primavera",
+        category: "lunch",
+        date,
+        calories: 640,
+        proteinGrams: 24,
+        carbohydratesGrams: 82,
+        fatGrams: 21,
+        notes: "Used whole-wheat pasta",
+      }),
+    });
+    expect(createResponse.status).toBe(200);
+    const created = mealResponseSchema.parse(await createResponse.json()).meal;
+    expect(created.source).toBe("manual");
+    expect(created.date).toBe(date);
+
+    const dayResponse = await requestWithCookie(`/api/me/meals?date=${date}`, user.jar);
+    expect(dayResponse.status).toBe(200);
+    expect(dailyMealsResponseSchema.parse(await dayResponse.json())).toMatchObject({
+      date,
+      totals: {
+        calories: 640,
+        proteinGrams: 24,
+        carbohydratesGrams: 82,
+        fatGrams: 21,
+      },
+    });
+
+    const otherUser = await signUpAndSignIn(uniqueEmail("meal-other"));
+    const forbiddenRead = await requestWithCookie(`/api/me/meals/${created.id}`, otherUser.jar);
+    expect(forbiddenRead.status).toBe(404);
+
+    const updateResponse = await requestWithCookie(`/api/me/meals/${created.id}`, user.jar, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ calories: 700, notes: null }),
+    });
+    expect(updateResponse.status).toBe(200);
+    expect(mealResponseSchema.parse(await updateResponse.json()).meal).toMatchObject({
+      calories: 700,
+      notes: null,
+    });
+
+    const invalidDate = await requestWithCookie("/api/me/meals?date=2026-02-31", user.jar);
+    expect(invalidDate.status).toBe(400);
+    const emptyDate = await requestWithCookie("/api/me/meals", user.jar);
+    expect(emptyDate.status).toBe(400);
+
+    const removeResponse = await requestWithCookie(`/api/me/meals/${created.id}`, user.jar, {
+      method: "DELETE",
+    });
+    expect(removeResponse.status).toBe(200);
+    expect(adminMutationResponseSchema.parse(await removeResponse.json()).success).toBe(true);
+    const afterRemove = await requestWithCookie(`/api/me/meals/${created.id}`, user.jar);
+    expect(afterRemove.status).toBe(404);
+  });
+
+  test("admins have full meal CRUD and every mutation is audited", async () => {
+    const target = await signUpAndSignIn(uniqueEmail("meal-admin-target"));
+    const targetIdentity = meResponseSchema.parse(
+      await (await requestWithCookie("/api/me", target.jar)).json(),
+    ).user;
+    const adminEmail = uniqueEmail("meal-admin");
+    const admin = await signUpAndSignIn(adminEmail);
+    await harness.db.update(user).set({ role: "admin" }).where(eq(user.email, adminEmail));
+
+    const forbidden = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/meals`,
+      target.jar,
+    );
+    expect(forbidden.status).toBe(403);
+
+    const createResponse = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/meals`,
+      admin.jar,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: "Greek yogurt",
+          category: "snack",
+          date: "2026-08-29",
+          calories: 180,
+          proteinGrams: 17,
+          carbohydratesGrams: 12,
+          fatGrams: 4,
+        }),
+      },
+    );
+    expect(createResponse.status).toBe(200);
+    const created = mealResponseSchema.parse(await createResponse.json()).meal;
+
+    const listResponse = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/meals?date=2026-08-29`,
+      admin.jar,
+    );
+    expect(listResponse.status).toBe(200);
+    const listed = adminMealsResponseSchema.parse(await listResponse.json());
+    expect(listed.total).toBe(1);
+    expect(listed.meals[0]?.id).toBe(created.id);
+
+    const updateResponse = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/meals/${created.id}`,
+      admin.jar,
+      {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: "Yogurt bowl" }),
+      },
+    );
+    expect(updateResponse.status).toBe(200);
+    expect(mealResponseSchema.parse(await updateResponse.json()).meal.name).toBe("Yogurt bowl");
+
+    const removeResponse = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/meals/${created.id}`,
+      admin.jar,
+      { method: "DELETE" },
+    );
+    expect(removeResponse.status).toBe(200);
+    expect(adminMutationResponseSchema.parse(await removeResponse.json()).success).toBe(true);
+
+    const auditResponse = await requestWithCookie("/api/admin/audit-logs?limit=20", admin.jar);
+    const audit = adminAuditLogsResponseSchema.parse(await auditResponse.json());
+    expect(
+      new Set(
+        audit.logs.filter((log) => log.targetUserId === targetIdentity.id).map((log) => log.action),
+      ),
+    ).toEqual(new Set(["user_meal_created", "user_meal_updated", "user_meal_removed"]));
   });
 });

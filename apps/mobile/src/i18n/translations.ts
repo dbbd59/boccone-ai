@@ -1,3 +1,5 @@
+import type { MealCategory } from "@boccone/contracts";
+
 export const supportedLocales = ["en", "it"] as const;
 export type Locale = (typeof supportedLocales)[number];
 
@@ -89,6 +91,55 @@ export interface TranslationCopy {
     refreshError: string;
     signedInAs: (email: string | undefined) => string;
     fallbackName: string;
+    todayTitle: string;
+    todayDate: (date: string) => string;
+    caloriesLabel: string;
+    caloriesValue: (value: number) => string;
+    caloriesTarget: (target: number) => string;
+    caloriesUnset: string;
+    macrosTitle: string;
+    proteinLabel: string;
+    carbohydratesLabel: string;
+    fatLabel: string;
+    gramsValue: (value: number) => string;
+    gramsTarget: (value: number, target: number) => string;
+    mealsTitle: string;
+    addMeal: string;
+    editMeal: string;
+    mealSummary: (name: string, calories: number) => string;
+    emptyTitle: string;
+    emptyBody: string;
+    loadError: string;
+    categoryLabels: Record<MealCategory, string>;
+  };
+  meal: {
+    addTitle: string;
+    editTitle: string;
+    subtitle: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    categoryLabel: string;
+    categories: Record<MealCategory, string>;
+    dateLabel: string;
+    dateDescription: string;
+    nutritionTitle: string;
+    caloriesLabel: string;
+    proteinLabel: string;
+    carbohydratesLabel: string;
+    fatLabel: string;
+    notesLabel: string;
+    notesDescription: string;
+    save: string;
+    saveChanges: string;
+    delete: string;
+    cancel: string;
+    deleteTitle: string;
+    deleteBody: string;
+    deleteError: string;
+    validation: string;
+    saveError: string;
+    loadError: string;
+    loading: string;
   };
   settings: {
     title: string;
@@ -197,6 +248,55 @@ export const translations: Record<Locale, TranslationCopy> = {
       refreshError: "Could not refresh your account. Pull to retry later.",
       signedInAs: (email) => `Signed in as ${email ?? "your account"}`,
       fallbackName: "there",
+      todayTitle: "Today",
+      todayDate: (date) => date,
+      caloriesLabel: "Calories",
+      caloriesValue: (value) => `${value} kcal`,
+      caloriesTarget: (target) => `of ${target} kcal target`,
+      caloriesUnset: "No calorie target set",
+      macrosTitle: "Macros",
+      proteinLabel: "Protein",
+      carbohydratesLabel: "Carbohydrates",
+      fatLabel: "Fat",
+      gramsValue: (value) => `${value} g`,
+      gramsTarget: (value, target) => `${value} / ${target} g`,
+      mealsTitle: "Meals",
+      addMeal: "Add meal",
+      editMeal: "Edit meal",
+      mealSummary: (name, calories) => `${name} · ${calories} kcal`,
+      emptyTitle: "Nothing logged yet",
+      emptyBody: "Add your first meal manually. You can review it here anytime.",
+      loadError: "Could not load today's meals. Try again later.",
+      categoryLabels: { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" },
+    },
+    meal: {
+      addTitle: "Add a meal",
+      editTitle: "Edit meal",
+      subtitle: "Record what you ate with values you trust.",
+      nameLabel: "Meal name",
+      namePlaceholder: "e.g. Pasta with tomato sauce",
+      categoryLabel: "Category",
+      categories: { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" },
+      dateLabel: "Date",
+      dateDescription: "Use your local calendar date: YYYY-MM-DD.",
+      nutritionTitle: "Nutrition",
+      caloriesLabel: "Calories (kcal)",
+      proteinLabel: "Protein (g)",
+      carbohydratesLabel: "Carbohydrates (g)",
+      fatLabel: "Fat (g)",
+      notesLabel: "Notes",
+      notesDescription: "Optional details to help you remember this meal.",
+      save: "Save meal",
+      saveChanges: "Save changes",
+      delete: "Delete meal",
+      cancel: "Cancel",
+      deleteTitle: "Delete this meal?",
+      deleteBody: "This removes the meal from your diary.",
+      deleteError: "Could not delete the meal. Try again.",
+      validation: "Enter a name, valid date, and whole numbers for nutrition values.",
+      saveError: "Could not save the meal. Try again.",
+      loadError: "Could not load this meal. Try again later.",
+      loading: "Loading meal…",
     },
     settings: {
       title: "Your space",
@@ -303,6 +403,60 @@ export const translations: Record<Locale, TranslationCopy> = {
       refreshError: "Impossibile aggiornare l’account. Riprova più tardi.",
       signedInAs: (email) => `Accesso effettuato come ${email ?? "il tuo account"}`,
       fallbackName: "te",
+      todayTitle: "Oggi",
+      todayDate: (date) => date,
+      caloriesLabel: "Calorie",
+      caloriesValue: (value) => `${value} kcal`,
+      caloriesTarget: (target) => `su ${target} kcal obiettivo`,
+      caloriesUnset: "Nessun obiettivo calorico impostato",
+      macrosTitle: "Macronutrienti",
+      proteinLabel: "Proteine",
+      carbohydratesLabel: "Carboidrati",
+      fatLabel: "Grassi",
+      gramsValue: (value) => `${value} g`,
+      gramsTarget: (value, target) => `${value} / ${target} g`,
+      mealsTitle: "Pasti",
+      addMeal: "Aggiungi pasto",
+      editMeal: "Modifica pasto",
+      mealSummary: (name, calories) => `${name} · ${calories} kcal`,
+      emptyTitle: "Nessun pasto registrato",
+      emptyBody: "Aggiungi il tuo primo pasto manualmente. Potrai rivederlo quando vuoi.",
+      loadError: "Impossibile caricare i pasti di oggi. Riprova più tardi.",
+      categoryLabels: {
+        breakfast: "Colazione",
+        lunch: "Pranzo",
+        dinner: "Cena",
+        snack: "Spuntino",
+      },
+    },
+    meal: {
+      addTitle: "Aggiungi un pasto",
+      editTitle: "Modifica pasto",
+      subtitle: "Registra ciò che hai mangiato con valori che conosci.",
+      nameLabel: "Nome del pasto",
+      namePlaceholder: "es. Pasta al pomodoro",
+      categoryLabel: "Categoria",
+      categories: { breakfast: "Colazione", lunch: "Pranzo", dinner: "Cena", snack: "Spuntino" },
+      dateLabel: "Data",
+      dateDescription: "Usa la data del tuo calendario locale: AAAA-MM-GG.",
+      nutritionTitle: "Valori nutrizionali",
+      caloriesLabel: "Calorie (kcal)",
+      proteinLabel: "Proteine (g)",
+      carbohydratesLabel: "Carboidrati (g)",
+      fatLabel: "Grassi (g)",
+      notesLabel: "Note",
+      notesDescription: "Dettagli facoltativi per ricordare meglio questo pasto.",
+      save: "Salva pasto",
+      saveChanges: "Salva modifiche",
+      delete: "Elimina pasto",
+      cancel: "Annulla",
+      deleteTitle: "Eliminare questo pasto?",
+      deleteBody: "Il pasto verrà rimosso dal diario.",
+      deleteError: "Impossibile eliminare il pasto. Riprova.",
+      validation: "Inserisci un nome, una data valida e numeri interi per i valori nutrizionali.",
+      saveError: "Impossibile salvare il pasto. Riprova.",
+      loadError: "Impossibile caricare questo pasto. Riprova più tardi.",
+      loading: "Caricamento del pasto…",
     },
     settings: {
       title: "Il tuo spazio",

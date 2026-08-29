@@ -10,25 +10,43 @@ import type {
   BanAdminUserResponses,
   CreateAdminUserData,
   CreateAdminUserErrors,
+  CreateAdminUserMealData,
+  CreateAdminUserMealErrors,
+  CreateAdminUserMealResponses,
   CreateAdminUserResponses,
+  CreateMealData,
+  CreateMealErrors,
+  CreateMealResponses,
   GetAdminUserDailyTargetsData,
   GetAdminUserDailyTargetsErrors,
   GetAdminUserDailyTargetsResponses,
   GetAdminUserData,
   GetAdminUserErrors,
+  GetAdminUserMealData,
+  GetAdminUserMealErrors,
+  GetAdminUserMealResponses,
   GetAdminUserResponses,
   GetCurrentUserData,
   GetCurrentUserErrors,
   GetCurrentUserResponses,
+  GetDailyMealsData,
+  GetDailyMealsErrors,
+  GetDailyMealsResponses,
   GetDailyTargetsData,
   GetDailyTargetsErrors,
   GetDailyTargetsResponses,
   GetHealthData,
   GetHealthErrors,
   GetHealthResponses,
+  GetMealData,
+  GetMealErrors,
+  GetMealResponses,
   ListAdminAuditLogsData,
   ListAdminAuditLogsErrors,
   ListAdminAuditLogsResponses,
+  ListAdminUserMealsData,
+  ListAdminUserMealsErrors,
+  ListAdminUserMealsResponses,
   ListAdminUsersData,
   ListAdminUsersErrors,
   ListAdminUsersResponses,
@@ -37,7 +55,13 @@ import type {
   RemoveAdminUserDailyTargetsResponses,
   RemoveAdminUserData,
   RemoveAdminUserErrors,
+  RemoveAdminUserMealData,
+  RemoveAdminUserMealErrors,
+  RemoveAdminUserMealResponses,
   RemoveAdminUserResponses,
+  RemoveMealData,
+  RemoveMealErrors,
+  RemoveMealResponses,
   SetAdminUserRoleData,
   SetAdminUserRoleErrors,
   SetAdminUserRoleResponses,
@@ -49,32 +73,56 @@ import type {
   UpdateAdminUserDailyTargetsResponses,
   UpdateAdminUserData,
   UpdateAdminUserErrors,
+  UpdateAdminUserMealData,
+  UpdateAdminUserMealErrors,
+  UpdateAdminUserMealResponses,
   UpdateAdminUserResponses,
   UpdateDailyTargetsData,
   UpdateDailyTargetsErrors,
   UpdateDailyTargetsResponses,
+  UpdateMealData,
+  UpdateMealErrors,
+  UpdateMealResponses,
 } from "./types.gen";
 import {
   zBanAdminUserBody,
   zBanAdminUserPath,
   zBanAdminUserResponse,
   zCreateAdminUserBody,
+  zCreateAdminUserMealBody,
+  zCreateAdminUserMealPath,
+  zCreateAdminUserMealResponse,
   zCreateAdminUserResponse,
+  zCreateMealBody,
+  zCreateMealResponse,
   zGetAdminUserDailyTargetsPath,
   zGetAdminUserDailyTargetsResponse,
+  zGetAdminUserMealPath,
+  zGetAdminUserMealResponse,
   zGetAdminUserPath,
   zGetAdminUserResponse,
   zGetCurrentUserResponse,
+  zGetDailyMealsQuery,
+  zGetDailyMealsResponse,
   zGetDailyTargetsResponse,
   zGetHealthResponse,
+  zGetMealPath,
+  zGetMealResponse,
   zListAdminAuditLogsQuery,
   zListAdminAuditLogsResponse,
+  zListAdminUserMealsPath,
+  zListAdminUserMealsQuery,
+  zListAdminUserMealsResponse,
   zListAdminUsersQuery,
   zListAdminUsersResponse,
   zRemoveAdminUserDailyTargetsPath,
   zRemoveAdminUserDailyTargetsResponse,
+  zRemoveAdminUserMealPath,
+  zRemoveAdminUserMealResponse,
   zRemoveAdminUserPath,
   zRemoveAdminUserResponse,
+  zRemoveMealPath,
+  zRemoveMealResponse,
   zSetAdminUserRoleBody,
   zSetAdminUserRolePath,
   zSetAdminUserRoleResponse,
@@ -84,10 +132,16 @@ import {
   zUpdateAdminUserDailyTargetsBody,
   zUpdateAdminUserDailyTargetsPath,
   zUpdateAdminUserDailyTargetsResponse,
+  zUpdateAdminUserMealBody,
+  zUpdateAdminUserMealPath,
+  zUpdateAdminUserMealResponse,
   zUpdateAdminUserPath,
   zUpdateAdminUserResponse,
   zUpdateDailyTargetsBody,
   zUpdateDailyTargetsResponse,
+  zUpdateMealBody,
+  zUpdateMealPath,
+  zUpdateMealResponse,
 } from "./zod.gen";
 
 export type Options<
@@ -210,6 +264,149 @@ export const updateDailyTargets = <ThrowOnError extends boolean = false>(
       },
     ],
     url: "/api/me/targets",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get the authenticated user's meals for a day
+ */
+export const getDailyMeals = <ThrowOnError extends boolean = false>(
+  options: Options<GetDailyMealsData, ThrowOnError>,
+): RequestResult<GetDailyMealsResponses, GetDailyMealsErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetDailyMealsResponses, GetDailyMealsErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetDailyMealsQuery,
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetDailyMealsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/meals",
+    ...options,
+  });
+
+/**
+ * Create a manual meal for the authenticated user
+ */
+export const createMeal = <ThrowOnError extends boolean = false>(
+  options: Options<CreateMealData, ThrowOnError>,
+): RequestResult<CreateMealResponses, CreateMealErrors, ThrowOnError> =>
+  (options.client ?? client).post<CreateMealResponses, CreateMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateMealBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/meals",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove one authenticated user's meal
+ */
+export const removeMeal = <ThrowOnError extends boolean = false>(
+  options: Options<RemoveMealData, ThrowOnError>,
+): RequestResult<RemoveMealResponses, RemoveMealErrors, ThrowOnError> =>
+  (options.client ?? client).delete<RemoveMealResponses, RemoveMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zRemoveMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zRemoveMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/meals/{id}",
+    ...options,
+  });
+
+/**
+ * Get one authenticated user's meal
+ */
+export const getMeal = <ThrowOnError extends boolean = false>(
+  options: Options<GetMealData, ThrowOnError>,
+): RequestResult<GetMealResponses, GetMealErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetMealResponses, GetMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/meals/{id}",
+    ...options,
+  });
+
+/**
+ * Update one authenticated user's meal
+ */
+export const updateMeal = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateMealData, ThrowOnError>,
+): RequestResult<UpdateMealResponses, UpdateMealErrors, ThrowOnError> =>
+  (options.client ?? client).patch<UpdateMealResponses, UpdateMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateMealBody,
+          path: zUpdateMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/meals/{id}",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -458,6 +655,165 @@ export const updateAdminUserDailyTargets = <ThrowOnError extends boolean = false
       },
     ],
     url: "/api/admin/users/{id}/targets",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List a user's meals for administrators
+ */
+export const listAdminUserMeals = <ThrowOnError extends boolean = false>(
+  options: Options<ListAdminUserMealsData, ThrowOnError>,
+): RequestResult<ListAdminUserMealsResponses, ListAdminUserMealsErrors, ThrowOnError> =>
+  (options.client ?? client).get<
+    ListAdminUserMealsResponses,
+    ListAdminUserMealsErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zListAdminUserMealsPath,
+          query: zListAdminUserMealsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zListAdminUserMealsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/meals",
+    ...options,
+  });
+
+/**
+ * Create a meal for a user
+ */
+export const createAdminUserMeal = <ThrowOnError extends boolean = false>(
+  options: Options<CreateAdminUserMealData, ThrowOnError>,
+): RequestResult<CreateAdminUserMealResponses, CreateAdminUserMealErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    CreateAdminUserMealResponses,
+    CreateAdminUserMealErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateAdminUserMealBody,
+          path: zCreateAdminUserMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateAdminUserMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/meals",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove one user's meal for administrators
+ */
+export const removeAdminUserMeal = <ThrowOnError extends boolean = false>(
+  options: Options<RemoveAdminUserMealData, ThrowOnError>,
+): RequestResult<RemoveAdminUserMealResponses, RemoveAdminUserMealErrors, ThrowOnError> =>
+  (options.client ?? client).delete<
+    RemoveAdminUserMealResponses,
+    RemoveAdminUserMealErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zRemoveAdminUserMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zRemoveAdminUserMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/meals/{mealId}",
+    ...options,
+  });
+
+/**
+ * Get one user's meal for administrators
+ */
+export const getAdminUserMeal = <ThrowOnError extends boolean = false>(
+  options: Options<GetAdminUserMealData, ThrowOnError>,
+): RequestResult<GetAdminUserMealResponses, GetAdminUserMealErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetAdminUserMealResponses, GetAdminUserMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetAdminUserMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminUserMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/meals/{mealId}",
+    ...options,
+  });
+
+/**
+ * Update one user's meal for administrators
+ */
+export const updateAdminUserMeal = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateAdminUserMealData, ThrowOnError>,
+): RequestResult<UpdateAdminUserMealResponses, UpdateAdminUserMealErrors, ThrowOnError> =>
+  (options.client ?? client).patch<
+    UpdateAdminUserMealResponses,
+    UpdateAdminUserMealErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateAdminUserMealBody,
+          path: zUpdateAdminUserMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateAdminUserMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/meals/{mealId}",
     ...options,
     headers: {
       "Content-Type": "application/json",
