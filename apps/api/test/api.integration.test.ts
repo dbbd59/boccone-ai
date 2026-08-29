@@ -5,7 +5,9 @@ import {
   adminMutationResponseSchema,
   adminUserResponseSchema,
   adminUsersResponseSchema,
+  dailyTargetsResponseSchema,
   healthResponseSchema,
+  meResponseSchema,
 } from "@boccone/contracts";
 import { eq, user } from "@boccone/db";
 
@@ -197,8 +199,14 @@ describe("authorization boundaries", () => {
     const body = (await meResponse.json()) as { error: { code: string } };
     expect(body.error.code).toBe("unauthorized");
 
+    const targetsResponse = await request("/api/me/targets");
+    expect(targetsResponse.status).toBe(401);
+
     const adminResponse = await request("/api/admin/users");
     expect(adminResponse.status).toBe(401);
+
+    const adminTargetsResponse = await request(`/api/admin/users/${crypto.randomUUID()}/targets`);
+    expect(adminTargetsResponse.status).toBe(401);
   });
 
   test("a normal user cannot access admin routes", async () => {
@@ -378,5 +386,222 @@ describe("authorization boundaries", () => {
         "user_removed",
       ]),
     );
+  });
+});
+
+describe("daily targets", () => {
+  test("a user can read, replace, and clear independent targets", async () => {
+    const { jar } = await signUpAndSignIn(uniqueEmail("targets"));
+
+    const emptyResponse = await requestWithCookie("/api/me/targets", jar);
+    expect(emptyResponse.status).toBe(200);
+    expect(dailyTargetsResponseSchema.parse(await emptyResponse.json()).targets).toEqual({
+      calories: null,
+      proteinGrams: null,
+      carbohydratesGrams: null,
+      fatGrams: null,
+    });
+
+    const updateResponse = await requestWithCookie("/api/me/targets", jar, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        calories: 2200,
+        proteinGrams: 140,
+        carbohydratesGrams: null,
+        fatGrams: 70,
+      }),
+    });
+    expect(updateResponse.status).toBe(200);
+    expect(dailyTargetsResponseSchema.parse(await updateResponse.json()).targets).toEqual({
+      calories: 2200,
+      proteinGrams: 140,
+      carbohydratesGrams: null,
+      fatGrams: 70,
+    });
+
+    const readResponse = await requestWithCookie("/api/me/targets", jar);
+    expect(dailyTargetsResponseSchema.parse(await readResponse.json()).targets).toEqual({
+      calories: 2200,
+      proteinGrams: 140,
+      carbohydratesGrams: null,
+      fatGrams: 70,
+    });
+
+    const clearResponse = await requestWithCookie("/api/me/targets", jar, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        calories: null,
+        proteinGrams: null,
+        carbohydratesGrams: null,
+        fatGrams: null,
+      }),
+    });
+    expect(clearResponse.status).toBe(200);
+    expect(dailyTargetsResponseSchema.parse(await clearResponse.json()).targets).toEqual({
+      calories: null,
+      proteinGrams: null,
+      carbohydratesGrams: null,
+      fatGrams: null,
+    });
+
+    const invalidResponse = await requestWithCookie("/api/me/targets", jar, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        calories: 0,
+        proteinGrams: null,
+        carbohydratesGrams: null,
+        fatGrams: null,
+      }),
+    });
+    expect(invalidResponse.status).toBe(400);
+  });
+
+  test("admins can inspect, update, and remove user targets while regular users cannot", async () => {
+    const targetUser = await signUpAndSignIn(uniqueEmail("target-user"));
+    const targetIdentity = meResponseSchema.parse(
+      await (await requestWithCookie("/api/me", targetUser.jar)).json(),
+    ).user;
+    const adminEmail = uniqueEmail("target-admin-real");
+    const adminWithKnownEmail = await signUpAndSignIn(adminEmail);
+    await harness.db.update(user).set({ role: "admin" }).where(eq(user.email, adminEmail));
+    const userUpdate = await requestWithCookie("/api/me/targets", targetUser.jar, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        calories: 1800,
+        proteinGrams: 120,
+        carbohydratesGrams: 200,
+        fatGrams: null,
+      }),
+    });
+    expect(userUpdate.status).toBe(200);
+
+    const forbiddenResponse = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/targets`,
+      targetUser.jar,
+    );
+    expect(forbiddenResponse.status).toBe(403);
+
+    const forbiddenUpdate = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/targets`,
+      targetUser.jar,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          calories: 2000,
+          proteinGrams: 130,
+          carbohydratesGrams: 220,
+          fatGrams: 65,
+        }),
+      },
+    );
+    expect(forbiddenUpdate.status).toBe(403);
+
+    const forbiddenRemove = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/targets`,
+      targetUser.jar,
+      { method: "DELETE" },
+    );
+    expect(forbiddenRemove.status).toBe(403);
+
+    const adminResponse = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/targets`,
+      adminWithKnownEmail.jar,
+    );
+    expect(adminResponse.status).toBe(200);
+    expect(dailyTargetsResponseSchema.parse(await adminResponse.json()).targets).toEqual({
+      calories: 1800,
+      proteinGrams: 120,
+      carbohydratesGrams: 200,
+      fatGrams: null,
+    });
+
+    const adminUpdate = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/targets`,
+      adminWithKnownEmail.jar,
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          calories: 2000,
+          proteinGrams: 130,
+          carbohydratesGrams: 220,
+          fatGrams: 65,
+        }),
+      },
+    );
+    expect(adminUpdate.status).toBe(200);
+    expect(dailyTargetsResponseSchema.parse(await adminUpdate.json()).targets).toEqual({
+      calories: 2000,
+      proteinGrams: 130,
+      carbohydratesGrams: 220,
+      fatGrams: 65,
+    });
+
+    const adminRemove = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/targets`,
+      adminWithKnownEmail.jar,
+      { method: "DELETE" },
+    );
+    expect(adminRemove.status).toBe(200);
+    expect(adminMutationResponseSchema.parse(await adminRemove.json()).success).toBe(true);
+
+    const afterRemove = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/targets`,
+      adminWithKnownEmail.jar,
+    );
+    expect(dailyTargetsResponseSchema.parse(await afterRemove.json()).targets).toEqual({
+      calories: null,
+      proteinGrams: null,
+      carbohydratesGrams: null,
+      fatGrams: null,
+    });
+
+    const auditResponse = await requestWithCookie(
+      "/api/admin/audit-logs?limit=20",
+      adminWithKnownEmail.jar,
+    );
+    expect(auditResponse.status).toBe(200);
+    const audit = adminAuditLogsResponseSchema.parse(await auditResponse.json());
+    const targetActions = new Set(
+      audit.logs.filter((log) => log.targetUserId === targetIdentity.id).map((log) => log.action),
+    );
+    expect(targetActions).toEqual(new Set(["user_targets_updated", "user_targets_removed"]));
+    const targetUpdateLog = audit.logs.find(
+      (log) => log.targetUserId === targetIdentity.id && log.action === "user_targets_updated",
+    );
+    expect(targetUpdateLog?.actor?.email).toBe(adminEmail);
+    expect(targetUpdateLog?.target?.email).toBe(targetIdentity.email);
+    expect(targetUpdateLog?.metadata["calories"]).toBe(2000);
+    expect(targetUpdateLog?.metadata["fatGrams"]).toBe(65);
+
+    const firstPageResponse = await requestWithCookie(
+      "/api/admin/audit-logs?limit=1&offset=0",
+      adminWithKnownEmail.jar,
+    );
+    expect(firstPageResponse.status).toBe(200);
+    const firstPage = adminAuditLogsResponseSchema.parse(await firstPageResponse.json());
+    expect(firstPage.limit).toBe(1);
+    expect(firstPage.offset).toBe(0);
+    expect(firstPage.logs).toHaveLength(1);
+    expect(firstPage.total).toBeGreaterThanOrEqual(2);
+
+    const secondPageResponse = await requestWithCookie(
+      "/api/admin/audit-logs?limit=1&offset=1",
+      adminWithKnownEmail.jar,
+    );
+    const secondPage = adminAuditLogsResponseSchema.parse(await secondPageResponse.json());
+    expect(secondPage.logs).toHaveLength(1);
+    expect(secondPage.logs[0]?.id).not.toBe(firstPage.logs[0]?.id);
+
+    const missingResponse = await requestWithCookie(
+      "/api/admin/users/does-not-exist/targets",
+      adminWithKnownEmail.jar,
+    );
+    expect(missingResponse.status).toBe(404);
   });
 });

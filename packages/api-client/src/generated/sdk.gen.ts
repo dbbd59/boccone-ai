@@ -11,12 +11,18 @@ import type {
   CreateAdminUserData,
   CreateAdminUserErrors,
   CreateAdminUserResponses,
+  GetAdminUserDailyTargetsData,
+  GetAdminUserDailyTargetsErrors,
+  GetAdminUserDailyTargetsResponses,
   GetAdminUserData,
   GetAdminUserErrors,
   GetAdminUserResponses,
   GetCurrentUserData,
   GetCurrentUserErrors,
   GetCurrentUserResponses,
+  GetDailyTargetsData,
+  GetDailyTargetsErrors,
+  GetDailyTargetsResponses,
   GetHealthData,
   GetHealthErrors,
   GetHealthResponses,
@@ -26,6 +32,9 @@ import type {
   ListAdminUsersData,
   ListAdminUsersErrors,
   ListAdminUsersResponses,
+  RemoveAdminUserDailyTargetsData,
+  RemoveAdminUserDailyTargetsErrors,
+  RemoveAdminUserDailyTargetsResponses,
   RemoveAdminUserData,
   RemoveAdminUserErrors,
   RemoveAdminUserResponses,
@@ -35,9 +44,15 @@ import type {
   UnbanAdminUserData,
   UnbanAdminUserErrors,
   UnbanAdminUserResponses,
+  UpdateAdminUserDailyTargetsData,
+  UpdateAdminUserDailyTargetsErrors,
+  UpdateAdminUserDailyTargetsResponses,
   UpdateAdminUserData,
   UpdateAdminUserErrors,
   UpdateAdminUserResponses,
+  UpdateDailyTargetsData,
+  UpdateDailyTargetsErrors,
+  UpdateDailyTargetsResponses,
 } from "./types.gen";
 import {
   zBanAdminUserBody,
@@ -45,14 +60,19 @@ import {
   zBanAdminUserResponse,
   zCreateAdminUserBody,
   zCreateAdminUserResponse,
+  zGetAdminUserDailyTargetsPath,
+  zGetAdminUserDailyTargetsResponse,
   zGetAdminUserPath,
   zGetAdminUserResponse,
   zGetCurrentUserResponse,
+  zGetDailyTargetsResponse,
   zGetHealthResponse,
   zListAdminAuditLogsQuery,
   zListAdminAuditLogsResponse,
   zListAdminUsersQuery,
   zListAdminUsersResponse,
+  zRemoveAdminUserDailyTargetsPath,
+  zRemoveAdminUserDailyTargetsResponse,
   zRemoveAdminUserPath,
   zRemoveAdminUserResponse,
   zSetAdminUserRoleBody,
@@ -61,8 +81,13 @@ import {
   zUnbanAdminUserPath,
   zUnbanAdminUserResponse,
   zUpdateAdminUserBody,
+  zUpdateAdminUserDailyTargetsBody,
+  zUpdateAdminUserDailyTargetsPath,
+  zUpdateAdminUserDailyTargetsResponse,
   zUpdateAdminUserPath,
   zUpdateAdminUserResponse,
+  zUpdateDailyTargetsBody,
+  zUpdateDailyTargetsResponse,
 } from "./zod.gen";
 
 export type Options<
@@ -128,6 +153,68 @@ export const getCurrentUser = <ThrowOnError extends boolean = false>(
     ],
     url: "/api/me",
     ...options,
+  });
+
+/**
+ * Get the current user's daily nutrition targets
+ */
+export const getDailyTargets = <ThrowOnError extends boolean = false>(
+  options?: Options<GetDailyTargetsData, ThrowOnError>,
+): RequestResult<GetDailyTargetsResponses, GetDailyTargetsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<GetDailyTargetsResponses, GetDailyTargetsErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetDailyTargetsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/targets",
+    ...options,
+  });
+
+/**
+ * Replace the current user's daily nutrition targets
+ */
+export const updateDailyTargets = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateDailyTargetsData, ThrowOnError>,
+): RequestResult<UpdateDailyTargetsResponses, UpdateDailyTargetsErrors, ThrowOnError> =>
+  (options.client ?? client).put<
+    UpdateDailyTargetsResponses,
+    UpdateDailyTargetsErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateDailyTargetsBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateDailyTargetsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/targets",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 
 /**
@@ -266,6 +353,111 @@ export const updateAdminUser = <ThrowOnError extends boolean = false>(
       },
     ],
     url: "/api/admin/users/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove a user's daily nutrition targets
+ */
+export const removeAdminUserDailyTargets = <ThrowOnError extends boolean = false>(
+  options: Options<RemoveAdminUserDailyTargetsData, ThrowOnError>,
+): RequestResult<
+  RemoveAdminUserDailyTargetsResponses,
+  RemoveAdminUserDailyTargetsErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).delete<
+    RemoveAdminUserDailyTargetsResponses,
+    RemoveAdminUserDailyTargetsErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zRemoveAdminUserDailyTargetsPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zRemoveAdminUserDailyTargetsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/targets",
+    ...options,
+  });
+
+/**
+ * Inspect a user's daily nutrition targets
+ */
+export const getAdminUserDailyTargets = <ThrowOnError extends boolean = false>(
+  options: Options<GetAdminUserDailyTargetsData, ThrowOnError>,
+): RequestResult<GetAdminUserDailyTargetsResponses, GetAdminUserDailyTargetsErrors, ThrowOnError> =>
+  (options.client ?? client).get<
+    GetAdminUserDailyTargetsResponses,
+    GetAdminUserDailyTargetsErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetAdminUserDailyTargetsPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminUserDailyTargetsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/targets",
+    ...options,
+  });
+
+/**
+ * Replace a user's daily nutrition targets
+ */
+export const updateAdminUserDailyTargets = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateAdminUserDailyTargetsData, ThrowOnError>,
+): RequestResult<
+  UpdateAdminUserDailyTargetsResponses,
+  UpdateAdminUserDailyTargetsErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).put<
+    UpdateAdminUserDailyTargetsResponses,
+    UpdateAdminUserDailyTargetsErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateAdminUserDailyTargetsBody,
+          path: zUpdateAdminUserDailyTargetsPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateAdminUserDailyTargetsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/targets",
     ...options,
     headers: {
       "Content-Type": "application/json",

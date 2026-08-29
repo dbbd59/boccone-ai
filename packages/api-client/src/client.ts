@@ -9,7 +9,7 @@ let sessionInterceptorId: number | undefined;
 export function configureApiClient(baseUrl: string, cookieProvider?: SessionCookieProvider) {
   client.setConfig({
     baseUrl,
-    credentials: "omit",
+    credentials: "include",
   });
 
   if (sessionInterceptorId !== undefined) {

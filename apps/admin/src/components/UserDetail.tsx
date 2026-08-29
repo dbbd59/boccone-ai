@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 
-import type { AdminUser } from "@boccone/api-client";
+import type { AdminUser, DailyTargets } from "@boccone/api-client";
 import { Button, Field, Input, Stack, Surface, Text } from "@boccone/ui-web";
 
+import { AdminDailyTargetsPanel } from "./AdminDailyTargetsPanel";
 import {
   banUser,
   fetchAdminUser,
+  fetchAdminUserDailyTargets,
   removeUser,
   setUserRole,
   unbanUser,
@@ -28,6 +30,8 @@ export function UserDetail({
   onRemoved,
 }: UserDetailProps) {
   const [user, setUser] = useState<AdminUser | null>(null);
+  const [targets, setTargets] = useState<DailyTargets | null>(null);
+  const [targetsLoading, setTargetsLoading] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"user" | "admin">("user");
@@ -42,15 +46,18 @@ export function UserDetail({
       // Reset the selected record when the directory selection is cleared.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(null);
+      setTargets(null);
       return;
     }
     let mounted = true;
     setLoading(true);
+    setTargetsLoading(true);
     setError(null);
-    void fetchAdminUser(userId)
-      .then((nextUser) => {
+    void Promise.all([fetchAdminUser(userId), fetchAdminUserDailyTargets(userId)])
+      .then(([nextUser, nextTargets]) => {
         if (!mounted) return;
         setUser(nextUser);
+        setTargets(nextTargets);
         setName(nextUser.name);
         setEmail(nextUser.email);
         setRole(nextUser.role);
@@ -60,7 +67,10 @@ export function UserDetail({
         if (mounted) setError(cause instanceof Error ? cause.message : "Unable to load user");
       })
       .finally(() => {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setTargetsLoading(false);
+        }
       });
     return () => {
       mounted = false;
@@ -225,6 +235,12 @@ export function UserDetail({
             </Text>
           ) : null}
         </div>
+        <AdminDailyTargetsPanel
+          loading={targetsLoading}
+          targets={targets}
+          userId={currentUser.id}
+          onChanged={setTargets}
+        />
         <div className="admin-action-block">
           <Text as="h3" variant="headingSm">
             Role

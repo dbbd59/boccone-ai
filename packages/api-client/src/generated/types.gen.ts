@@ -40,6 +40,17 @@ export type MeResponse = {
   user: AuthUser;
 };
 
+export type DailyTargets = {
+  calories: number | null;
+  proteinGrams: number | null;
+  carbohydratesGrams: number | null;
+  fatGrams: number | null;
+};
+
+export type DailyTargetsResponse = {
+  targets: DailyTargets;
+};
+
 export type AdminUser = {
   id: string;
   name: string;
@@ -95,12 +106,22 @@ export type AdminAuditAction =
   | "user_role_changed"
   | "user_banned"
   | "user_unbanned"
-  | "user_removed";
+  | "user_removed"
+  | "user_targets_updated"
+  | "user_targets_removed";
+
+export type AdminAuditPrincipal = {
+  id: string;
+  name: string;
+  email: string;
+};
 
 export type AdminAuditLog = {
   id: string;
   actorUserId: string;
   targetUserId: string | null;
+  actor: AdminAuditPrincipal | null;
+  target: AdminAuditPrincipal | null;
   action: AdminAuditAction;
   metadata: {
     [key: string]: string | number | boolean;
@@ -164,6 +185,61 @@ export type GetCurrentUserResponses = {
 };
 
 export type GetCurrentUserResponse = GetCurrentUserResponses[keyof GetCurrentUserResponses];
+
+export type GetDailyTargetsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/me/targets";
+};
+
+export type GetDailyTargetsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type GetDailyTargetsError = GetDailyTargetsErrors[keyof GetDailyTargetsErrors];
+
+export type GetDailyTargetsResponses = {
+  /**
+   * Daily nutrition targets
+   */
+  200: DailyTargetsResponse;
+};
+
+export type GetDailyTargetsResponse = GetDailyTargetsResponses[keyof GetDailyTargetsResponses];
+
+export type UpdateDailyTargetsData = {
+  body: DailyTargets;
+  path?: never;
+  query?: never;
+  url: "/api/me/targets";
+};
+
+export type UpdateDailyTargetsErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type UpdateDailyTargetsError = UpdateDailyTargetsErrors[keyof UpdateDailyTargetsErrors];
+
+export type UpdateDailyTargetsResponses = {
+  /**
+   * Updated daily nutrition targets
+   */
+  200: DailyTargetsResponse;
+};
+
+export type UpdateDailyTargetsResponse =
+  UpdateDailyTargetsResponses[keyof UpdateDailyTargetsResponses];
 
 export type ListAdminUsersData = {
   body?: never;
@@ -351,6 +427,117 @@ export type UpdateAdminUserResponses = {
 };
 
 export type UpdateAdminUserResponse = UpdateAdminUserResponses[keyof UpdateAdminUserResponses];
+
+export type RemoveAdminUserDailyTargetsData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/targets";
+};
+
+export type RemoveAdminUserDailyTargetsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type RemoveAdminUserDailyTargetsError =
+  RemoveAdminUserDailyTargetsErrors[keyof RemoveAdminUserDailyTargetsErrors];
+
+export type RemoveAdminUserDailyTargetsResponses = {
+  /**
+   * User daily nutrition targets removed
+   */
+  200: AdminMutationResponse;
+};
+
+export type RemoveAdminUserDailyTargetsResponse =
+  RemoveAdminUserDailyTargetsResponses[keyof RemoveAdminUserDailyTargetsResponses];
+
+export type GetAdminUserDailyTargetsData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/targets";
+};
+
+export type GetAdminUserDailyTargetsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type GetAdminUserDailyTargetsError =
+  GetAdminUserDailyTargetsErrors[keyof GetAdminUserDailyTargetsErrors];
+
+export type GetAdminUserDailyTargetsResponses = {
+  /**
+   * User daily nutrition targets
+   */
+  200: DailyTargetsResponse;
+};
+
+export type GetAdminUserDailyTargetsResponse =
+  GetAdminUserDailyTargetsResponses[keyof GetAdminUserDailyTargetsResponses];
+
+export type UpdateAdminUserDailyTargetsData = {
+  body: DailyTargets;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/targets";
+};
+
+export type UpdateAdminUserDailyTargetsErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type UpdateAdminUserDailyTargetsError =
+  UpdateAdminUserDailyTargetsErrors[keyof UpdateAdminUserDailyTargetsErrors];
+
+export type UpdateAdminUserDailyTargetsResponses = {
+  /**
+   * Updated user daily nutrition targets
+   */
+  200: DailyTargetsResponse;
+};
+
+export type UpdateAdminUserDailyTargetsResponse =
+  UpdateAdminUserDailyTargetsResponses[keyof UpdateAdminUserDailyTargetsResponses];
 
 export type SetAdminUserRoleData = {
   body: AdminUserRoleRequest;

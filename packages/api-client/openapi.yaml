@@ -39,6 +39,47 @@ paths:
                 $ref: "#/components/schemas/MeResponse"
         "401":
           $ref: "#/components/responses/ErrorResponse"
+  /api/me/targets:
+    get:
+      operationId: getDailyTargets
+      tags:
+        - targets
+      summary: Get the current user's daily nutrition targets
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Daily nutrition targets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyTargetsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+    put:
+      operationId: updateDailyTargets
+      tags:
+        - targets
+      summary: Replace the current user's daily nutrition targets
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DailyTargets"
+      responses:
+        "200":
+          description: Updated daily nutrition targets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyTargetsResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
   /api/admin/users:
     get:
       operationId: listAdminUsers
@@ -182,6 +223,79 @@ paths:
                 $ref: "#/components/schemas/AdminMutationResponse"
         "400":
           $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/users/{id}/targets:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getAdminUserDailyTargets
+      tags:
+        - admin
+      summary: Inspect a user's daily nutrition targets
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: User daily nutrition targets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyTargetsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+    put:
+      operationId: updateAdminUserDailyTargets
+      tags:
+        - admin
+      summary: Replace a user's daily nutrition targets
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DailyTargets"
+      responses:
+        "200":
+          description: Updated user daily nutrition targets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyTargetsResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: removeAdminUserDailyTargets
+      tags:
+        - admin
+      summary: Remove a user's daily nutrition targets
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: User daily nutrition targets removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminMutationResponse"
         "401":
           $ref: "#/components/responses/ErrorResponse"
         "403":
@@ -413,6 +527,41 @@ components:
       properties:
         user:
           $ref: "#/components/schemas/AuthUser"
+    DailyTargets:
+      type: object
+      required:
+        - calories
+        - proteinGrams
+        - carbohydratesGrams
+        - fatGrams
+      properties:
+        calories:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          nullable: true
+        proteinGrams:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          nullable: true
+        carbohydratesGrams:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          nullable: true
+        fatGrams:
+          type: integer
+          minimum: 1
+          maximum: 10000
+          nullable: true
+    DailyTargetsResponse:
+      type: object
+      required:
+        - targets
+      properties:
+        targets:
+          $ref: "#/components/schemas/DailyTargets"
     AdminUser:
       type: object
       required:
@@ -548,12 +697,30 @@ components:
         - user_banned
         - user_unbanned
         - user_removed
+        - user_targets_updated
+        - user_targets_removed
+    AdminAuditPrincipal:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
     AdminAuditLog:
       type: object
       required:
         - id
         - actorUserId
         - targetUserId
+        - actor
+        - target
         - action
         - metadata
         - createdAt
@@ -564,6 +731,14 @@ components:
           type: string
         targetUserId:
           type: string
+          nullable: true
+        actor:
+          allOf:
+            - $ref: "#/components/schemas/AdminAuditPrincipal"
+          nullable: true
+        target:
+          allOf:
+            - $ref: "#/components/schemas/AdminAuditPrincipal"
           nullable: true
         action:
           $ref: "#/components/schemas/AdminAuditAction"

@@ -1,15 +1,19 @@
 import {
   banAdminUser,
   createAdminUser,
+  getAdminUserDailyTargets,
   getAdminUser,
   listAdminAuditLogs,
   listAdminUsers,
+  removeAdminUserDailyTargets,
   removeAdminUser,
   setAdminUserRole,
   unbanAdminUser,
+  updateAdminUserDailyTargets,
   updateAdminUser,
   type AdminAuditLogsResponse,
   type AdminUser,
+  type DailyTargets,
   type AdminUserBanRequest,
   type AdminUserCreateRequest,
   type AdminUserRoleRequest,
@@ -38,6 +42,28 @@ export async function fetchAdminUsers(input: {
 export async function fetchAdminUser(userId: string): Promise<AdminUser> {
   const result = await getAdminUser({ client: apiClient, path: { id: userId } });
   return unwrap(result, "Unable to load user").user;
+}
+
+export async function fetchAdminUserDailyTargets(userId: string): Promise<DailyTargets> {
+  const result = await getAdminUserDailyTargets({ client: apiClient, path: { id: userId } });
+  return unwrap(result, "Unable to load user targets").targets;
+}
+
+export async function updateAdminTargets(
+  userId: string,
+  targets: DailyTargets,
+): Promise<DailyTargets> {
+  const result = await updateAdminUserDailyTargets({
+    client: apiClient,
+    path: { id: userId },
+    body: targets,
+  });
+  return unwrap(result, "Unable to update user targets").targets;
+}
+
+export async function removeAdminTargets(userId: string): Promise<void> {
+  const result = await removeAdminUserDailyTargets({ client: apiClient, path: { id: userId } });
+  unwrap(result, "Unable to remove user targets");
 }
 
 export async function createUser(data: AdminUserCreateRequest): Promise<AdminUser> {

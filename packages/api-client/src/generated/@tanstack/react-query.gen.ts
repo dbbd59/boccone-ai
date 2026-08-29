@@ -12,15 +12,20 @@ import {
   banAdminUser,
   createAdminUser,
   getAdminUser,
+  getAdminUserDailyTargets,
   getCurrentUser,
+  getDailyTargets,
   getHealth,
   listAdminAuditLogs,
   listAdminUsers,
   type Options,
   removeAdminUser,
+  removeAdminUserDailyTargets,
   setAdminUserRole,
   unbanAdminUser,
   updateAdminUser,
+  updateAdminUserDailyTargets,
+  updateDailyTargets,
 } from "../sdk.gen";
 import type {
   BanAdminUserData,
@@ -29,12 +34,18 @@ import type {
   CreateAdminUserData,
   CreateAdminUserError,
   CreateAdminUserResponse,
+  GetAdminUserDailyTargetsData,
+  GetAdminUserDailyTargetsError,
+  GetAdminUserDailyTargetsResponse,
   GetAdminUserData,
   GetAdminUserError,
   GetAdminUserResponse,
   GetCurrentUserData,
   GetCurrentUserError,
   GetCurrentUserResponse,
+  GetDailyTargetsData,
+  GetDailyTargetsError,
+  GetDailyTargetsResponse,
   GetHealthData,
   GetHealthError,
   GetHealthResponse,
@@ -44,6 +55,9 @@ import type {
   ListAdminUsersData,
   ListAdminUsersError,
   ListAdminUsersResponse,
+  RemoveAdminUserDailyTargetsData,
+  RemoveAdminUserDailyTargetsError,
+  RemoveAdminUserDailyTargetsResponse,
   RemoveAdminUserData,
   RemoveAdminUserError,
   RemoveAdminUserResponse,
@@ -53,9 +67,15 @@ import type {
   UnbanAdminUserData,
   UnbanAdminUserError,
   UnbanAdminUserResponse,
+  UpdateAdminUserDailyTargetsData,
+  UpdateAdminUserDailyTargetsError,
+  UpdateAdminUserDailyTargetsResponse,
   UpdateAdminUserData,
   UpdateAdminUserError,
   UpdateAdminUserResponse,
+  UpdateDailyTargetsData,
+  UpdateDailyTargetsError,
+  UpdateDailyTargetsResponse,
 } from "../types.gen";
 
 export type QueryKey<TOptions extends Options> = [
@@ -146,6 +166,58 @@ export const getCurrentUserOptions = (options?: Options<GetCurrentUserData>) =>
     },
     queryKey: getCurrentUserQueryKey(options),
   });
+
+export const getDailyTargetsQueryKey = (options?: Options<GetDailyTargetsData>) =>
+  createQueryKey("getDailyTargets", options);
+
+/**
+ * Get the current user's daily nutrition targets
+ */
+export const getDailyTargetsOptions = (options?: Options<GetDailyTargetsData>) =>
+  queryOptions<
+    GetDailyTargetsResponse,
+    GetDailyTargetsError,
+    GetDailyTargetsResponse,
+    ReturnType<typeof getDailyTargetsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getDailyTargets({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getDailyTargetsQueryKey(options),
+  });
+
+/**
+ * Replace the current user's daily nutrition targets
+ */
+export const updateDailyTargetsMutation = (
+  options?: Partial<Options<UpdateDailyTargetsData>>,
+): UseMutationOptions<
+  UpdateDailyTargetsResponse,
+  UpdateDailyTargetsError,
+  Options<UpdateDailyTargetsData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateDailyTargetsResponse,
+    UpdateDailyTargetsError,
+    Options<UpdateDailyTargetsData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateDailyTargets({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
 
 export const listAdminUsersQueryKey = (options?: Options<ListAdminUsersData>) =>
   createQueryKey("listAdminUsers", options);
@@ -347,6 +419,85 @@ export const updateAdminUserMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await updateAdminUser({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Remove a user's daily nutrition targets
+ */
+export const removeAdminUserDailyTargetsMutation = (
+  options?: Partial<Options<RemoveAdminUserDailyTargetsData>>,
+): UseMutationOptions<
+  RemoveAdminUserDailyTargetsResponse,
+  RemoveAdminUserDailyTargetsError,
+  Options<RemoveAdminUserDailyTargetsData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RemoveAdminUserDailyTargetsResponse,
+    RemoveAdminUserDailyTargetsError,
+    Options<RemoveAdminUserDailyTargetsData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await removeAdminUserDailyTargets({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getAdminUserDailyTargetsQueryKey = (options: Options<GetAdminUserDailyTargetsData>) =>
+  createQueryKey("getAdminUserDailyTargets", options);
+
+/**
+ * Inspect a user's daily nutrition targets
+ */
+export const getAdminUserDailyTargetsOptions = (options: Options<GetAdminUserDailyTargetsData>) =>
+  queryOptions<
+    GetAdminUserDailyTargetsResponse,
+    GetAdminUserDailyTargetsError,
+    GetAdminUserDailyTargetsResponse,
+    ReturnType<typeof getAdminUserDailyTargetsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAdminUserDailyTargets({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAdminUserDailyTargetsQueryKey(options),
+  });
+
+/**
+ * Replace a user's daily nutrition targets
+ */
+export const updateAdminUserDailyTargetsMutation = (
+  options?: Partial<Options<UpdateAdminUserDailyTargetsData>>,
+): UseMutationOptions<
+  UpdateAdminUserDailyTargetsResponse,
+  UpdateAdminUserDailyTargetsError,
+  Options<UpdateAdminUserDailyTargetsData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateAdminUserDailyTargetsResponse,
+    UpdateAdminUserDailyTargetsError,
+    Options<UpdateAdminUserDailyTargetsData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateAdminUserDailyTargets({
         ...options,
         ...fnOptions,
         throwOnError: true,

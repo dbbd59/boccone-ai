@@ -39,6 +39,17 @@ export const zMeResponse = z.object({
   user: zAuthUser,
 });
 
+export const zDailyTargets = z.object({
+  calories: z.int().gte(1).lte(100000).nullable(),
+  proteinGrams: z.int().gte(1).lte(10000).nullable(),
+  carbohydratesGrams: z.int().gte(1).lte(10000).nullable(),
+  fatGrams: z.int().gte(1).lte(10000).nullable(),
+});
+
+export const zDailyTargetsResponse = z.object({
+  targets: zDailyTargets,
+});
+
 export const zAdminUser = z.object({
   id: z.string(),
   name: z.string(),
@@ -95,12 +106,22 @@ export const zAdminAuditAction = z.enum([
   "user_banned",
   "user_unbanned",
   "user_removed",
+  "user_targets_updated",
+  "user_targets_removed",
 ]);
+
+export const zAdminAuditPrincipal = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.email(),
+});
 
 export const zAdminAuditLog = z.object({
   id: z.string(),
   actorUserId: z.string(),
   targetUserId: z.string().nullable(),
+  actor: zAdminAuditPrincipal.nullable(),
+  target: zAdminAuditPrincipal.nullable(),
   action: zAdminAuditAction,
   metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
   createdAt: z.iso.datetime(),
@@ -122,6 +143,18 @@ export const zGetHealthResponse = zHealthResponse;
  * Current user
  */
 export const zGetCurrentUserResponse = zMeResponse;
+
+/**
+ * Daily nutrition targets
+ */
+export const zGetDailyTargetsResponse = zDailyTargetsResponse;
+
+export const zUpdateDailyTargetsBody = zDailyTargets;
+
+/**
+ * Updated daily nutrition targets
+ */
+export const zUpdateDailyTargetsResponse = zDailyTargetsResponse;
 
 export const zListAdminUsersQuery = z.object({
   search: z.string().min(1).max(255).optional(),
@@ -169,6 +202,35 @@ export const zUpdateAdminUserPath = z.object({
  * Updated user
  */
 export const zUpdateAdminUserResponse = zAdminUserResponse;
+
+export const zRemoveAdminUserDailyTargetsPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * User daily nutrition targets removed
+ */
+export const zRemoveAdminUserDailyTargetsResponse = zAdminMutationResponse;
+
+export const zGetAdminUserDailyTargetsPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * User daily nutrition targets
+ */
+export const zGetAdminUserDailyTargetsResponse = zDailyTargetsResponse;
+
+export const zUpdateAdminUserDailyTargetsBody = zDailyTargets;
+
+export const zUpdateAdminUserDailyTargetsPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Updated user daily nutrition targets
+ */
+export const zUpdateAdminUserDailyTargetsResponse = zDailyTargetsResponse;
 
 export const zSetAdminUserRoleBody = zAdminUserRoleRequest;
 

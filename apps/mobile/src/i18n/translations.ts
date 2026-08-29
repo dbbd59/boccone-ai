@@ -98,6 +98,18 @@ export interface TranslationCopy {
     system: string;
     light: string;
     dark: string;
+    targetsTitle: string;
+    targetsBody: string;
+    targetsOptional: string;
+    caloriesLabel: string;
+    proteinLabel: string;
+    carbohydratesLabel: string;
+    fatLabel: string;
+    saveTargets: string;
+    targetsSaved: string;
+    targetsLoadError: string;
+    targetsSaveError: string;
+    targetsInvalid: string;
     languageTitle: string;
     accountTitle: string;
     signedInAs: (email: string | undefined) => string;
@@ -194,6 +206,18 @@ export const translations: Record<Locale, TranslationCopy> = {
       system: "System",
       light: "Light",
       dark: "Dark",
+      targetsTitle: "Daily targets",
+      targetsBody: "Set only the numbers that are useful to you. Each target is optional.",
+      targetsOptional: "Leave a field blank to keep that target unset.",
+      caloriesLabel: "Calories (kcal)",
+      proteinLabel: "Protein (g)",
+      carbohydratesLabel: "Carbohydrates (g)",
+      fatLabel: "Fat (g)",
+      saveTargets: "Save targets",
+      targetsSaved: "Targets saved.",
+      targetsLoadError: "Could not load your targets. Try again later.",
+      targetsSaveError: "Could not save your targets. Try again.",
+      targetsInvalid: "Use a whole number or leave the field blank.",
       languageTitle: "Language",
       accountTitle: "Account",
       signedInAs: (email) => `Signed in as ${email ?? "your account"}`,
@@ -288,6 +312,18 @@ export const translations: Record<Locale, TranslationCopy> = {
       system: "Sistema",
       light: "Chiaro",
       dark: "Scuro",
+      targetsTitle: "Obiettivi giornalieri",
+      targetsBody: "Imposta solo i numeri che ti sono utili. Ogni obiettivo è facoltativo.",
+      targetsOptional: "Lascia vuoto un campo per non impostare quell’obiettivo.",
+      caloriesLabel: "Calorie (kcal)",
+      proteinLabel: "Proteine (g)",
+      carbohydratesLabel: "Carboidrati (g)",
+      fatLabel: "Grassi (g)",
+      saveTargets: "Salva obiettivi",
+      targetsSaved: "Obiettivi salvati.",
+      targetsLoadError: "Impossibile caricare gli obiettivi. Riprova più tardi.",
+      targetsSaveError: "Impossibile salvare gli obiettivi. Riprova.",
+      targetsInvalid: "Usa un numero intero o lascia vuoto il campo.",
       languageTitle: "Lingua",
       accountTitle: "Account",
       signedInAs: (email) => `Accesso effettuato come ${email ?? "il tuo account"}`,

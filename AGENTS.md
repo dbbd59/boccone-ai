@@ -176,7 +176,10 @@ Do not leak provider-specific SDK responses to the app.
 
 9. Admin app rules
 
-The admin app is operational, not all-powerful.
+The admin app is an operational control surface with full CRUD over application
+data introduced by the product verticals. It is not a secrets or security
+surface: operational control never includes plaintext credentials, encryption
+keys, session secrets, or silent impersonation.
 
 Allowed:
 
@@ -188,7 +191,12 @@ role changes, account suspension/reactivation, and account removal;
 
 inspect meals/targets;
 
-safe corrections/deletions;
+inspect, create, update, and delete all application data exposed by the
+current product verticals, including targets, meals, diary entries, and known
+meals;
+
+safe corrections and destructive actions must be explicit, authorized, and
+audited;
 
 account state management;
 

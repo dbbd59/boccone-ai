@@ -1,6 +1,6 @@
 import { focusManager, onlineManager, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, type PropsWithChildren } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import * as Network from "expo-network";
 
 import { configureApiClient } from "@boccone/api-client/client";
@@ -9,7 +9,9 @@ import { apiUrl } from "../config";
 import { authClient } from "../lib/auth-client";
 import { queryClient } from "./query-client";
 
-configureApiClient(apiUrl, () => authClient.getCookie());
+// Browsers send the HttpOnly session cookie with credentials: include; native
+// clients cannot rely on browser cookie handling and use the SecureStore value.
+configureApiClient(apiUrl, Platform.OS === "web" ? undefined : () => authClient.getCookie());
 
 export function QueryProvider({ children }: PropsWithChildren) {
   useEffect(() => {

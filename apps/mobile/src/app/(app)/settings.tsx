@@ -15,6 +15,7 @@ import {
 } from "@boccone/ui-mobile";
 
 import { LanguageSelector } from "../../components/LanguageSelector";
+import { DailyTargetsForm } from "../../components/DailyTargetsForm";
 import { useI18n } from "../../i18n/context";
 import { lightImpactFeedback } from "../../lib/haptics";
 import { useSession } from "../../session-context";
@@ -66,6 +67,8 @@ export default function SettingsScreen() {
               </FloatingGlassBar>
             </Stack>
           </Surface>
+
+          <DailyTargetsForm />
 
           <Stack gap="md">
             <Stack gap="xs">

@@ -51,9 +51,19 @@ export const adminAuditActionSchema = z.enum([
   "user_banned",
   "user_unbanned",
   "user_removed",
+  "user_targets_updated",
+  "user_targets_removed",
 ]);
 
 export type AdminAuditAction = z.infer<typeof adminAuditActionSchema>;
+
+export const adminAuditPrincipalSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.email(),
+});
+
+export type AdminAuditPrincipal = z.infer<typeof adminAuditPrincipalSchema>;
 
 const auditMetadataValueSchema = z.union([z.string(), z.number(), z.boolean()]);
 
@@ -61,6 +71,8 @@ export const adminAuditLogSchema = z.object({
   id: z.string(),
   actorUserId: z.string(),
   targetUserId: z.string().nullable(),
+  actor: adminAuditPrincipalSchema.nullable(),
+  target: adminAuditPrincipalSchema.nullable(),
   action: adminAuditActionSchema,
   metadata: z.record(z.string(), auditMetadataValueSchema),
   createdAt: z.coerce.date(),

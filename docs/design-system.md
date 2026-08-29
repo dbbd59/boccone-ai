@@ -142,6 +142,12 @@ Admin remains English-only. Preserve real API/auth behavior and show loading,
 error, empty, and planned states honestly. `ComingSoon` must not imply that an
 endpoint, data source, or product flow already exists.
 
+The daily-targets vertical owns one optional target set per user. Mobile edits
+it from Settings through the authenticated generated client; Admin can inspect,
+edit, and delete the same values from User details. Blank fields are stored as
+null, not as invented zeroes. Destructive admin actions require confirmation
+and create audit records.
+
 Admin is operational: it may manage users and inspect audit data, but never
 exposes secrets or silently impersonates users. Keep its layout denser than
 mobile while retaining the same tokens and material hierarchy.

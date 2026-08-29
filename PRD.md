@@ -95,10 +95,15 @@ The codebase must prioritize:
 
 Meal photos are transient and MUST NOT be permanently stored.
 
-### 3.6 Admin access is operational, not omnipotent
+### 3.6 Admin access is operational and complete
 
-An admin back office exists, but it is not a god-mode dashboard.
-It can manage operational data but MUST NOT reveal sensitive secrets such as plaintext AI API keys.
+An admin back office exists as the operational control surface for the product.
+Authorized admins MUST be able to inspect, create, update, and delete all
+application data exposed by implemented product verticals, including targets,
+meals, diary entries, and known meals.
+
+This is not a secrets or security surface. Admin CRUD MUST NOT reveal plaintext
+AI API keys, encryption keys, session secrets, or enable silent impersonation.
 
 ---
 
@@ -470,7 +475,7 @@ The admin app exists to:
 - inspect user accounts;
 - inspect meal/target data;
 - debug issues;
-- correct or remove bad data;
+- create, update, and remove application data to resolve operational issues;
 - manage account state;
 - support the product’s operations.
 
@@ -484,7 +489,10 @@ Admins may:
 - manage the explicit `user`/`admin` role boundary;
 - inspect daily targets;
 - inspect meals and meal items;
-- edit/delete application data where appropriate;
+- create, edit, and delete all application data exposed by an implemented
+  product vertical, including targets, meals, diary entries, and known meals;
+- require confirmation for destructive actions and audit every sensitive
+  mutation;
 - suspend or unsuspend users;
 - trigger account deletion flows;
 - inspect AI provider/model metadata;
@@ -735,13 +743,13 @@ The broccoli mascot can begin to be integrated into empty states, onboarding, an
 
 Implement user-configured targets end-to-end.
 
-Continue basic admin visibility for user targets.
+Continue admin visibility and full CRUD for user targets.
 
 #### Step 5 — Manual meals
 
 Implement manual meal creation, editing, deletion, and Today aggregation.
 
-Continue admin visibility/editability for meals.
+Continue admin visibility and full CRUD for meals.
 
 #### Step 6 — AI configuration
 
@@ -779,9 +787,9 @@ Continue evolving the back office in parallel throughout development, and by thi
 
 - user search;
 - user detail;
-- targets inspection;
-- meals inspection;
-- safe edits/deletes;
+- targets inspection and full CRUD;
+- meals inspection and full CRUD;
+- full CRUD for every other application-data vertical as it lands;
 - account state management;
 - audit logs.
 
@@ -838,7 +846,7 @@ The MVP is successful when a user can:
 And an authorized admin can:
 
 - inspect users and relevant application data;
-- manage operational issues safely;
+- create, update, and delete relevant application data safely;
 - do so without access to plaintext AI keys.
 
 ---

@@ -15,7 +15,7 @@
 Boccone AI is being built for people who want a calmer, more transparent way to understand what they eat. The product direction combines self-defined nutrition targets, manual and AI-assisted meal logging, a diary, simple statistics, and an assistant grounded in a user’s own history.
 
 > [!IMPORTANT]
-> Boccone AI is in early development. The current repository delivers the monorepo, API, authentication foundation, database migrations, shared contracts, an OpenAPI-generated client, UI primitives, and initial mobile/admin auth surfaces. Meal logging, targets, diary history, statistics, known meals, and AI orchestration are planned product slices, not finished features.
+> Boccone AI is in early development. The current repository delivers the monorepo, API, authentication foundation, database migrations, shared contracts, an OpenAPI-generated client, UI primitives, initial mobile/admin auth surfaces, and authenticated daily nutrition targets. Meal logging, diary history, statistics, known meals, and AI orchestration are planned product slices, not finished features.
 
 ## Product direction
 
@@ -61,7 +61,7 @@ The implemented foundation is intentionally small and explicit:
 - **Database** — PostgreSQL via Drizzle ORM and <code>postgres-js</code>, with versioned migrations for Better Auth’s user, session, account, verification, and admin-audit tables.
 - **Contracts** — Zod schemas define public health, user, admin-user, and error response shapes. Raw database rows do not form the public API.
 - **API client** — the checked-in OpenAPI description generates fetch, Zod, and TanStack Query artifacts in <code>packages/api-client</code>; clients share one typed HTTP boundary.
-- **Clients** — an Expo Router mobile auth shell with persisted English/Italian localization, native Home/Settings navigation, system/light/dark appearance, and a Vite/React admin surface for sign-in, server-side admin access checks, user search, user detail/edit, role changes, ban/unban, removal, and audit-log inspection. The admin surface is English-only for now.
+- **Clients** — an Expo Router mobile auth shell with persisted English/Italian localization, native Home/Settings navigation, system/light/dark appearance, and authenticated daily-target editing in Settings; plus a Vite/React admin surface for sign-in, server-side admin access checks, user search, user detail/edit, role changes, ban/unban, removal, audit-log inspection, and daily-target inspection/edit/delete. The admin surface is English-only for now.
 - **UI foundation** — a layered design system (<a href="docs/design-system.md">docs/design-system.md</a>): <code>design-tokens</code> (semantic light/dark themes, spacing, typography, motion, WCAG-tested contrast, and material roles) plus mirrored React Native and web primitives (<code>Text</code>, <code>Button</code>, <code>Input</code>, <code>Field</code>, <code>Screen</code>, <code>Surface</code>, <code>GlassSurface</code>, <code>Stack</code>, <code>Alert</code>, …). Native iOS 26 Liquid Glass is guarded at runtime with tokenized fallbacks for older iOS, Android, and web; a dev-only showcase remains available at <code>/dev/design-system</code> on mobile.
 
 ## Architecture
@@ -201,20 +201,25 @@ Do not put server secrets in either client environment.
 
 The API currently exposes these application routes:
 
-| Method              | Path                                     | Auth          | Description                                                                                       |
-| ------------------- | ---------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------- |
-| <code>GET</code>    | <code>/api/health</code>                 | Public        | Returns service status, version, request ID, and timestamp.                                       |
-| <code>ALL</code>    | <code>/api/auth/*</code>                 | Better Auth   | Email/password, password reset, and configured social-auth handlers.                              |
-| <code>GET</code>    | <code>/api/me</code>                     | Session       | Returns the authenticated user’s public contract.                                                 |
-| <code>GET</code>    | <code>/api/admin/users</code>            | Admin session | Lists users with optional email <code>search</code>, <code>limit</code>, and <code>offset</code>. |
-| <code>GET</code>    | <code>/api/admin/users/{id}</code>       | Admin session | Returns one operational user record.                                                              |
-| <code>POST</code>   | <code>/api/admin/users</code>            | Admin session | Creates a user through Better Auth’s admin API.                                                   |
-| <code>PATCH</code>  | <code>/api/admin/users/{id}</code>       | Admin session | Updates a user’s name and/or email.                                                               |
-| <code>POST</code>   | <code>/api/admin/users/{id}/role</code>  | Admin session | Changes a user between the explicit <code>user</code> and <code>admin</code> roles.               |
-| <code>POST</code>   | <code>/api/admin/users/{id}/ban</code>   | Admin session | Bans a user with an optional reason and duration.                                                 |
-| <code>POST</code>   | <code>/api/admin/users/{id}/unban</code> | Admin session | Removes the user ban.                                                                             |
-| <code>DELETE</code> | <code>/api/admin/users/{id}</code>       | Admin session | Removes the account and linked auth data.                                                         |
-| <code>GET</code>    | <code>/api/admin/audit-logs</code>       | Admin session | Lists recent admin account-management actions.                                                    |
+| Method              | Path                                       | Auth          | Description                                                                                        |
+| ------------------- | ------------------------------------------ | ------------- | -------------------------------------------------------------------------------------------------- |
+| <code>GET</code>    | <code>/api/health</code>                   | Public        | Returns service status, version, request ID, and timestamp.                                        |
+| <code>ALL</code>    | <code>/api/auth/*</code>                   | Better Auth   | Email/password, password reset, and configured social-auth handlers.                               |
+| <code>GET</code>    | <code>/api/me</code>                       | Session       | Returns the authenticated user’s public contract.                                                  |
+| <code>GET</code>    | <code>/api/me/targets</code>               | Session       | Returns the authenticated user’s optional daily calorie and macro targets.                         |
+| <code>PUT</code>    | <code>/api/me/targets</code>               | Session       | Replaces the authenticated user’s daily targets; each value may be cleared with <code>null</code>. |
+| <code>GET</code>    | <code>/api/admin/users</code>              | Admin session | Lists users with optional email <code>search</code>, <code>limit</code>, and <code>offset</code>.  |
+| <code>GET</code>    | <code>/api/admin/users/{id}</code>         | Admin session | Returns one operational user record.                                                               |
+| <code>GET</code>    | <code>/api/admin/users/{id}/targets</code> | Admin session | Inspects one user’s daily targets.                                                                 |
+| <code>PUT</code>    | <code>/api/admin/users/{id}/targets</code> | Admin session | Replaces one user’s daily targets; null clears individual values.                                  |
+| <code>DELETE</code> | <code>/api/admin/users/{id}/targets</code> | Admin session | Removes one user’s daily-target record.                                                            |
+| <code>POST</code>   | <code>/api/admin/users</code>              | Admin session | Creates a user through Better Auth’s admin API.                                                    |
+| <code>PATCH</code>  | <code>/api/admin/users/{id}</code>         | Admin session | Updates a user’s name and/or email.                                                                |
+| <code>POST</code>   | <code>/api/admin/users/{id}/role</code>    | Admin session | Changes a user between the explicit <code>user</code> and <code>admin</code> roles.                |
+| <code>POST</code>   | <code>/api/admin/users/{id}/ban</code>     | Admin session | Bans a user with an optional reason and duration.                                                  |
+| <code>POST</code>   | <code>/api/admin/users/{id}/unban</code>   | Admin session | Removes the user ban.                                                                              |
+| <code>DELETE</code> | <code>/api/admin/users/{id}</code>         | Admin session | Removes the account and linked auth data.                                                          |
+| <code>GET</code>    | <code>/api/admin/audit-logs</code>         | Admin session | Lists paginated admin account/application-data actions with actor and target details.              |
 
 The machine-readable API description is [packages/api-client/openapi.yaml](packages/api-client/openapi.yaml). It drives the generated fetch, Zod, and TanStack Query client artifacts.
 
@@ -296,7 +301,7 @@ cd ../..
 
 ## Testing and CI
 
-API tests live in [apps/api/test](apps/api/test). They cover health and 404 contracts, email/password auth, password reset behavior, session invalidation, admin authorization, complete user-management mutations and audit logging, email search, identity-boundary checks, environment validation, and secret-safe structured logging.
+API tests live in [apps/api/test](apps/api/test). They cover health and 404 contracts, email/password auth, password reset behavior, session invalidation, admin authorization, complete user-management mutations and audit logging, daily-target persistence and validation, email search, identity-boundary checks, environment validation, and secret-safe structured logging.
 
 Integration tests create a throwaway PostgreSQL database, apply the checked-in migrations, run the suite, and remove the database during cleanup. Start the local database before running them:
 

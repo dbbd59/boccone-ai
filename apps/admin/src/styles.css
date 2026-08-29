@@ -449,6 +449,30 @@ select:focus-visible {
   margin: 0;
 }
 
+.admin-targets-panel {
+  display: grid;
+  gap: var(--bc-space-3);
+  padding-top: var(--bc-space-4);
+  border-top: 1px solid var(--bc-border-subtle);
+}
+
+.admin-targets-form {
+  display: grid;
+  gap: var(--bc-space-3);
+}
+
+.admin-targets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--bc-space-2);
+}
+
+.admin-targets-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bc-space-3);
+}
+
 .admin-action-block,
 .admin-danger-zone {
   display: grid;
@@ -508,6 +532,20 @@ select:focus-visible {
 .admin-audit-row small {
   color: var(--bc-fg-muted);
 }
+
+.admin-audit-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--bc-space-3);
+  padding-top: var(--bc-space-2);
+}
+
+.admin-pagination-actions {
+  display: flex;
+  gap: var(--bc-space-2);
+}
+
 .admin-empty-state {
   display: grid;
   gap: var(--bc-space-1);
