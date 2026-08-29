@@ -5,6 +5,7 @@
 **Boccone AI** is a mobile-first food diary and calorie/macronutrient tracker.
 
 Users can:
+
 - authenticate with Google / Apple (and optionally email/password);
 - manually set daily nutrition targets;
 - configure an AI provider, API key, and model;
@@ -36,6 +37,7 @@ Before feature implementation begins, create and maintain a root-level `AGENTS.m
 `AGENTS.md` is the operating manual for coding agents (including Codex) and contributors.
 
 It MUST describe:
+
 - repository structure;
 - package responsibilities;
 - dependency boundaries;
@@ -60,6 +62,7 @@ It MUST describe:
 Boccone AI tracks calories and macros.
 
 It MUST NOT:
+
 - provide medical advice;
 - diagnose conditions;
 - claim clinical or professional nutritional accuracy;
@@ -79,6 +82,7 @@ The primary product is a **native mobile app**.
 ### 3.4 Open-source quality
 
 The codebase must prioritize:
+
 - maintainability;
 - explicit boundaries;
 - good DX;
@@ -107,6 +111,7 @@ A normal consumer who wants to track food, calories, and macros against self-def
 ### 4.2 Out of scope for MVP
 
 Do NOT implement these in MVP unless explicitly reprioritized:
+
 - barcode-based nutrition lookup;
 - weight tracking;
 - medical plans;
@@ -124,6 +129,7 @@ Do NOT implement these in MVP unless explicitly reprioritized:
 ### 5.1 Authentication
 
 Users can authenticate with:
+
 - Google;
 - Apple;
 - optionally email/password and password reset flows.
@@ -133,6 +139,7 @@ Password reset / account recovery should be supported if email/password auth is 
 ### 5.2 Daily targets
 
 Users can manually set daily targets for:
+
 - calories;
 - protein;
 - carbohydrates;
@@ -143,12 +150,14 @@ Each target should be independently optional.
 ### 5.3 Meal creation
 
 Users can create meals via:
+
 - camera;
 - gallery;
 - natural-language text;
 - manual entry.
 
 Supported meal categories for MVP:
+
 - Breakfast
 - Lunch
 - Dinner
@@ -159,6 +168,7 @@ The category is chosen by the user.
 ### 5.4 AI meal analysis
 
 AI meal analysis must support:
+
 - one or more images per meal;
 - provider-agnostic execution;
 - normalized structured output;
@@ -168,6 +178,7 @@ AI meal analysis must support:
 ### 5.5 Diary and calendar
 
 Users can:
+
 - open a day;
 - browse meal history;
 - navigate via calendar;
@@ -177,6 +188,7 @@ Users can:
 ### 5.6 Statistics
 
 MVP statistics include:
+
 - daily calorie totals;
 - average calories over time;
 - average macros;
@@ -197,6 +209,7 @@ It is a reusable pattern system that helps recognize common meals and suggest re
 The AI assistant is part of MVP.
 
 It can answer questions grounded in the user’s data, for example:
+
 - how many calories are left today;
 - how the week went;
 - how much protein was eaten this week;
@@ -211,6 +224,7 @@ The assistant must stay within non-medical boundaries.
 The recurring mascot across the project is a **stylized broccoli AI character**.
 
 Requirements for the mascot:
+
 - broccoli-based;
 - cute, friendly, modern, and recognizable;
 - stylized rather than highly realistic;
@@ -220,6 +234,7 @@ Requirements for the mascot:
 - should be usable in onboarding, empty states, assistant surfaces, and branding assets.
 
 The design system and product visuals should feel:
+
 - calm;
 - modern;
 - soft;
@@ -228,6 +243,7 @@ The design system and product visuals should feel:
 - mobile-app appropriate.
 
 Avoid:
+
 - clinical aesthetic;
 - gym/bodybuilding clichés;
 - excessive realism;
@@ -242,6 +258,7 @@ Avoid:
 Use a **monorepo**.
 
 Preferred tooling:
+
 - Bun 1.4 workspaces;
 - Turborepo.
 
@@ -259,6 +276,7 @@ packages/
   db/
   contracts/
   design-tokens/
+  api-client/
   ui-mobile/
   ui-web/
   config/
@@ -268,16 +286,19 @@ packages/
 ### 7.2 Applications
 
 #### `apps/mobile`
+
 - Expo + React Native + TypeScript;
 - primary end-user application;
 - uses Expo Router;
 - contains meal flows, diary, statistics, settings, assistant, onboarding.
 
 #### `apps/api`
+
 - ElysiaJS + TypeScript on Bun;
 - contains authentication integration, business logic, AI orchestration, authorization, and data access.
 
 #### `apps/admin`
+
 - web-based back office;
 - internal/admin-facing;
 - developed progressively in parallel with the main product.
@@ -285,6 +306,7 @@ packages/
 ### 7.3 Backend stack
 
 Preferred backend stack:
+
 - TypeScript;
 - ElysiaJS;
 - Bun runtime;
@@ -296,10 +318,24 @@ Preferred backend stack:
 ### 7.4 Frontend/mobile stack
 
 Preferred mobile stack:
+
 - Expo;
 - React Native;
 - TypeScript;
 - Expo Router.
+- TanStack Query for server state and async request lifecycle;
+- Hey API-generated clients from the backend OpenAPI contract;
+- Zod schemas for runtime validation at external-data boundaries.
+
+Mobile user-facing copy must use a centralized, typed localization layer. The
+initial mobile locales are English and Italian, with a persisted in-app
+language selector and device-locale detection as the default. Every new mobile
+vertical must add translation keys instead of hardcoding labels or messages.
+The admin app is English-only for now.
+
+The generated API client is a shared package. Authentication remains owned by
+Better Auth's client SDK; feature and session-resource requests use the Hey API
+client and TanStack Query.
 
 ---
 
@@ -310,6 +346,7 @@ Authentication is a **first-priority implementation area**.
 Use **Better Auth** unless there is a concrete blocker.
 
 Support:
+
 - Google login;
 - Apple login;
 - optional email/password sign-up/sign-in;
@@ -328,11 +365,13 @@ Use an AI-agnostic abstraction layer.
 Preferred direction: **TanStack AI** or another robust provider-agnostic wrapper if it proves clearly better during implementation.
 
 The architecture MUST support user-configured:
+
 - provider;
 - API key;
 - model.
 
 Supported providers should be easy to extend and may include:
+
 - OpenAI;
 - Anthropic;
 - Gemini;
@@ -350,27 +389,27 @@ The meal analysis output must be normalized to a shared contract similar to:
 
 ```ts
 export type MealAnalysis = {
-  name: string
+  name: string;
   calories: {
-    estimated: number
-    min: number
-    max: number
-  }
+    estimated: number;
+    min: number;
+    max: number;
+  };
   macros: {
-    protein: number
-    carbohydrates: number
-    fat: number
-  }
+    protein: number;
+    carbohydrates: number;
+    fat: number;
+  };
   items: Array<{
-    name: string
-    estimatedAmount?: string
-    calories: number
-    protein: number
-    carbohydrates: number
-    fat: number
-  }>
-  confidence: 'low' | 'medium' | 'high'
-}
+    name: string;
+    estimatedAmount?: string;
+    calories: number;
+    protein: number;
+    carbohydrates: number;
+    fat: number;
+  }>;
+  confidence: "low" | "medium" | "high";
+};
 ```
 
 Use runtime validation (preferably Zod).
@@ -382,6 +421,7 @@ Use runtime validation (preferably Zod).
 AI credentials may be stored server-side for cross-device access.
 
 They MUST:
+
 - be encrypted before persistence;
 - never be stored in plaintext;
 - never appear in logs;
@@ -400,6 +440,7 @@ Use authenticated encryption (e.g. AES-256-GCM) and a server-side master key sto
 Meal photos are transient.
 
 They MUST NOT be stored in:
+
 - PostgreSQL;
 - object storage;
 - analytics;
@@ -425,6 +466,7 @@ However, it should be **operational and controlled**, not overpowered.
 ### 12.1 Purpose
 
 The admin app exists to:
+
 - inspect user accounts;
 - inspect meal/target data;
 - debug issues;
@@ -435,6 +477,7 @@ The admin app exists to:
 ### 12.2 Allowed admin capabilities
 
 Admins may:
+
 - search users;
 - inspect user profile metadata;
 - inspect daily targets;
@@ -448,6 +491,7 @@ Admins may:
 ### 12.3 Forbidden admin capabilities
 
 Admins MUST NOT:
+
 - view AI API keys in plaintext;
 - decrypt credentials for display;
 - access secrets or encryption keys;
@@ -469,6 +513,7 @@ Do not assemble screens from one-off components and hardcoded tokens.
 ### 13.1 Token layer
 
 Create shared design tokens for:
+
 - colors;
 - spacing;
 - typography;
@@ -478,6 +523,7 @@ Create shared design tokens for:
 - motion.
 
 Prefer semantic tokens such as:
+
 - `background.primary`
 - `background.secondary`
 - `text.primary`
@@ -494,6 +540,7 @@ Prefer semantic tokens such as:
 ### 13.2 UI packages
 
 Prefer separate UI packages for mobile and web/admin:
+
 - `packages/ui-mobile`
 - `packages/ui-web`
 
@@ -502,6 +549,7 @@ with shared design tokens.
 ### 13.3 Core primitives
 
 Build reusable primitives such as:
+
 - Text;
 - Button;
 - IconButton;
@@ -524,6 +572,7 @@ Build reusable primitives such as:
 
 The Today screen is the primary home screen.
 It should show:
+
 - calories consumed today;
 - calorie target if configured;
 - macro totals and targets;
@@ -533,6 +582,7 @@ It should show:
 ### 14.2 Confirmation screen
 
 AI-generated meals MUST go through a confirmation screen showing:
+
 - meal name;
 - estimated calories;
 - calorie range;
@@ -559,6 +609,7 @@ Natural-language input must produce the same normalized flow as image-based AI i
 Testing is mandatory.
 
 Prioritize:
+
 - domain logic;
 - totals and aggregations;
 - target calculations;
@@ -576,6 +627,7 @@ Provider calls must be mockable.
 ## 16. Definition of done
 
 A feature is done only when the full relevant vertical slice is complete, including:
+
 - schema/migration if needed;
 - contract/validation;
 - backend logic;
@@ -610,7 +662,9 @@ However, the initial sequence should follow the founder’s preferred priority:
 ### 17.2 Detailed implementation steps
 
 #### Step 0 — Repository foundation
+
 Build the monorepo foundation:
+
 - Bun 1.4 workspace;
 - Turborepo;
 - baseline linting/formatting/type-checking;
@@ -622,7 +676,9 @@ Build the monorepo foundation:
 - CI skeleton.
 
 #### Step 1 — Backend scaffolding
+
 Set up the backend skeleton first:
+
 - ElysiaJS app structure;
 - Drizzle integration;
 - PostgreSQL connection;
@@ -635,7 +691,9 @@ Set up the backend skeleton first:
 In parallel, bootstrap the admin app foundation and basic routing.
 
 #### Step 2 — Authentication vertical
+
 Implement authentication thoroughly:
+
 - sign up;
 - sign in;
 - session handling;
@@ -648,11 +706,14 @@ Implement authentication thoroughly:
 - admin authorization foundation.
 
 In parallel, continue evolving the admin app with at least:
+
 - admin auth gate;
 - role/permission foundation.
 
 #### Step 3 — Design system foundation
+
 Before building many product screens, create the design system foundation:
+
 - design tokens;
 - typography;
 - spacing;
@@ -664,40 +725,51 @@ Before building many product screens, create the design system foundation:
 The broccoli mascot can begin to be integrated into empty states, onboarding, and branding references.
 
 #### Step 4 — Daily targets
+
 Implement user-configured targets end-to-end.
 
 Continue basic admin visibility for user targets.
 
 #### Step 5 — Manual meals
+
 Implement manual meal creation, editing, deletion, and Today aggregation.
 
 Continue admin visibility/editability for meals.
 
 #### Step 6 — AI configuration
+
 Implement provider/model/key configuration, secure storage, and connection test.
 
 Continue admin metadata visibility (without key visibility).
 
 #### Step 7 — AI text meals
+
 Implement text-to-meal analysis and confirmation flow.
 
 #### Step 8 — AI image meals
+
 Implement camera/gallery/multi-image meal analysis and confirmation flow.
 
 #### Step 9 — Diary and calendar
+
 Implement historical browsing.
 
 #### Step 10 — Statistics
+
 Implement useful trends and summary views.
 
 #### Step 11 — Known meals
+
 Implement recurring meal recognition and reuse.
 
 #### Step 12 — AI assistant
+
 Implement assistant grounded in user data.
 
 #### Step 13 — Admin operations expansion
+
 Continue evolving the back office in parallel throughout development, and by this stage ensure it supports:
+
 - user search;
 - user detail;
 - targets inspection;
@@ -717,6 +789,7 @@ It should be developed progressively alongside the main application as relevant 
 ## 18. Engineering guardrails
 
 Do NOT introduce unnecessary complexity such as:
+
 - microservices;
 - event sourcing;
 - CQRS;
@@ -728,6 +801,7 @@ Do NOT introduce unnecessary complexity such as:
 Prefer a clean modular monolith.
 
 Do NOT:
+
 - leak secrets;
 - store AI keys in plaintext;
 - store meal photos;
@@ -741,6 +815,7 @@ Do NOT:
 ## 19. MVP success criteria
 
 The MVP is successful when a user can:
+
 1. authenticate;
 2. configure optional calorie and macro targets;
 3. configure an AI provider/model/key;
@@ -754,6 +829,7 @@ The MVP is successful when a user can:
 11. interact with a non-medical AI assistant grounded in their data.
 
 And an authorized admin can:
+
 - inspect users and relevant application data;
 - manage operational issues safely;
 - do so without access to plaintext AI keys.
@@ -765,6 +841,7 @@ And an authorized admin can:
 Build **one coherent product and one coherent codebase**.
 
 When trade-offs arise, prioritize:
+
 1. correctness;
 2. security;
 3. maintainability;

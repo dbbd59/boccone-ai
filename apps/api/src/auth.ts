@@ -21,7 +21,10 @@ export const auth = createAuth({
   isProduction: config.isProduction,
   google: config.google,
   apple: config.apple,
-  sendResetPasswordEmail: createResetPasswordEmailSender({ isProduction: config.isProduction, logger }),
+  sendResetPasswordEmail: createResetPasswordEmailSender({
+    isProduction: config.isProduction,
+    logger,
+  }),
 });
 
 export type Session = typeof auth.$Infer.Session;

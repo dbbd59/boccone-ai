@@ -23,7 +23,7 @@ describe("redactValue", () => {
       items: [{ passwordHash: "leak" }, { safe: "value" }],
     }) as Record<string, unknown>;
     const user = result["user"] as Record<string, unknown>;
-    const items = result["items"] as Array<Record<string, unknown>>;
+    const items = result["items"] as Record<string, unknown>[];
     expect(user["name"]).toBe("ok");
     expect(user["sessionToken"]).toBe("[REDACTED]");
     expect(items[0]?.["passwordHash"]).toBe("[REDACTED]");

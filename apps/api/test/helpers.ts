@@ -5,21 +5,22 @@ import { closeDb, createDb, migrateDatabase, type Database } from "@boccone/db";
 
 import { createApp } from "../src/app";
 
-const LOCAL_POSTGRES_URL = process.env["DATABASE_URL"] ?? "postgres://boccone:boccone@localhost:5433/boccone";
+const LOCAL_POSTGRES_URL =
+  process.env["DATABASE_URL"] ?? "postgres://boccone:boccone@localhost:5433/boccone";
 
-export type TestHarness = {
+export interface TestHarness {
   app: ReturnType<typeof createApp>;
   db: Database;
-  resetEmails: Array<{ to: string; resetUrl: string }>;
+  resetEmails: { to: string; resetUrl: string }[];
   cleanup: () => Promise<void>;
-};
+}
 
 /**
  * Create a throwaway Postgres database for this test run, apply migrations,
  * and build a fully wired app (auth + routes) against it.
  */
 export async function createTestHarness(): Promise<TestHarness> {
-  const adminSql = postgres(LOCAL_POSTGRES_URL, { max: 1, onnotice: () => {} });
+  const adminSql = postgres(LOCAL_POSTGRES_URL, { max: 1, onnotice: () => undefined });
   try {
     await adminSql`SELECT 1`;
   } catch (error) {
@@ -37,14 +38,15 @@ export async function createTestHarness(): Promise<TestHarness> {
   const db = createDb({ connectionString: dbUrl, max: 5 });
   await migrateDatabase(db);
 
-  const resetEmails: Array<{ to: string; resetUrl: string }> = [];
+  const resetEmails: { to: string; resetUrl: string }[] = [];
   const auth = createAuth({
     db,
     secret: "test-secret-boccone-0123456789-0123456789-abcdef",
     baseURL: "http://localhost:3000",
     trustedOrigins: ["http://localhost:3001"],
     isProduction: false,
-    sendResetPasswordEmail: async (input) => {
+    rateLimitEnabled: false,
+    sendResetPasswordEmail: (input) => {
       resetEmails.push({ to: input.to, resetUrl: input.resetUrl });
     },
   });
@@ -58,7 +60,7 @@ export async function createTestHarness(): Promise<TestHarness> {
 
   const cleanup = async (): Promise<void> => {
     await closeDb(db);
-    const dropSql = postgres(LOCAL_POSTGRES_URL, { max: 1, onnotice: () => {} });
+    const dropSql = postgres(LOCAL_POSTGRES_URL, { max: 1, onnotice: () => undefined });
     await dropSql.unsafe(`DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE)`);
     await dropSql.end({ timeout: 1 });
   };

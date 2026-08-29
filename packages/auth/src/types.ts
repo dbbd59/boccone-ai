@@ -1,9 +1,9 @@
 import type { Database } from "@boccone/db";
 
-export type GoogleOAuthConfig = {
+export interface GoogleOAuthConfig {
   clientId: string;
   clientSecret: string;
-};
+}
 
 /**
  * Apple Sign In configuration.
@@ -12,20 +12,20 @@ export type GoogleOAuthConfig = {
  * The client secret JWT is minted at runtime from the .p8 key — never store a
  * pre-generated secret.
  */
-export type AppleOAuthConfig = {
+export interface AppleOAuthConfig {
   clientId: string;
   bundleId: string;
   teamId: string;
   keyId: string;
   /** PKCS8 PEM contents of the .p8 key (\n-escaped when provided via env). */
   privateKey: string;
-};
+}
 
-export type SendResetPasswordEmailInput = {
+export interface SendResetPasswordEmailInput {
   to: string;
   /** Full password-reset URL including the one-time token. */
   resetUrl: string;
-};
+}
 
 /**
  * Mail delivery seam. The API decides how mail is delivered (dev console,
@@ -33,7 +33,7 @@ export type SendResetPasswordEmailInput = {
  */
 export type SendResetPasswordEmail = (input: SendResetPasswordEmailInput) => Promise<void> | void;
 
-export type CreateAuthOptions = {
+export interface CreateAuthOptions {
   db: Database;
   secret: string;
   /** Public base URL of the API, e.g. https://api.example.com. */
@@ -49,5 +49,7 @@ export type CreateAuthOptions = {
   mobileScheme?: string;
   google?: GoogleOAuthConfig;
   apple?: AppleOAuthConfig;
+  /** Disable only in isolated automated tests; production keeps rate limiting on. */
+  rateLimitEnabled?: boolean;
   sendResetPasswordEmail: SendResetPasswordEmail;
-};
+}

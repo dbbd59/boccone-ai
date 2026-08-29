@@ -11,7 +11,10 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   BETTER_AUTH_SECRET: z
     .string()
-    .min(32, "BETTER_AUTH_SECRET must be at least 32 characters (generate one with: openssl rand -base64 32)"),
+    .min(
+      32,
+      "BETTER_AUTH_SECRET must be at least 32 characters (generate one with: openssl rand -base64 32)",
+    ),
   BETTER_AUTH_URL: z.url("BETTER_AUTH_URL must be a valid URL, e.g. http://localhost:3000"),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   LOG_LEVEL: logLevelSchema.default("info"),
@@ -26,7 +29,7 @@ const envSchema = z.object({
   APPLE_PRIVATE_KEY: z.string().optional(),
 });
 
-export type AppConfig = {
+export interface AppConfig {
   nodeEnv: "development" | "test" | "production";
   isProduction: boolean;
   databaseUrl: string;
@@ -37,7 +40,7 @@ export type AppConfig = {
   corsOrigins: string[];
   google?: GoogleOAuthConfig;
   apple?: AppleOAuthConfig;
-};
+}
 
 const APPLE_FIELDS = [
   "APPLE_SERVICES_ID",
@@ -69,7 +72,12 @@ function buildOAuthConfig(env: z.infer<typeof envSchema>): Pick<AppConfig, "goog
 
   return {
     ...(googleConfigured
-      ? { google: { clientId: env.GOOGLE_CLIENT_ID ?? "", clientSecret: env.GOOGLE_CLIENT_SECRET ?? "" } }
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID ?? "",
+            clientSecret: env.GOOGLE_CLIENT_SECRET ?? "",
+          },
+        }
       : {}),
     ...(appleConfiguredCount === APPLE_FIELDS.length
       ? {

@@ -15,6 +15,13 @@
       "when": 1787990078245,
       "tag": "0001_bitter_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787991792183,
+      "tag": "0002_crazy_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }

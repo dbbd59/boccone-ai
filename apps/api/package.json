@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "start": "bun src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun --sourcemap=linked",
+    "start": "bun dist/index.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "bun test"

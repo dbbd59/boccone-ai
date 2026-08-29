@@ -12,18 +12,24 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await harness.cleanup();
+  if (harness) await harness.cleanup();
 });
 
 function request(path: string, init: RequestInit = {}): Promise<Response> {
   return harness.app.handle(new Request(`http://localhost${path}`, init));
 }
 
-function requestWithCookie(path: string, jar: ReturnType<typeof createCookieJar>, init: RequestInit = {}) {
-  return harness.app.handle(new Request(`http://localhost${path}`, {
-    ...init,
-    headers: { ...init.headers, Cookie: jar.header() },
-  }));
+function requestWithCookie(
+  path: string,
+  jar: ReturnType<typeof createCookieJar>,
+  init: RequestInit = {},
+) {
+  return harness.app.handle(
+    new Request(`http://localhost${path}`, {
+      ...init,
+      headers: { ...init.headers, Cookie: jar.header() },
+    }),
+  );
 }
 
 async function signUpAndSignIn(email: string, password = "correct-horse-42", name = "Test User") {
@@ -45,7 +51,18 @@ describe("health", () => {
     const body = healthResponseSchema.parse(await response.json());
     expect(body.service).toBe("boccone-api");
     expect(body.status).toBe("ok");
-    expect(response.headers.get("x-request-id")).toBeTruthy();
+    const requestId = response.headers.get("x-request-id");
+    if (!requestId) throw new Error("health response did not include a request id");
+    expect(body.requestId).toBe(requestId);
+  });
+
+  test("preserves a caller-provided request id for tracing", async () => {
+    const response = await request("/api/health", {
+      headers: { "x-request-id": "health-test-request" },
+    });
+    const body = healthResponseSchema.parse(await response.json());
+    expect(body.requestId).toBe("health-test-request");
+    expect(response.headers.get("x-request-id")).toBe("health-test-request");
   });
 
   test("unknown routes return the shared 404 error contract", async () => {
@@ -110,14 +127,24 @@ describe("authentication flows", () => {
     const requestReset = await request("/api/auth/request-password-reset", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, redirectTo: "http://localhost:3001/reset-password" }),
+      body: JSON.stringify({ email, redirectTo: "boccone://reset-password" }),
     });
     expect(requestReset.status).toBe(200);
     expect(harness.resetEmails).toHaveLength(1);
     expect(harness.resetEmails[0]?.to).toBe(email);
 
     const resetUrl = new URL(harness.resetEmails[0]?.resetUrl ?? "");
-    const token = resetUrl.searchParams.get("token");
+    const callback = await request(`${resetUrl.pathname}${resetUrl.search}`);
+    expect(callback.status).toBe(302);
+    const callbackLocation = callback.headers.get("location");
+    if (!callbackLocation) throw new Error("password reset callback did not redirect");
+    const deepLink = new URL(callbackLocation);
+    if (deepLink.protocol !== "boccone:") {
+      throw new Error(
+        `password reset callback did not return a Boccone deep link (protocol=${deepLink.protocol}, pathname=${deepLink.pathname}, hasError=${deepLink.searchParams.has("error")})`,
+      );
+    }
+    const token = deepLink.searchParams.get("token");
     expect(token).toBeTruthy();
 
     const reset = await request("/api/auth/reset-password", {
@@ -180,7 +207,7 @@ describe("authorization boundaries", () => {
 
   test("an admin can list users and the response matches the contract", async () => {
     const email = uniqueEmail("chief");
-    await signUpAndSignIn(email);
+    const { jar } = await signUpAndSignIn(email);
 
     // Promote directly in the database — mirroring how the first admin is
     // bootstrapped in practice (CLI / migration), never via client input.
@@ -190,8 +217,6 @@ describe("authorization boundaries", () => {
       .where(eq(user.email, email))
       .returning({ id: user.id });
     expect(promoted).toHaveLength(1);
-
-    const { jar } = await signUpAndSignIn(email, "correct-horse-42", "Admin");
 
     const response = await requestWithCookie("/api/admin/users", jar);
     expect(response.status).toBe(200);
@@ -210,9 +235,8 @@ describe("authorization boundaries", () => {
     const email = uniqueEmail("searchable");
     await signUpAndSignIn(email);
     const adminEmail = uniqueEmail("admin");
-    await signUpAndSignIn(adminEmail);
-    await harness.db.update(user).set({ role: "admin" }).where(eq(user.email, adminEmail));
     const { jar } = await signUpAndSignIn(adminEmail);
+    await harness.db.update(user).set({ role: "admin" }).where(eq(user.email, adminEmail));
 
     const response = await requestWithCookie(`/api/admin/users?search=${email}`, jar);
     expect(response.status).toBe(200);

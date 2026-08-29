@@ -25,6 +25,7 @@ export function defineConfig(options = {}) {
         "**/coverage/**",
         "**/drizzle/**",
         "**/.expo-shared/**",
+        "**/src/generated/**",
       ],
     },
     eslint.configs.recommended,
@@ -32,6 +33,10 @@ export function defineConfig(options = {}) {
     ...tseslint.configs.stylisticTypeChecked,
     {
       languageOptions: {
+        globals: {
+          ...globals.node,
+          ...globals.browser,
+        },
         parserOptions: {
           projectService: true,
           tsconfigRootDir: process.cwd(),

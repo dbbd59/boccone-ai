@@ -67,6 +67,7 @@ auth/
 db/
 contracts/
 design-tokens/
+api-client/
 ui-mobile/
 ui-web/
 config/
@@ -84,6 +85,12 @@ Provider-specific AI code belongs only in packages/ai.
 
 Public API contracts belong in packages/contracts.
 
+OpenAPI-generated client artifacts belong in a shared API client package; do not hand-write endpoint clients in mobile or admin apps.
+
+Regenerate that package from `packages/api-client/openapi.yaml` with `bun run generate`; generated files are not hand-edited.
+
+Better Auth's client SDK owns authentication calls. Use the generated Hey API client plus TanStack Query for authenticated application resources.
+
 Database schema belongs in packages/db.
 
 Do not expose raw DB tables directly as public API contracts.
@@ -99,6 +106,20 @@ React Native
 TypeScript
 
 Expo Router
+
+TanStack Query for server state
+
+Hey API-generated clients from the OpenAPI contract
+
+Zod for runtime validation
+
+Mobile localization
+
+All mobile user-facing copy must use the typed localization layer in
+`apps/mobile/src/i18n`. The initial locales are English and Italian. Use the
+persisted `LanguageSelector` and add translation keys for every new mobile
+vertical; do not hardcode mobile labels or messages. The admin app remains
+English-only until explicitly changed.
 
 API
 
@@ -135,6 +156,8 @@ Always enforce server-side authorization.
 Validate all inputs.
 
 Use migrations.
+
+Password-reset links may be logged only by the development sender. Production must use a configured transactional email provider and must never fall back to console delivery.
 
 8. AI rules
 
@@ -177,6 +200,10 @@ Build reusable primitives.
 Prefer packages/ui-mobile and packages/ui-web with shared tokens.
 
 Avoid random hardcoded styles.
+
+Mobile localization is a product foundation: keep all mobile user-facing copy
+in the central typed translations and keep locale selection persistent. Do not
+add a second localization mechanism in a feature package.
 
 The recurring mascot is a stylized broccoli AI character without headphones.
 

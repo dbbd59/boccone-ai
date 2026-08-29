@@ -4,12 +4,12 @@ import { ZodError } from "zod";
 import { AppError, errorBody, jsonResponse } from "../errors";
 import type { Logger } from "../logger";
 
-type ErrorHookContext = {
+interface ErrorHookContext {
   code: unknown;
   error: unknown;
   request: Request;
   requestId?: string;
-};
+}
 
 /** Single error funnel. Client errors get contracts; 5xx errors get redacted logs. */
 export function createErrorHandler(logger: Logger) {
@@ -20,7 +20,11 @@ export function createErrorHandler(logger: Logger) {
       return jsonResponse(errorBody(error.code, error.message, id), error.status);
     }
 
-    if (error instanceof ZodError || error instanceof ElysiaValidationError || code === "VALIDATION") {
+    if (
+      error instanceof ZodError ||
+      error instanceof ElysiaValidationError ||
+      code === "VALIDATION"
+    ) {
       return jsonResponse(errorBody("validation_error", "Validation failed", id), 400);
     }
 

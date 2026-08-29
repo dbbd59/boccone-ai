@@ -1,9 +1,9 @@
 import type { BocconeSession } from "@boccone/auth";
 
-export type RequestContext = {
+export interface RequestContext {
   requestId: string;
-};
+}
 
-export type AuthenticatedContext = RequestContext & {
+export interface AuthenticatedContext extends RequestContext {
   session: BocconeSession;
-};
+}

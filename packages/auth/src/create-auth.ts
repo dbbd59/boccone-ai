@@ -86,7 +86,7 @@ export function createAuth(options: CreateAuthOptions) {
       expo(),
     ],
     rateLimit: {
-      enabled: true,
+      enabled: options.rateLimitEnabled ?? true,
       window: 60,
       max: 100,
     },

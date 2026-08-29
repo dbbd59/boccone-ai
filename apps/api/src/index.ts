@@ -24,15 +24,18 @@ const server = Bun.serve({
 });
 
 if (!config.isProduction) {
-  logger.info("Password-reset emails print to this console in development — see apps/api/src/email.ts", {
-    env: config.nodeEnv,
-  });
+  logger.info(
+    "Password-reset emails print to this console in development — see apps/api/src/email.ts",
+    {
+      env: config.nodeEnv,
+    },
+  );
 }
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
     logger.info(`Received ${signal}, shutting down`, {});
-    server.stop(true);
+    void server.stop(true);
     void closeDb(db).finally(() => process.exit(0));
   });
 }

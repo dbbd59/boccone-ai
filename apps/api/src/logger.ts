@@ -25,21 +25,21 @@ export function redactValue(value: unknown, depth = 0): unknown {
   return value;
 }
 
-export type Logger = {
+export interface Logger {
   debug: (message: string, fields?: Record<string, unknown>) => void;
   info: (message: string, fields?: Record<string, unknown>) => void;
   warn: (message: string, fields?: Record<string, unknown>) => void;
   error: (message: string, fields?: Record<string, unknown>) => void;
   child: (fields: Record<string, unknown>) => Logger;
-};
+}
 
-export type CreateLoggerOptions = {
+export interface CreateLoggerOptions {
   level: LogLevel;
   /** Fields merged into every line (e.g. service name). */
   base?: Record<string, unknown>;
   /** Test seam. */
   write?: (line: string) => void;
-};
+}
 
 export function createLogger(options: CreateLoggerOptions): Logger {
   const write = options.write ?? ((line: string) => console.log(line));
@@ -52,7 +52,9 @@ export function createLogger(options: CreateLoggerOptions): Logger {
     if (LEVEL_WEIGHT[level] < LEVEL_WEIGHT[options.level]) return;
     const redacted = redactValue({ ...base, ...fields });
     const safeFields: Record<string, unknown> =
-      typeof redacted === "object" && redacted !== null ? redacted as Record<string, unknown> : {};
+      typeof redacted === "object" && redacted !== null
+        ? (redacted as Record<string, unknown>)
+        : {};
     const line = {
       time: new Date().toISOString(),
       level,

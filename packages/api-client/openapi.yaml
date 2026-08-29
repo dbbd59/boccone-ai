@@ -1,0 +1,236 @@
+openapi: 3.0.3
+info:
+  title: Boccone AI API
+  version: 0.1.0
+  description: Authenticated application API for Boccone AI.
+servers:
+  - url: http://localhost:3000
+    description: Local development
+paths:
+  /api/health:
+    get:
+      operationId: getHealth
+      tags:
+        - health
+      summary: Check API health
+      responses:
+        "200":
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "500":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me:
+    get:
+      operationId: getCurrentUser
+      tags:
+        - session
+      summary: Get the current authenticated user
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/users:
+    get:
+      operationId: listAdminUsers
+      tags:
+        - admin
+      summary: List users for administrators
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Users visible to operations staff
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsersResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+  responses:
+    ErrorResponse:
+      description: API error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              enum:
+                - bad_request
+                - unauthorized
+                - forbidden
+                - not_found
+                - conflict
+                - validation_error
+                - internal_error
+            message:
+              type: string
+            requestId:
+              type: string
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+        - requestId
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        service:
+          type: string
+          enum: [boccone-api]
+        version:
+          type: string
+        requestId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    AuthUser:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - emailVerified
+        - image
+        - role
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        emailVerified:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [user, admin]
+    MeResponse:
+      type: object
+      required:
+        - user
+      properties:
+        user:
+          $ref: "#/components/schemas/AuthUser"
+    AdminUser:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - emailVerified
+        - image
+        - role
+        - banned
+        - banReason
+        - banExpires
+        - createdAt
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        emailVerified:
+          type: boolean
+        image:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [user, admin]
+        banned:
+          type: boolean
+          nullable: true
+        banReason:
+          type: string
+          nullable: true
+        banExpires:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    AdminUsersResponse:
+      type: object
+      required:
+        - users
+        - total
+        - limit
+        - offset
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUser"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer

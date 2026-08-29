@@ -11,16 +11,19 @@ import { createHealthRoutes } from "./routes/health";
 import { createMeRoutes } from "./routes/me";
 import type { LogLevel } from "./config/env";
 
-export type CreateAppOptions = {
+export interface CreateAppOptions {
   auth: BocconeAuth;
   version: string;
   corsOrigins: string[];
   logLevel: LogLevel;
-};
+}
 
 /** Build modular Elysia app. Dependencies are injected for isolated tests. */
 export function createApp(options: CreateAppOptions) {
-  const logger: Logger = createLogger({ level: options.logLevel, base: { service: "boccone-api" } });
+  const logger: Logger = createLogger({
+    level: options.logLevel,
+    base: { service: "boccone-api" },
+  });
   const allowedOrigins = new Set(options.corsOrigins);
 
   return new Elysia({ name: "boccone-api" })

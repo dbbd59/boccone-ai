@@ -1,5 +1,9 @@
 import type { BocconeAuth } from "@boccone/auth";
-import { adminUsersResponseSchema, type AdminUsersQuery, type AdminUsersResponse } from "@boccone/contracts";
+import {
+  adminUsersResponseSchema,
+  type AdminUsersQuery,
+  type AdminUsersResponse,
+} from "@boccone/contracts";
 
 const MAX_PAGE_SIZE = 100;
 
@@ -20,7 +24,11 @@ export async function listAdminUsers(input: {
       sortBy: "createdAt",
       sortDirection: "desc",
       ...(input.query.search
-        ? { searchValue: input.query.search, searchField: "email" as const, searchOperator: "contains" as const }
+        ? {
+            searchValue: input.query.search,
+            searchField: "email" as const,
+            searchOperator: "contains" as const,
+          }
         : {}),
     },
     headers: input.headers,

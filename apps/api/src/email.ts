@@ -2,10 +2,10 @@ import type { SendResetPasswordEmail } from "@boccone/auth";
 
 import type { Logger } from "./logger";
 
-export type CreateEmailSenderOptions = {
+export interface CreateEmailSenderOptions {
   isProduction: boolean;
   logger: Logger;
-};
+}
 
 /**
  * Mail delivery seam for transactional emails.
@@ -19,16 +19,21 @@ export type CreateEmailSenderOptions = {
  * enabling production sign-ups. The provider choice is deliberately left to
  * the operator; no vendor code is bundled.
  */
-export function createResetPasswordEmailSender(options: CreateEmailSenderOptions): SendResetPasswordEmail {
-  return async ({ to, resetUrl }) => {
+export function createResetPasswordEmailSender(
+  options: CreateEmailSenderOptions,
+): SendResetPasswordEmail {
+  return ({ to, resetUrl }) => {
     if (options.isProduction) {
       throw new Error(
         "Password-reset email delivery is not configured. Implement a provider call in apps/api/src/email.ts (createResetPasswordEmailSender) before enabling production authentication.",
       );
     }
-    options.logger.warn("DEV ONLY password-reset link (development builds only — never enable in production)", {
-      to,
-      resetUrl,
-    });
+    options.logger.warn(
+      "DEV ONLY password-reset link (development builds only — never enable in production)",
+      {
+        to,
+        resetUrl,
+      },
+    );
   };
 }

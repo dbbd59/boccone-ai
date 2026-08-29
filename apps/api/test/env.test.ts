@@ -50,9 +50,7 @@ describe("loadConfig", () => {
   });
 
   test("accepts fully configured Google OAuth", () => {
-    const config = loadConfig(
-      envWith({ GOOGLE_CLIENT_ID: "id", GOOGLE_CLIENT_SECRET: "secret" }),
-    );
+    const config = loadConfig(envWith({ GOOGLE_CLIENT_ID: "id", GOOGLE_CLIENT_SECRET: "secret" }));
     expect(config.google).toEqual({ clientId: "id", clientSecret: "secret" });
   });
 

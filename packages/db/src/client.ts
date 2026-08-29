@@ -8,13 +8,13 @@ export type Database = PostgresJsDatabase<typeof schema> & {
   $client: postgres.Sql;
 };
 
-export type CreateDbOptions = {
+export interface CreateDbOptions {
   connectionString: string;
   /** Max pooled connections. Tune for the deployment target. */
   max?: number;
   /** Override for tests. */
   client?: postgres.Sql;
-};
+}
 
 /**
  * Create a Drizzle database handle backed by a postgres-js pool.
@@ -30,7 +30,7 @@ export function createDb(options: CreateDbOptions): Database {
       idle_timeout: 30,
       connect_timeout: 10,
     });
-  return drizzle(client, { schema }) as Database;
+  return drizzle(client, { schema });
 }
 
 export { schema };

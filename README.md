@@ -61,7 +61,7 @@ The implemented foundation is intentionally small and explicit:
 - **Database** — PostgreSQL via Drizzle ORM and <code>postgres-js</code>, with versioned migrations for Better Auth’s user, session, account, and verification tables.
 - **Contracts** — Zod schemas define public health, user, admin-user, and error response shapes. Raw database rows do not form the public API.
 - **API client** — the checked-in OpenAPI description generates fetch, Zod, and TanStack Query artifacts in <code>packages/api-client</code>; clients share one typed HTTP boundary.
-- **Clients** — an Expo Router mobile auth shell and a Vite/React admin surface for sign-in, admin access checks, user listing, and email search.
+- **Clients** — an Expo Router mobile auth shell with persisted English/Italian localization and a Vite/React admin surface for sign-in, admin access checks, user listing, and email search. The admin surface is English-only for now.
 - **UI foundation** — shared semantic design tokens plus small React Native and web primitives (<code>Text</code>, <code>Button</code>, <code>Input</code>, <code>Screen</code>, <code>Surface</code>, and <code>Stack</code>).
 
 ## Architecture

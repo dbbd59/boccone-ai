@@ -1,0 +1,24 @@
+{
+  "name": "@boccone/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "generate": "openapi-ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hey-api/client-fetch": "0.13.1",
+    "@tanstack/react-query": "5.102.8",
+    "zod": "4.1.13"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "@types/bun": "^1.4.0"
+  }
+}
