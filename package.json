@@ -1,0 +1,39 @@
+{
+  "name": "boccone",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Boccone AI — mobile-first AI food diary (open-source monorepo)",
+  "license": "MIT",
+  "packageManager": "bun@1.4.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "bootstrap": "bun install",
+    "dev": "turbo run dev",
+    "dev:api": "turbo run dev --filter=@boccone/api",
+    "dev:admin": "turbo run dev --filter=@boccone/admin",
+    "dev:mobile": "turbo run dev --filter=@boccone/mobile",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:generate": "turbo run db:generate --filter=@boccone/db",
+    "db:migrate": "turbo run db:migrate --filter=@boccone/db",
+    "db:studio": "turbo run db:studio --filter=@boccone/db"
+  },
+  "devDependencies": {
+    "@boccone/config": "workspace:*",
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.8",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "bun": ">=1.4.0"
+  }
+}

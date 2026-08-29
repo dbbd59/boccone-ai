@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+dist/
+build/
+.output/
+.expo/
+web-build/
+*.tsbuildinfo
+
+# env files — never commit real secrets
+.env
+.env.*
+!.env.example
+
+# db
+*.db
+
+# testing
+coverage/
+
+# editors / os
+.DS_Store
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# turbo
+.turbo/
+
+# misc
+*.log
+npm-debug.log*
+Expo.plist

@@ -1,0 +1,27 @@
+# Local development PostgreSQL for Boccone AI.
+# Usage: bun run db:up   (then bun run db:migrate)
+#
+# Production runs on Railway — this file is dev-only.
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: boccone-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: boccone
+      POSTGRES_PASSWORD: boccone
+      POSTGRES_DB: boccone
+    ports:
+      # Host port 5433 to avoid clashing with a locally installed Postgres.
+      - "5433:5432"
+    volumes:
+      - boccone-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U boccone -d boccone"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  boccone-pgdata:

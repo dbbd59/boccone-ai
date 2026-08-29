@@ -1,0 +1,26 @@
+{
+  "name": "@boccone/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@boccone/auth": "workspace:*",
+    "@boccone/config": "workspace:*",
+    "@boccone/contracts": "workspace:*",
+    "@boccone/db": "workspace:*",
+    "@boccone/utils": "workspace:*",
+    "elysia": "^1.4.30",
+    "@elysiajs/cors": "^1.4.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0",
+    "postgres": "^3.4.7"
+  }
+}

@@ -1,0 +1,65 @@
+:root {
+  --boccone-bg-primary: #fffaf3;
+  --boccone-bg-secondary: #f4eadb;
+  --boccone-bg-elevated: #ffffff;
+  --boccone-text-primary: #243127;
+  --boccone-text-secondary: #66736a;
+  --boccone-text-muted: #8c988f;
+  --boccone-border-default: #e5dacb;
+  --boccone-accent-primary: #367b45;
+  --boccone-accent-strong: #245c31;
+  --boccone-radius-md: 14px;
+  --boccone-radius-lg: 22px;
+  --boccone-space-md: 16px;
+  --boccone-space-lg: 24px;
+}
+
+.boccone-screen {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 32px;
+  background: var(--boccone-bg-primary);
+  color: var(--boccone-text-primary);
+}
+
+.boccone-surface {
+  padding: var(--boccone-space-lg);
+  border: 1px solid var(--boccone-border-default);
+  border-radius: var(--boccone-radius-lg);
+  background: var(--boccone-bg-elevated);
+  box-shadow: 0 12px 30px rgb(36 49 39 / 8%);
+}
+
+.boccone-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--boccone-space-md);
+}
+
+.boccone-button {
+  min-height: 48px;
+  border: 0;
+  border-radius: var(--boccone-radius-md);
+  padding: 0 20px;
+  background: var(--boccone-accent-primary);
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.boccone-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.boccone-input {
+  min-height: 48px;
+  box-sizing: border-box;
+  border: 1px solid var(--boccone-border-default);
+  border-radius: var(--boccone-radius-md);
+  padding: 0 14px;
+  color: var(--boccone-text-primary);
+  background: var(--boccone-bg-elevated);
+  font: inherit;
+}

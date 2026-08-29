@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: boccone
+          POSTGRES_PASSWORD: boccone
+          POSTGRES_DB: boccone
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U boccone -d boccone"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://boccone:boccone@localhost:5433/boccone
+      BETTER_AUTH_SECRET: ci-secret-not-used-in-production
+      BETTER_AUTH_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+      - run: bun run db:migrate
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run test
