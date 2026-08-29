@@ -53,6 +53,7 @@ export async function createTestHarness(): Promise<TestHarness> {
 
   const app = createApp({
     auth,
+    db,
     version: "test",
     corsOrigins: ["http://localhost:3001"],
     logLevel: "error",

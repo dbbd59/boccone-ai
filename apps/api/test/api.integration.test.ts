@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
-import { adminUsersResponseSchema, healthResponseSchema } from "@boccone/contracts";
+import {
+  adminAuditLogsResponseSchema,
+  adminMutationResponseSchema,
+  adminUserResponseSchema,
+  adminUsersResponseSchema,
+  healthResponseSchema,
+} from "@boccone/contracts";
 import { eq, user } from "@boccone/db";
 
 import { createCookieJar, createTestHarness, uniqueEmail, type TestHarness } from "./helpers";
@@ -203,6 +209,13 @@ describe("authorization boundaries", () => {
     expect(response.status).toBe(403);
     const body = (await response.json()) as { error: { code: string } };
     expect(body.error.code).toBe("forbidden");
+
+    const mutationResponse = await requestWithCookie("/api/admin/users/not-theirs", jar, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Should not change" }),
+    });
+    expect(mutationResponse.status).toBe(403);
   });
 
   test("an admin can list users and the response matches the contract", async () => {
@@ -257,5 +270,113 @@ describe("authorization boundaries", () => {
     });
     const body = (await response.json()) as { user: { email: string } };
     expect(body.user.email).toBe(email);
+  });
+
+  test("an admin can manage a user and every mutation is audited", async () => {
+    const adminEmail = uniqueEmail("operator");
+    const { jar } = await signUpAndSignIn(adminEmail, "admin-password-42", "Admin Operator");
+    const promoted = await harness.db
+      .update(user)
+      .set({ role: "admin" })
+      .where(eq(user.email, adminEmail))
+      .returning({ id: user.id });
+    const adminId = promoted[0]?.id;
+    if (!adminId) throw new Error("admin bootstrap did not return a user id");
+
+    const selfRole = await requestWithCookie(`/api/admin/users/${adminId}/role`, jar, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ role: "user" }),
+    });
+    expect(selfRole.status).toBe(400);
+
+    const selfBan = await requestWithCookie(`/api/admin/users/${adminId}/ban`, jar, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason: "not allowed" }),
+    });
+    expect(selfBan.status).toBe(400);
+
+    const selfRemove = await requestWithCookie(`/api/admin/users/${adminId}`, jar, {
+      method: "DELETE",
+    });
+    expect(selfRemove.status).toBe(400);
+
+    const targetEmail = uniqueEmail("managed");
+    const createResponse = await requestWithCookie("/api/admin/users", jar, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Managed User",
+        email: targetEmail,
+        password: "managed-password-42",
+      }),
+    });
+    expect(createResponse.status).toBe(200);
+    const created = adminUserResponseSchema.parse(await createResponse.json()).user;
+
+    const detailResponse = await requestWithCookie(`/api/admin/users/${created.id}`, jar);
+    expect(detailResponse.status).toBe(200);
+    expect(adminUserResponseSchema.parse(await detailResponse.json()).user.email).toBe(targetEmail);
+
+    const updateResponse = await requestWithCookie(`/api/admin/users/${created.id}`, jar, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: "Updated User" }),
+    });
+    expect(updateResponse.status).toBe(200);
+    expect(adminUserResponseSchema.parse(await updateResponse.json()).user.name).toBe(
+      "Updated User",
+    );
+
+    const roleResponse = await requestWithCookie(`/api/admin/users/${created.id}/role`, jar, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ role: "admin" }),
+    });
+    expect(roleResponse.status).toBe(200);
+    expect(adminUserResponseSchema.parse(await roleResponse.json()).user.role).toBe("admin");
+
+    const banResponse = await requestWithCookie(`/api/admin/users/${created.id}/ban`, jar, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reason: "test suspension", durationSeconds: 3600 }),
+    });
+    expect(banResponse.status).toBe(200);
+    const banned = adminUserResponseSchema.parse(await banResponse.json()).user;
+    expect(banned.banned).toBe(true);
+    expect(banned.banReason).toBe("test suspension");
+
+    const unbanResponse = await requestWithCookie(`/api/admin/users/${created.id}/unban`, jar, {
+      method: "POST",
+    });
+    expect(unbanResponse.status).toBe(200);
+    expect(adminUserResponseSchema.parse(await unbanResponse.json()).user.banned).toBe(false);
+
+    const removeResponse = await requestWithCookie(`/api/admin/users/${created.id}`, jar, {
+      method: "DELETE",
+    });
+    expect(removeResponse.status).toBe(200);
+    expect(adminMutationResponseSchema.parse(await removeResponse.json()).success).toBe(true);
+
+    const removedDetail = await requestWithCookie(`/api/admin/users/${created.id}`, jar);
+    expect(removedDetail.status).toBe(404);
+
+    const auditResponse = await requestWithCookie("/api/admin/audit-logs?limit=20", jar);
+    expect(auditResponse.status).toBe(200);
+    const audit = adminAuditLogsResponseSchema.parse(await auditResponse.json());
+    const targetActions = new Set(
+      audit.logs.filter((log) => log.targetUserId === created.id).map((log) => log.action),
+    );
+    expect(targetActions).toEqual(
+      new Set([
+        "user_created",
+        "user_updated",
+        "user_role_changed",
+        "user_banned",
+        "user_unbanned",
+        "user_removed",
+      ]),
+    );
   });
 });

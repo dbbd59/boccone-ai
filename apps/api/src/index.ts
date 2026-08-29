@@ -11,6 +11,7 @@ const logger = createLogger({ level: config.logLevel, base: { service: "boccone-
 
 const app = createApp({
   auth,
+  db,
   version: packageJson.version,
   corsOrigins: config.corsOrigins,
   logLevel: config.logLevel,

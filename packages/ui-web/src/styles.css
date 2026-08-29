@@ -1,65 +1,297 @@
-:root {
-  --boccone-bg-primary: #fffaf3;
-  --boccone-bg-secondary: #f4eadb;
-  --boccone-bg-elevated: #ffffff;
-  --boccone-text-primary: #243127;
-  --boccone-text-secondary: #66736a;
-  --boccone-text-muted: #8c988f;
-  --boccone-border-default: #e5dacb;
-  --boccone-accent-primary: #367b45;
-  --boccone-accent-strong: #245c31;
-  --boccone-radius-md: 14px;
-  --boccone-radius-lg: 22px;
-  --boccone-space-md: 16px;
-  --boccone-space-lg: 24px;
+/**
+ * Boccone AI — web theme variables + primitive styles.
+ *
+ * Generated from @boccone/design-tokens (light/dark semantic themes).
+ * Theme switching: [data-bc-theme="light" | "dark"] on <html>, set by
+ * ThemeProvider. "system" mode resolves via prefers-color-scheme in JS
+ * and writes the resolved name to the same attribute.
+ */
+
+:root,
+[data-bc-theme="light"] {
+  --bc-bg-default: #fffaf3;
+  --bc-bg-subtle: #f7f0e6;
+  --bc-bg-elevated: #ffffff;
+  --bc-bg-inverse: #1c2620;
+
+  --bc-fg-default: #2e3a33;
+  --bc-fg-muted: #66736a;
+  --bc-fg-subtle: #8c988f;
+  --bc-fg-inverse: #fffaf3;
+
+  --bc-border-default: #e5dacb;
+  --bc-border-subtle: #efe6d8;
+  --bc-border-strong: #c9bda9;
+
+  --bc-interactive-default: #367b45;
+  --bc-interactive-hover: #4f8f5b;
+  --bc-interactive-pressed: #245c31;
+  --bc-interactive-disabled: #e5dacb;
+
+  --bc-status-success: #2f7c4b;
+  --bc-status-success-subtle: #e9f6ec;
+  --bc-status-warning: #a66b21;
+  --bc-status-warning-subtle: #fbf3e4;
+  --bc-status-danger: #b64747;
+  --bc-status-danger-subtle: #fbeeee;
+  --bc-status-info: #3a6ea5;
+  --bc-status-info-subtle: #eaf2f7;
+
+  --bc-nutrition-protein: #367b45;
+  --bc-nutrition-carbs: #a66b21;
+  --bc-nutrition-fat: #3a6ea5;
+
+  --bc-focus: #4f8f5b;
 }
 
-.boccone-screen {
+[data-bc-theme="dark"] {
+  --bc-bg-default: #121a15;
+  --bc-bg-subtle: #1c2620;
+  --bc-bg-elevated: #2e3a33;
+  --bc-bg-inverse: #fffaf3;
+
+  --bc-fg-default: #f7f0e6;
+  --bc-fg-muted: #c9bda9;
+  --bc-fg-subtle: #8c988f;
+  --bc-fg-inverse: #121a15;
+
+  --bc-border-default: #4a554d;
+  --bc-border-subtle: #2e3a33;
+  --bc-border-strong: #66736a;
+
+  --bc-interactive-default: #6fb278;
+  --bc-interactive-hover: #9dcda2;
+  --bc-interactive-pressed: #4f8f5b;
+  --bc-interactive-disabled: #4a554d;
+
+  --bc-status-success: #2f7c4b;
+  --bc-status-success-subtle: #205333;
+  --bc-status-warning: #a66b21;
+  --bc-status-warning-subtle: #744916;
+  --bc-status-danger: #b64747;
+  --bc-status-danger-subtle: #7f2424;
+  --bc-status-info: #3a6ea5;
+  --bc-status-info-subtle: #274a70;
+
+  --bc-nutrition-protein: #6fb278;
+  --bc-nutrition-carbs: #a66b21;
+  --bc-nutrition-fat: #3a6ea5;
+
+  --bc-focus: #9dcda2;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+
+.bc-screen {
   min-height: 100vh;
   box-sizing: border-box;
   padding: 32px;
-  background: var(--boccone-bg-primary);
-  color: var(--boccone-text-primary);
+  background: var(--bc-bg-default);
+  color: var(--bc-fg-default);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  transition:
+    background-color 220ms cubic-bezier(0.2, 0, 0, 1),
+    color 220ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-.boccone-surface {
-  padding: var(--boccone-space-lg);
-  border: 1px solid var(--boccone-border-default);
-  border-radius: var(--boccone-radius-lg);
-  background: var(--boccone-bg-elevated);
-  box-shadow: 0 12px 30px rgb(36 49 39 / 8%);
+.bc-surface {
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid var(--bc-border-subtle);
+  border-radius: 14px;
+  background: var(--bc-bg-elevated);
+  box-shadow: 0 8px 24px rgb(28 38 32 / 14%);
+  transition:
+    background-color 220ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 220ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-.boccone-stack {
+/* ------------------------------------------------------------------ */
+/* Text                                                                */
+/* ------------------------------------------------------------------ */
+
+.bc-text {
+  margin: 0;
+  color: var(--bc-fg-default);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.bc-text[data-variant="display"] {
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.bc-text[data-variant="headingXl"] {
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.bc-text[data-variant="headingLg"] {
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.bc-text[data-variant="headingMd"] {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.bc-text[data-variant="headingSm"] {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.bc-text[data-variant="bodyLg"] {
+  font-size: 17px;
+  line-height: 26px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.bc-text[data-variant="bodyMd"] {
+  font-size: 15px;
+  line-height: 23px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.bc-text[data-variant="bodySm"] {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.bc-text[data-variant="label"] {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.bc-text[data-variant="caption"] {
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+}
+
+.bc-text[data-tone="muted"] {
+  color: var(--bc-fg-muted);
+}
+.bc-text[data-tone="subtle"] {
+  color: var(--bc-fg-subtle);
+}
+.bc-text[data-tone="inverse"] {
+  color: var(--bc-fg-inverse);
+}
+.bc-text[data-tone="brand"] {
+  color: var(--bc-interactive-default);
+}
+.bc-text[data-tone="positive"] {
+  color: var(--bc-status-success);
+}
+.bc-text[data-tone="negative"] {
+  color: var(--bc-status-danger);
+}
+
+/* ------------------------------------------------------------------ */
+/* Stack                                                               */
+/* ------------------------------------------------------------------ */
+
+.bc-stack {
   display: flex;
   flex-direction: column;
-  gap: var(--boccone-space-md);
 }
 
-.boccone-button {
+/* ------------------------------------------------------------------ */
+/* Button                                                              */
+/* ------------------------------------------------------------------ */
+
+.bc-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 48px;
   border: 0;
-  border-radius: var(--boccone-radius-md);
+  border-radius: 10px;
   padding: 0 20px;
-  background: var(--boccone-accent-primary);
-  color: white;
-  font: inherit;
+  background: var(--bc-interactive-default);
+  color: var(--bc-fg-inverse);
+  font-family: inherit;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background-color 150ms cubic-bezier(0.2, 0, 0, 1),
+    color 150ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 150ms cubic-bezier(0.2, 0, 0, 1);
 }
 
-.boccone-button:disabled {
+.bc-button:hover:not(:disabled):not([aria-busy="true"]) {
+  background: var(--bc-interactive-hover);
+}
+
+.bc-button:active:not(:disabled):not([aria-busy="true"]) {
+  background: var(--bc-interactive-pressed);
+}
+
+.bc-button:disabled,
+.bc-button[aria-busy="true"] {
   cursor: not-allowed;
   opacity: 0.55;
 }
 
-.boccone-input {
+.bc-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--bc-focus) 35%, transparent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Input                                                               */
+/* ------------------------------------------------------------------ */
+
+.bc-input {
   min-height: 48px;
   box-sizing: border-box;
-  border: 1px solid var(--boccone-border-default);
-  border-radius: var(--boccone-radius-md);
+  border: 1px solid var(--bc-border-default);
+  border-radius: 10px;
   padding: 0 14px;
-  color: var(--boccone-text-primary);
-  background: var(--boccone-bg-elevated);
-  font: inherit;
+  color: var(--bc-fg-default);
+  background: var(--bc-bg-elevated);
+  font-family: inherit;
+  font-size: 15px;
+  transition:
+    border-color 150ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 150ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.bc-input::placeholder {
+  color: var(--bc-fg-subtle);
+}
+
+.bc-input:focus {
+  border-color: var(--bc-interactive-default);
+}
+
+.bc-input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--bc-focus) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.bc-input-invalid {
+  border-color: var(--bc-status-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bc-screen,
+  .bc-surface,
+  .bc-button,
+  .bc-input {
+    transition: none;
+  }
 }

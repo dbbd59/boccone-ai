@@ -1,11 +1,16 @@
+import { type AnyElysia } from "elysia";
+
 import type { BocconeAuth } from "@boccone/auth";
 import { meResponseSchema } from "@boccone/contracts";
 
 import { createRequireAuth } from "../middleware/auth";
+import { getRequest, type RouteContext } from "./context";
 
 /** Routes available to any authenticated user. */
-export function createMeRoutes(auth: BocconeAuth) {
-  return createRequireAuth(auth).get("/api/me", ({ session }) => {
+export function createMeRoutes(auth: BocconeAuth): AnyElysia {
+  const routes = createRequireAuth(auth).get("/api/me", async (context: RouteContext) => {
+    const request = getRequest(context);
+    const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return new Response(null, { status: 401 });
     }
@@ -20,4 +25,5 @@ export function createMeRoutes(auth: BocconeAuth) {
       },
     });
   });
+  return routes;
 }

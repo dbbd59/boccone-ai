@@ -1,5 +1,30 @@
 import type { Database } from "@boccone/db";
 
+export interface BocconeAuthUser {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  image?: string | null;
+  role?: string | null;
+}
+
+export interface BocconeSession {
+  user: BocconeAuthUser;
+}
+
+/**
+ * Deliberately small application-facing auth boundary. Better Auth remains
+ * the implementation; the API does not propagate its full inferred type graph
+ * through every Elysia route.
+ */
+export interface BocconeAuth {
+  handler(request: Request): Promise<Response>;
+  api: {
+    getSession(input: { headers: Headers }): Promise<BocconeSession | null>;
+  };
+}
+
 export interface GoogleOAuthConfig {
   clientId: string;
   clientSecret: string;

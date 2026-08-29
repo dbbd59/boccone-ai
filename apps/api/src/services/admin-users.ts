@@ -1,45 +1,67 @@
-import type { BocconeAuth } from "@boccone/auth";
 import {
+  adminUserSchema,
   adminUsersResponseSchema,
+  type AdminUser,
   type AdminUsersQuery,
   type AdminUsersResponse,
 } from "@boccone/contracts";
 
+import { callBetterAuthAdmin, type BetterAuthHandler } from "./better-auth-admin";
+
 const MAX_PAGE_SIZE = 100;
 
-/**
- * List users for the admin back office. Delegates search/filter/pagination to
- * the Better Auth admin plugin, then re-validates the result against the
- * public contract so the API never leaks unexpected fields.
- */
+function parseAdminUser(value: unknown): AdminUser {
+  return adminUserSchema.parse(value);
+}
+
 export async function listAdminUsers(input: {
-  auth: BocconeAuth;
+  handler: BetterAuthHandler;
   headers: Headers;
   query: AdminUsersQuery;
 }): Promise<AdminUsersResponse> {
-  const result = await input.auth.api.listUsers({
-    query: {
-      limit: Math.min(input.query.limit, MAX_PAGE_SIZE),
-      offset: input.query.offset,
-      sortBy: "createdAt",
-      sortDirection: "desc",
-      ...(input.query.search
-        ? {
-            searchValue: input.query.search,
-            searchField: "email" as const,
-            searchOperator: "contains" as const,
-          }
-        : {}),
-    },
-    headers: input.headers,
-  });
+  const limit = Math.min(input.query.limit, MAX_PAGE_SIZE);
+  const result = adminUsersResponseSchema.pick({ users: true, total: true }).parse(
+    await callBetterAuthAdmin(input.handler, {
+      path: "list-users",
+      method: "GET",
+      headers: input.headers,
+      query: {
+        limit: String(limit),
+        offset: String(input.query.offset),
+        sortBy: "createdAt",
+        sortDirection: "desc",
+        ...(input.query.search
+          ? {
+              searchValue: input.query.search,
+              searchField: "email",
+              searchOperator: "contains",
+            }
+          : {}),
+      },
+      fallbackMessage: "Unable to load users",
+    }),
+  );
 
-  // Validate the plugin response into the contract shape (also guards against
-  // accidental exposure of credentials/tokens).
   return adminUsersResponseSchema.parse({
-    users: result.users ?? [],
-    total: result.total ?? 0,
-    limit: Math.min(input.query.limit, MAX_PAGE_SIZE),
+    users: result.users,
+    total: result.total,
+    limit,
     offset: input.query.offset,
   });
+}
+
+export async function getAdminUser(input: {
+  handler: BetterAuthHandler;
+  headers: Headers;
+  userId: string;
+}): Promise<AdminUser> {
+  return parseAdminUser(
+    await callBetterAuthAdmin(input.handler, {
+      path: "get-user",
+      method: "GET",
+      headers: input.headers,
+      query: { id: input.userId },
+      fallbackMessage: "Unable to load user",
+    }),
+  );
 }

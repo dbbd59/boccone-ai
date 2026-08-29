@@ -91,6 +91,13 @@ Regenerate that package from `packages/api-client/openapi.yaml` with `bun run ge
 
 Better Auth's client SDK owns authentication calls. Use the generated Hey API client plus TanStack Query for authenticated application resources.
 
+Elysia route factories are kept modular and use `AnyElysia` only at composition
+boundaries where Elysia's recursive route types become impractical. Route
+handlers still use explicit application types, central JSON parsing, Zod
+validation, and server-side `requireSession` checks. Admin account operations
+delegate to Better Auth's admin plugin, are revalidated against public Zod
+contracts, and write an audit record after each successful mutation.
+
 Database schema belongs in packages/db.
 
 Do not expose raw DB tables directly as public API contracts.
@@ -175,6 +182,10 @@ Allowed:
 
 user search;
 
+user creation and profile updates;
+
+role changes, account suspension/reactivation, and account removal;
+
 inspect meals/targets;
 
 safe corrections/deletions;
@@ -193,11 +204,20 @@ silent impersonation.
 
 10. Design system rules
 
-Use semantic tokens.
+Use semantic tokens from packages/design-tokens. Never hardcode colors,
+font sizes, or spacing values in app or UI package code.
 
-Build reusable primitives.
+Build reusable primitives in packages/ui-mobile and packages/ui-web with
+mirrored component names, props, variants, and tones. See
+docs/design-system.md for the architecture, theming contract, and
+component inventory.
 
-Prefer packages/ui-mobile and packages/ui-web with shared tokens.
+Every component must resolve colors through the active theme
+(ThemeProvider / useTheme), so light, dark, and system theming work
+everywhere. Do not reference light-theme values directly.
+
+Interactive components must guarantee a minimum 44px touch target on
+mobile and visible focus states on web.
 
 Avoid random hardcoded styles.
 

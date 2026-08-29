@@ -58,11 +58,11 @@ The implemented foundation is intentionally small and explicit:
 - **API** — Elysia on Bun with request IDs, structured redacted logging, CORS, shared error responses, health checks, and modular dependency injection for tests.
 - **Authentication** — Better Auth with email/password, optional Google and Apple OAuth, password-reset hooks, session-cookie identity, a simple <code>user</code>/<code>admin</code> role model, and rate limiting.
 - **Authorization** — protected <code>/api/me</code> and <code>/api/admin/*</code> routes resolve identity from the server-side session; client-supplied user IDs are ignored.
-- **Database** — PostgreSQL via Drizzle ORM and <code>postgres-js</code>, with versioned migrations for Better Auth’s user, session, account, and verification tables.
+- **Database** — PostgreSQL via Drizzle ORM and <code>postgres-js</code>, with versioned migrations for Better Auth’s user, session, account, verification, and admin-audit tables.
 - **Contracts** — Zod schemas define public health, user, admin-user, and error response shapes. Raw database rows do not form the public API.
 - **API client** — the checked-in OpenAPI description generates fetch, Zod, and TanStack Query artifacts in <code>packages/api-client</code>; clients share one typed HTTP boundary.
-- **Clients** — an Expo Router mobile auth shell with persisted English/Italian localization and a Vite/React admin surface for sign-in, admin access checks, user listing, and email search. The admin surface is English-only for now.
-- **UI foundation** — shared semantic design tokens plus small React Native and web primitives (<code>Text</code>, <code>Button</code>, <code>Input</code>, <code>Screen</code>, <code>Surface</code>, and <code>Stack</code>).
+- **Clients** — an Expo Router mobile auth shell with persisted English/Italian localization and a Vite/React admin surface for sign-in, server-side admin access checks, user search, user detail/edit, role changes, ban/unban, removal, and audit-log inspection. The admin surface is English-only for now.
+- **UI foundation** — a layered design system (<a href="docs/design-system.md">docs/design-system.md</a>): <code>design-tokens</code> (semantic light/dark themes, spacing, typography, motion, WCAG-tested contrast) plus mirrored React Native and web primitives (<code>Text</code>, <code>Button</code>, <code>Input</code>, <code>Field</code>, <code>Screen</code>, <code>Surface</code>, <code>Stack</code>, <code>Alert</code>, …) with light/dark/system theming and a dev-only showcase screen (<code>/dev/design-system</code> on mobile).
 
 ## Architecture
 
@@ -201,12 +201,20 @@ Do not put server secrets in either client environment.
 
 The API currently exposes these application routes:
 
-| Method           | Path                          | Auth          | Description                                                                                       |
-| ---------------- | ----------------------------- | ------------- | ------------------------------------------------------------------------------------------------- |
-| <code>GET</code> | <code>/api/health</code>      | Public        | Returns service status, version, request ID, and timestamp.                                       |
-| <code>ALL</code> | <code>/api/auth/*</code>      | Better Auth   | Email/password, password reset, and configured social-auth handlers.                              |
-| <code>GET</code> | <code>/api/me</code>          | Session       | Returns the authenticated user’s public contract.                                                 |
-| <code>GET</code> | <code>/api/admin/users</code> | Admin session | Lists users with optional email <code>search</code>, <code>limit</code>, and <code>offset</code>. |
+| Method              | Path                                     | Auth          | Description                                                                                       |
+| ------------------- | ---------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| <code>GET</code>    | <code>/api/health</code>                 | Public        | Returns service status, version, request ID, and timestamp.                                       |
+| <code>ALL</code>    | <code>/api/auth/*</code>                 | Better Auth   | Email/password, password reset, and configured social-auth handlers.                              |
+| <code>GET</code>    | <code>/api/me</code>                     | Session       | Returns the authenticated user’s public contract.                                                 |
+| <code>GET</code>    | <code>/api/admin/users</code>            | Admin session | Lists users with optional email <code>search</code>, <code>limit</code>, and <code>offset</code>. |
+| <code>GET</code>    | <code>/api/admin/users/{id}</code>       | Admin session | Returns one operational user record.                                                              |
+| <code>POST</code>   | <code>/api/admin/users</code>            | Admin session | Creates a user through Better Auth’s admin API.                                                   |
+| <code>PATCH</code>  | <code>/api/admin/users/{id}</code>       | Admin session | Updates a user’s name and/or email.                                                               |
+| <code>POST</code>   | <code>/api/admin/users/{id}/role</code>  | Admin session | Changes a user between the explicit <code>user</code> and <code>admin</code> roles.               |
+| <code>POST</code>   | <code>/api/admin/users/{id}/ban</code>   | Admin session | Bans a user with an optional reason and duration.                                                 |
+| <code>POST</code>   | <code>/api/admin/users/{id}/unban</code> | Admin session | Removes the user ban.                                                                             |
+| <code>DELETE</code> | <code>/api/admin/users/{id}</code>       | Admin session | Removes the account and linked auth data.                                                         |
+| <code>GET</code>    | <code>/api/admin/audit-logs</code>       | Admin session | Lists recent admin account-management actions.                                                    |
 
 The machine-readable API description is [packages/api-client/openapi.yaml](packages/api-client/openapi.yaml). It drives the generated fetch, Zod, and TanStack Query client artifacts.
 
@@ -231,7 +239,7 @@ In development, password-reset links are logged to the API console so the flow c
 ```text
 apps/
   api/                 Elysia HTTP API, auth wiring, routes, services, tests
-  admin/               Vite/React operational user surface
+  admin/               Vite/React operational user-management surface
   mobile/              Expo Router auth and initial app shell
 
 packages/
@@ -288,7 +296,7 @@ cd ../..
 
 ## Testing and CI
 
-API tests live in [apps/api/test](apps/api/test). They cover health and 404 contracts, email/password auth, password reset behavior, session invalidation, admin authorization, email search, identity-boundary checks, environment validation, and secret-safe structured logging.
+API tests live in [apps/api/test](apps/api/test). They cover health and 404 contracts, email/password auth, password reset behavior, session invalidation, admin authorization, complete user-management mutations and audit logging, email search, identity-boundary checks, environment validation, and secret-safe structured logging.
 
 Integration tests create a throwaway PostgreSQL database, apply the checked-in migrations, run the suite, and remove the database during cleanup. Start the local database before running them:
 

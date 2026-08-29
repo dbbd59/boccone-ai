@@ -138,6 +138,9 @@
     "packages/design-tokens": {
       "name": "@boccone/design-tokens",
       "version": "0.1.0",
+      "devDependencies": {
+        "@types/bun": "^1.4.0",
+      },
     },
     "packages/ui-mobile": {
       "name": "@boccone/ui-mobile",

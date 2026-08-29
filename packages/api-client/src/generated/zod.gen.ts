@@ -59,6 +59,60 @@ export const zAdminUsersResponse = z.object({
   offset: z.int(),
 });
 
+export const zAdminUserResponse = z.object({
+  user: zAdminUser,
+});
+
+export const zAdminUserCreateRequest = z.object({
+  name: z.string().min(1).max(120),
+  email: z.email(),
+  password: z.string().min(8).max(128),
+  role: z.enum(["user", "admin"]).optional().default("user"),
+});
+
+export const zAdminUserUpdateRequest = z.object({
+  name: z.string().min(1).max(120).optional(),
+  email: z.email().optional(),
+});
+
+export const zAdminUserRoleRequest = z.object({
+  role: z.enum(["user", "admin"]),
+});
+
+export const zAdminUserBanRequest = z.object({
+  reason: z.string().max(500).optional(),
+  durationSeconds: z.int().gte(60).lte(31536000).optional(),
+});
+
+export const zAdminMutationResponse = z.object({
+  success: z.literal(true),
+});
+
+export const zAdminAuditAction = z.enum([
+  "user_created",
+  "user_updated",
+  "user_role_changed",
+  "user_banned",
+  "user_unbanned",
+  "user_removed",
+]);
+
+export const zAdminAuditLog = z.object({
+  id: z.string(),
+  actorUserId: z.string(),
+  targetUserId: z.string().nullable(),
+  action: zAdminAuditAction,
+  metadata: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
+  createdAt: z.iso.datetime(),
+});
+
+export const zAdminAuditLogsResponse = z.object({
+  logs: z.array(zAdminAuditLog),
+  total: z.int(),
+  limit: z.int(),
+  offset: z.int(),
+});
+
 /**
  * API is healthy
  */
@@ -79,3 +133,80 @@ export const zListAdminUsersQuery = z.object({
  * Users visible to operations staff
  */
 export const zListAdminUsersResponse = zAdminUsersResponse;
+
+export const zCreateAdminUserBody = zAdminUserCreateRequest;
+
+/**
+ * Created user
+ */
+export const zCreateAdminUserResponse = zAdminUserResponse;
+
+export const zRemoveAdminUserPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * User removed
+ */
+export const zRemoveAdminUserResponse = zAdminMutationResponse;
+
+export const zGetAdminUserPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * User details
+ */
+export const zGetAdminUserResponse = zAdminUserResponse;
+
+export const zUpdateAdminUserBody = zAdminUserUpdateRequest;
+
+export const zUpdateAdminUserPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Updated user
+ */
+export const zUpdateAdminUserResponse = zAdminUserResponse;
+
+export const zSetAdminUserRoleBody = zAdminUserRoleRequest;
+
+export const zSetAdminUserRolePath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Role-updated user
+ */
+export const zSetAdminUserRoleResponse = zAdminUserResponse;
+
+export const zBanAdminUserBody = zAdminUserBanRequest;
+
+export const zBanAdminUserPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Banned user
+ */
+export const zBanAdminUserResponse = zAdminUserResponse;
+
+export const zUnbanAdminUserPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Unbanned user
+ */
+export const zUnbanAdminUserResponse = zAdminUserResponse;
+
+export const zListAdminAuditLogsQuery = z.object({
+  limit: z.int().gte(1).lte(100).optional().default(20),
+  offset: z.int().gte(0).optional().default(0),
+});
+
+/**
+ * Admin audit logs
+ */
+export const zListAdminAuditLogsResponse = zAdminAuditLogsResponse;

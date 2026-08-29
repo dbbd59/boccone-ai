@@ -1,9 +1,9 @@
-import { Elysia } from "elysia";
+import { Elysia, type AnyElysia } from "elysia";
 
 import type { Logger } from "../logger";
 
 /** Request-scoped trace id. Never logs headers or request bodies. */
-export function createRequestContext() {
+export function createRequestContext(): AnyElysia {
   return new Elysia({ name: "boccone-request-context" })
     .onRequest(({ request, set }) => {
       const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
@@ -16,7 +16,7 @@ export function createRequestContext() {
 }
 
 /** Structured request logging, kept separate from route/business modules. */
-export function createRequestLogging(logger: Logger) {
+export function createRequestLogging(logger: Logger): AnyElysia {
   return new Elysia({ name: "boccone-request-logging" }).onAfterHandle(({ request, response }) => {
     const status = response instanceof Response ? response.status : 200;
     const fields = {

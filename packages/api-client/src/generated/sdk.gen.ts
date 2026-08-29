@@ -5,21 +5,64 @@ import * as z from "zod";
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from "./client";
 import { client } from "./client.gen";
 import type {
+  BanAdminUserData,
+  BanAdminUserErrors,
+  BanAdminUserResponses,
+  CreateAdminUserData,
+  CreateAdminUserErrors,
+  CreateAdminUserResponses,
+  GetAdminUserData,
+  GetAdminUserErrors,
+  GetAdminUserResponses,
   GetCurrentUserData,
   GetCurrentUserErrors,
   GetCurrentUserResponses,
   GetHealthData,
   GetHealthErrors,
   GetHealthResponses,
+  ListAdminAuditLogsData,
+  ListAdminAuditLogsErrors,
+  ListAdminAuditLogsResponses,
   ListAdminUsersData,
   ListAdminUsersErrors,
   ListAdminUsersResponses,
+  RemoveAdminUserData,
+  RemoveAdminUserErrors,
+  RemoveAdminUserResponses,
+  SetAdminUserRoleData,
+  SetAdminUserRoleErrors,
+  SetAdminUserRoleResponses,
+  UnbanAdminUserData,
+  UnbanAdminUserErrors,
+  UnbanAdminUserResponses,
+  UpdateAdminUserData,
+  UpdateAdminUserErrors,
+  UpdateAdminUserResponses,
 } from "./types.gen";
 import {
+  zBanAdminUserBody,
+  zBanAdminUserPath,
+  zBanAdminUserResponse,
+  zCreateAdminUserBody,
+  zCreateAdminUserResponse,
+  zGetAdminUserPath,
+  zGetAdminUserResponse,
   zGetCurrentUserResponse,
   zGetHealthResponse,
+  zListAdminAuditLogsQuery,
+  zListAdminAuditLogsResponse,
   zListAdminUsersQuery,
   zListAdminUsersResponse,
+  zRemoveAdminUserPath,
+  zRemoveAdminUserResponse,
+  zSetAdminUserRoleBody,
+  zSetAdminUserRolePath,
+  zSetAdminUserRoleResponse,
+  zUnbanAdminUserPath,
+  zUnbanAdminUserResponse,
+  zUpdateAdminUserBody,
+  zUpdateAdminUserPath,
+  zUpdateAdminUserResponse,
 } from "./zod.gen";
 
 export type Options<
@@ -111,5 +154,241 @@ export const listAdminUsers = <ThrowOnError extends boolean = false>(
       },
     ],
     url: "/api/admin/users",
+    ...options,
+  });
+
+/**
+ * Create a user for administrators
+ */
+export const createAdminUser = <ThrowOnError extends boolean = false>(
+  options: Options<CreateAdminUserData, ThrowOnError>,
+): RequestResult<CreateAdminUserResponses, CreateAdminUserErrors, ThrowOnError> =>
+  (options.client ?? client).post<CreateAdminUserResponses, CreateAdminUserErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateAdminUserBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateAdminUserResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove a user for administrators
+ */
+export const removeAdminUser = <ThrowOnError extends boolean = false>(
+  options: Options<RemoveAdminUserData, ThrowOnError>,
+): RequestResult<RemoveAdminUserResponses, RemoveAdminUserErrors, ThrowOnError> =>
+  (options.client ?? client).delete<RemoveAdminUserResponses, RemoveAdminUserErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zRemoveAdminUserPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zRemoveAdminUserResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}",
+    ...options,
+  });
+
+/**
+ * Get a user for administrators
+ */
+export const getAdminUser = <ThrowOnError extends boolean = false>(
+  options: Options<GetAdminUserData, ThrowOnError>,
+): RequestResult<GetAdminUserResponses, GetAdminUserErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetAdminUserResponses, GetAdminUserErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetAdminUserPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminUserResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}",
+    ...options,
+  });
+
+/**
+ * Update a user for administrators
+ */
+export const updateAdminUser = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateAdminUserData, ThrowOnError>,
+): RequestResult<UpdateAdminUserResponses, UpdateAdminUserErrors, ThrowOnError> =>
+  (options.client ?? client).patch<UpdateAdminUserResponses, UpdateAdminUserErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateAdminUserBody,
+          path: zUpdateAdminUserPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateAdminUserResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Change a user role
+ */
+export const setAdminUserRole = <ThrowOnError extends boolean = false>(
+  options: Options<SetAdminUserRoleData, ThrowOnError>,
+): RequestResult<SetAdminUserRoleResponses, SetAdminUserRoleErrors, ThrowOnError> =>
+  (options.client ?? client).post<SetAdminUserRoleResponses, SetAdminUserRoleErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zSetAdminUserRoleBody,
+          path: zSetAdminUserRolePath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zSetAdminUserRoleResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/role",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Ban a user
+ */
+export const banAdminUser = <ThrowOnError extends boolean = false>(
+  options: Options<BanAdminUserData, ThrowOnError>,
+): RequestResult<BanAdminUserResponses, BanAdminUserErrors, ThrowOnError> =>
+  (options.client ?? client).post<BanAdminUserResponses, BanAdminUserErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zBanAdminUserBody,
+          path: zBanAdminUserPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zBanAdminUserResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/ban",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Unban a user
+ */
+export const unbanAdminUser = <ThrowOnError extends boolean = false>(
+  options: Options<UnbanAdminUserData, ThrowOnError>,
+): RequestResult<UnbanAdminUserResponses, UnbanAdminUserErrors, ThrowOnError> =>
+  (options.client ?? client).post<UnbanAdminUserResponses, UnbanAdminUserErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zUnbanAdminUserPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUnbanAdminUserResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/users/{id}/unban",
+    ...options,
+  });
+
+/**
+ * List admin audit logs
+ */
+export const listAdminAuditLogs = <ThrowOnError extends boolean = false>(
+  options?: Options<ListAdminAuditLogsData, ThrowOnError>,
+): RequestResult<ListAdminAuditLogsResponses, ListAdminAuditLogsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    ListAdminAuditLogsResponses,
+    ListAdminAuditLogsErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zListAdminAuditLogsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zListAdminAuditLogsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/audit-logs",
     ...options,
   });

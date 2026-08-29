@@ -26,5 +26,3 @@ export const auth = createAuth({
     logger,
   }),
 });
-
-export type Session = typeof auth.$Infer.Session;

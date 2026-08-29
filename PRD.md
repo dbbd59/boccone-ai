@@ -480,6 +480,8 @@ Admins may:
 
 - search users;
 - inspect user profile metadata;
+- create users and update their name/email;
+- manage the explicit `user`/`admin` role boundary;
 - inspect daily targets;
 - inspect meals and meal items;
 - edit/delete application data where appropriate;
@@ -501,6 +503,11 @@ Admins MUST NOT:
 ### 12.4 Audit logs
 
 Sensitive admin actions MUST create audit logs.
+
+The initial authentication vertical includes the account-management slice:
+user listing/detail, create, profile update, role change, ban/unban, account
+removal, and an audit log. These operations remain server-authorized and use
+Better Auth's admin plugin; the admin frontend is English-only.
 
 ---
 

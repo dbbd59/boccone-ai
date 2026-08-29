@@ -60,6 +60,61 @@ export type AdminUsersResponse = {
   offset: number;
 };
 
+export type AdminUserResponse = {
+  user: AdminUser;
+};
+
+export type AdminUserCreateRequest = {
+  name: string;
+  email: string;
+  password: string;
+  role?: "user" | "admin";
+};
+
+export type AdminUserUpdateRequest = {
+  name?: string;
+  email?: string;
+};
+
+export type AdminUserRoleRequest = {
+  role: "user" | "admin";
+};
+
+export type AdminUserBanRequest = {
+  reason?: string;
+  durationSeconds?: number;
+};
+
+export type AdminMutationResponse = {
+  success: true;
+};
+
+export type AdminAuditAction =
+  | "user_created"
+  | "user_updated"
+  | "user_role_changed"
+  | "user_banned"
+  | "user_unbanned"
+  | "user_removed";
+
+export type AdminAuditLog = {
+  id: string;
+  actorUserId: string;
+  targetUserId: string | null;
+  action: AdminAuditAction;
+  metadata: {
+    [key: string]: string | number | boolean;
+  };
+  createdAt: string;
+};
+
+export type AdminAuditLogsResponse = {
+  logs: Array<AdminAuditLog>;
+  total: number;
+  limit: number;
+  offset: number;
+};
+
 export type GetHealthData = {
   body?: never;
   path?: never;
@@ -142,3 +197,303 @@ export type ListAdminUsersResponses = {
 };
 
 export type ListAdminUsersResponse = ListAdminUsersResponses[keyof ListAdminUsersResponses];
+
+export type CreateAdminUserData = {
+  body: AdminUserCreateRequest;
+  path?: never;
+  query?: never;
+  url: "/api/admin/users";
+};
+
+export type CreateAdminUserErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  409: ErrorResponse;
+};
+
+export type CreateAdminUserError = CreateAdminUserErrors[keyof CreateAdminUserErrors];
+
+export type CreateAdminUserResponses = {
+  /**
+   * Created user
+   */
+  200: AdminUserResponse;
+};
+
+export type CreateAdminUserResponse = CreateAdminUserResponses[keyof CreateAdminUserResponses];
+
+export type RemoveAdminUserData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}";
+};
+
+export type RemoveAdminUserErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type RemoveAdminUserError = RemoveAdminUserErrors[keyof RemoveAdminUserErrors];
+
+export type RemoveAdminUserResponses = {
+  /**
+   * User removed
+   */
+  200: AdminMutationResponse;
+};
+
+export type RemoveAdminUserResponse = RemoveAdminUserResponses[keyof RemoveAdminUserResponses];
+
+export type GetAdminUserData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}";
+};
+
+export type GetAdminUserErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type GetAdminUserError = GetAdminUserErrors[keyof GetAdminUserErrors];
+
+export type GetAdminUserResponses = {
+  /**
+   * User details
+   */
+  200: AdminUserResponse;
+};
+
+export type GetAdminUserResponse = GetAdminUserResponses[keyof GetAdminUserResponses];
+
+export type UpdateAdminUserData = {
+  body: AdminUserUpdateRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}";
+};
+
+export type UpdateAdminUserErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+  /**
+   * API error
+   */
+  409: ErrorResponse;
+};
+
+export type UpdateAdminUserError = UpdateAdminUserErrors[keyof UpdateAdminUserErrors];
+
+export type UpdateAdminUserResponses = {
+  /**
+   * Updated user
+   */
+  200: AdminUserResponse;
+};
+
+export type UpdateAdminUserResponse = UpdateAdminUserResponses[keyof UpdateAdminUserResponses];
+
+export type SetAdminUserRoleData = {
+  body: AdminUserRoleRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/role";
+};
+
+export type SetAdminUserRoleErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type SetAdminUserRoleError = SetAdminUserRoleErrors[keyof SetAdminUserRoleErrors];
+
+export type SetAdminUserRoleResponses = {
+  /**
+   * Role-updated user
+   */
+  200: AdminUserResponse;
+};
+
+export type SetAdminUserRoleResponse = SetAdminUserRoleResponses[keyof SetAdminUserRoleResponses];
+
+export type BanAdminUserData = {
+  body: AdminUserBanRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/ban";
+};
+
+export type BanAdminUserErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type BanAdminUserError = BanAdminUserErrors[keyof BanAdminUserErrors];
+
+export type BanAdminUserResponses = {
+  /**
+   * Banned user
+   */
+  200: AdminUserResponse;
+};
+
+export type BanAdminUserResponse = BanAdminUserResponses[keyof BanAdminUserResponses];
+
+export type UnbanAdminUserData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/users/{id}/unban";
+};
+
+export type UnbanAdminUserErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type UnbanAdminUserError = UnbanAdminUserErrors[keyof UnbanAdminUserErrors];
+
+export type UnbanAdminUserResponses = {
+  /**
+   * Unbanned user
+   */
+  200: AdminUserResponse;
+};
+
+export type UnbanAdminUserResponse = UnbanAdminUserResponses[keyof UnbanAdminUserResponses];
+
+export type ListAdminAuditLogsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    limit?: number;
+    offset?: number;
+  };
+  url: "/api/admin/audit-logs";
+};
+
+export type ListAdminAuditLogsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type ListAdminAuditLogsError = ListAdminAuditLogsErrors[keyof ListAdminAuditLogsErrors];
+
+export type ListAdminAuditLogsResponses = {
+  /**
+   * Admin audit logs
+   */
+  200: AdminAuditLogsResponse;
+};
+
+export type ListAdminAuditLogsResponse =
+  ListAdminAuditLogsResponses[keyof ListAdminAuditLogsResponses];

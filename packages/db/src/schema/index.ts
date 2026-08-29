@@ -8,3 +8,4 @@
  *   `src/schema/` and are added here in future verticals.
  */
 export * from "./auth";
+export * from "./admin";

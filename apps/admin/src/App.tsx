@@ -1,15 +1,19 @@
 import { useEffect, useState } from "react";
 
-import { getCurrentUser, listAdminUsers, type AdminUsersResponse } from "@boccone/api-client";
-import { Button, Input, Screen, Stack, Surface, Text } from "@boccone/ui-web";
+import { getCurrentUser } from "@boccone/api-client";
+import type { ColorMode } from "@boccone/ui-web";
+import { Button, Input, Screen, Stack, Surface, Text, ThemeProvider } from "@boccone/ui-web";
 
+import { AdminShell } from "./components/AdminShell";
 import { apiClient } from "./lib/api-client";
+import { readStoredColorMode } from "./lib/color-mode";
 import { authClient } from "./lib/auth-client";
 import "@boccone/ui-web/styles.css";
 import "./styles.css";
 
 export default function App() {
   const sessionState = authClient.useSession();
+  const [colorMode, setColorMode] = useState<ColorMode | undefined>(() => readStoredColorMode());
 
   if (sessionState.isPending)
     return (
@@ -18,10 +22,18 @@ export default function App() {
       </Screen>
     );
   if (!sessionState.data) return <AdminLogin />;
-  return <AdminAccessGate email={sessionState.data.user.email} />;
+  return (
+    <ThemeProvider colorMode={colorMode} onColorModeChange={handleColorModeChange}>
+      <AdminAccessGate email={sessionState.data.user.email} userId={sessionState.data.user.id} />
+    </ThemeProvider>
+  );
+
+  function handleColorModeChange(next: ColorMode) {
+    setColorMode(next);
+  }
 }
 
-function AdminAccessGate({ email }: { email: string }) {
+function AdminAccessGate({ email, userId }: { email: string; userId: string }) {
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -56,7 +68,7 @@ function AdminAccessGate({ email }: { email: string }) {
       </Screen>
     );
   if (error || role !== "admin") return <AccessDenied />;
-  return <AdminShell email={email} />;
+  return <AdminShell email={email} userId={userId} />;
 }
 
 function AdminLogin() {
@@ -123,101 +135,4 @@ function AccessDenied() {
       </div>
     </Screen>
   );
-}
-
-function AdminShell({ email }: { email: string }) {
-  const [users, setUsers] = useState<AdminUsersResponse | null>(null);
-  const [search, setSearch] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  async function loadUsers(searchValue = search) {
-    setLoading(true);
-    setError(null);
-    try {
-      setUsers(await fetchAdminUsers(searchValue));
-    } catch {
-      setError("Unable to load users");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    let mounted = true;
-
-    void fetchAdminUsers("")
-      .then((data) => {
-        if (mounted) setUsers(data);
-      })
-      .catch(() => {
-        if (mounted) setError("Unable to load users");
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  return (
-    <Screen>
-      <div className="admin-content">
-        <header className="admin-header">
-          <div>
-            <Text as="span">BOCCONE AI / OPERATIONS</Text>
-            <Text as="h1">Users</Text>
-          </div>
-          <div className="admin-header-actions">
-            <Text>{email}</Text>
-            <Button onClick={() => void authClient.signOut()}>Sign out</Button>
-          </div>
-        </header>
-        <Surface>
-          <Stack>
-            <form
-              className="admin-search"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void loadUsers();
-              }}
-            >
-              <Input
-                aria-label="Search users by email"
-                placeholder="Search by email"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-              <Button type="submit">Search</Button>
-            </form>
-            {error ? <Text className="admin-error">{error}</Text> : null}
-            {loading ? <Text>Loading users…</Text> : null}
-            {!loading && users?.users.length === 0 ? <Text>No users found.</Text> : null}
-            {users?.users.map((user) => (
-              <div className="admin-user-row" key={user.id}>
-                <div>
-                  <Text as="strong">{user.name}</Text>
-                  <Text>{user.email}</Text>
-                </div>
-                <Text as="span">{user.role}</Text>
-              </div>
-            ))}
-          </Stack>
-        </Surface>
-      </div>
-    </Screen>
-  );
-}
-
-async function fetchAdminUsers(searchValue: string): Promise<AdminUsersResponse> {
-  const result = await listAdminUsers({
-    client: apiClient,
-    query: {
-      ...(searchValue.trim() ? { search: searchValue.trim() } : {}),
-    },
-  });
-  if (result.error) throw new Error("Unable to load users");
-  return result.data;
 }

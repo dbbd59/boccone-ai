@@ -4,7 +4,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin } from "better-auth/plugins";
 
 import { generateAppleClientSecret } from "./apple";
-import type { CreateAuthOptions } from "./types";
+import type { BocconeAuth, CreateAuthOptions } from "./types";
 
 export type { CreateAuthOptions } from "./types";
 
@@ -18,7 +18,7 @@ export type { CreateAuthOptions } from "./types";
  * Note: the Expo server plugin is always enabled — it is required for native
  * flows and is inert for browser clients.
  */
-export function createAuth(options: CreateAuthOptions) {
+export function createAuth(options: CreateAuthOptions): BocconeAuth {
   const mobileScheme = options.mobileScheme ?? "boccone";
   const apple = options.apple;
 

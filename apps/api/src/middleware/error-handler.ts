@@ -5,16 +5,16 @@ import { AppError, errorBody, jsonResponse } from "../errors";
 import type { Logger } from "../logger";
 
 interface ErrorHookContext {
-  code: unknown;
-  error: unknown;
-  request: Request;
+  code?: unknown;
+  error?: unknown;
+  request?: Request;
   requestId?: string;
 }
 
 /** Single error funnel. Client errors get contracts; 5xx errors get redacted logs. */
 export function createErrorHandler(logger: Logger) {
   return ({ code, error, request, requestId }: ErrorHookContext): Response => {
-    const id = requestId ?? request.headers.get("x-request-id") ?? undefined;
+    const id = requestId ?? request?.headers.get("x-request-id") ?? undefined;
 
     if (error instanceof AppError) {
       return jsonResponse(errorBody(error.code, error.message, id), error.status);
