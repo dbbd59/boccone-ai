@@ -1,5 +1,5 @@
 import type { AdminUser } from "@boccone/api-client";
-import { Button, Input, Stack, Text } from "@boccone/ui-web";
+import { Button, Field, Input, Text } from "@boccone/ui-web";
 
 interface UserDirectoryProps {
   users: AdminUser[];
@@ -40,7 +40,9 @@ export function UserDirectory({
           <Text as="h2" id="users-heading">
             Users
           </Text>
-          <Text className="admin-muted">{total} total records</Text>
+          <Text variant="bodySm" tone="secondary">
+            {total} accounts
+          </Text>
         </div>
       </div>
       <form
@@ -50,20 +52,31 @@ export function UserDirectory({
           onSearch();
         }}
       >
-        <Stack>
-          <label htmlFor="user-search">Search by email</label>
+        <Field fieldId="user-search" label="Search by email">
           <Input
             id="user-search"
-            aria-label="Search users by email"
             placeholder="name@example.com"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
           />
-        </Stack>
-        <Button type="submit">Search</Button>
+        </Field>
+        <Button variant="secondary" type="submit">
+          Search
+        </Button>
       </form>
-      {loading ? <Text>Loading users…</Text> : null}
-      {!loading && users.length === 0 ? <Text>No users found.</Text> : null}
+      {loading ? (
+        <Text role="status" tone="secondary">
+          Loading accounts…
+        </Text>
+      ) : null}
+      {!loading && users.length === 0 ? (
+        <div className="admin-empty-state">
+          <Text variant="headingSm">No accounts found</Text>
+          <Text variant="bodySm" tone="secondary">
+            Try a different email search.
+          </Text>
+        </div>
+      ) : null}
       <div className="admin-user-list">
         {users.map((user) => (
           <button
@@ -86,13 +99,25 @@ export function UserDirectory({
         ))}
       </div>
       <div className="admin-pagination" aria-label="User list pagination">
-        <Button type="button" disabled={offset === 0 || loading} onClick={onPrevious}>
+        <Button
+          variant="ghost"
+          size="sm"
+          type="button"
+          disabled={offset === 0 || loading}
+          onClick={onPrevious}
+        >
           Previous
         </Button>
         <Text className="admin-muted">
           Page {page} of {totalPages}
         </Text>
-        <Button type="button" disabled={offset + limit >= total || loading} onClick={onNext}>
+        <Button
+          variant="ghost"
+          size="sm"
+          type="button"
+          disabled={offset + limit >= total || loading}
+          onClick={onNext}
+        >
           Next
         </Button>
       </div>

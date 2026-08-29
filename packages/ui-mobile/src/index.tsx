@@ -1,3 +1,6 @@
+/* Shared UI barrel intentionally exports hooks and components together. */
+/* eslint-disable react-refresh/only-export-components */
+
 /**
  * Boccone AI — React Native UI primitives.
  *
@@ -19,14 +22,17 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type PropsWithChildren,
   type ReactNode,
 } from "react";
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Pressable,
+  Platform,
   StyleSheet,
   Text as NativeText,
   TextInput as NativeTextInput,
@@ -42,13 +48,22 @@ import {
 } from "react-native";
 
 import {
+  GlassContainer as NativeGlassContainer,
+  GlassView as NativeGlassView,
+  isGlassEffectAPIAvailable,
+  isLiquidGlassAvailable,
+} from "expo-glass-effect";
+
+import {
   borderWidths,
   controlHeights,
   elevation,
-  fontFamily,
+  fontFamilies,
+  glassOpacities,
   minTouchTarget,
   opacities,
   radii,
+  shape,
   spacing,
   themes,
   typography,
@@ -100,6 +115,7 @@ function resolveOverride(base: SemanticColors, override?: ThemeOverride): Semant
     status: { ...base.status, ...override.status },
     nutrition: { ...base.nutrition, ...override.nutrition },
     focus: override.focus ?? base.focus,
+    glass: { ...base.glass, ...override.glass },
   };
 }
 
@@ -150,6 +166,164 @@ export function useTheme(): ThemeContextValue {
 /** Convenience hook returning just the resolved semantic colors. */
 export function useThemeColors(): SemanticColors {
   return useTheme().colors;
+}
+
+/** System preference used by functional glass surfaces and motion primitives. */
+export function useReducedTransparency(): boolean {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS !== "ios") return;
+    let mounted = true;
+    void AccessibilityInfo.isReduceTransparencyEnabled().then((value) => {
+      if (mounted) setReduced(value);
+    });
+    const subscription = AccessibilityInfo.addEventListener(
+      "reduceTransparencyChanged",
+      setReduced,
+    );
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
+
+  return reduced;
+}
+
+/** System preference for future transitions; shared so screens do not guess. */
+export function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+      if (mounted) setReduced(value);
+    });
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
+
+  return reduced;
+}
+
+function nativeGlassIsAvailable(reducedTransparency: boolean): boolean {
+  return (
+    Platform.OS === "ios" &&
+    !reducedTransparency &&
+    isLiquidGlassAvailable() &&
+    isGlassEffectAPIAvailable()
+  );
+}
+
+function withAlpha(hex: string, opacity: number): string {
+  return `${hex}${Math.round(opacity * 255)
+    .toString(16)
+    .padStart(2, "0")}`;
+}
+
+// ---------------------------------------------------------------------------
+// Liquid Glass — native iOS 26 with intentional cross-platform fallback.
+// ---------------------------------------------------------------------------
+
+export type GlassVariant = "regular" | "clear" | "prominent";
+
+export interface GlassSurfaceProps extends ViewProps {
+  variant?: GlassVariant;
+  interactive?: boolean;
+  tintColor?: string;
+}
+
+/** Functional material for floating controls. Content surfaces stay solid. */
+export function GlassSurface({
+  variant = "regular",
+  interactive = false,
+  tintColor,
+  style,
+  children,
+  ...props
+}: PropsWithChildren<GlassSurfaceProps>) {
+  const { colors, themeName } = useTheme();
+  const reducedTransparency = useReducedTransparency();
+  const nativeGlass = nativeGlassIsAvailable(reducedTransparency);
+
+  if (nativeGlass) {
+    return (
+      <NativeGlassView
+        {...props}
+        colorScheme={themeName}
+        glassEffectStyle={variant === "clear" ? "clear" : "regular"}
+        isInteractive={interactive}
+        tintColor={variant === "prominent" ? (tintColor ?? colors.glass.tintAccent) : tintColor}
+        style={[styles.glassSurface, { borderRadius: shape.floating }, style]}
+      >
+        {children}
+      </NativeGlassView>
+    );
+  }
+
+  return (
+    <View
+      {...props}
+      style={[
+        styles.glassSurface,
+        {
+          backgroundColor: withAlpha(colors.glass[variant], glassOpacities.fallback),
+          borderColor: withAlpha(colors.glass.borderFallback, glassOpacities.border),
+          borderRadius: shape.floating,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
+export interface GlassContainerProps extends PropsWithChildren<ViewProps> {
+  mergeSpacing?: number;
+}
+
+/** Groups related glass controls so native iOS can merge their lensing. */
+export function GlassContainer({
+  mergeSpacing = spacing[2],
+  style,
+  children,
+  ...props
+}: GlassContainerProps) {
+  const reducedTransparency = useReducedTransparency();
+  if (nativeGlassIsAvailable(reducedTransparency)) {
+    return (
+      <NativeGlassContainer {...props} spacing={mergeSpacing} style={style}>
+        {children}
+      </NativeGlassContainer>
+    );
+  }
+  return (
+    <View {...props} style={[styles.floatingGlassBar, { gap: mergeSpacing }, style]}>
+      {children}
+    </View>
+  );
+}
+
+export interface FloatingGlassBarProps extends PropsWithChildren<ViewProps> {
+  mergeSpacing?: number;
+}
+
+export function FloatingGlassBar({
+  mergeSpacing,
+  style,
+  children,
+  ...props
+}: FloatingGlassBarProps) {
+  return (
+    <GlassContainer {...props} mergeSpacing={mergeSpacing} style={[styles.floatingGlassBar, style]}>
+      {children}
+    </GlassContainer>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -207,6 +381,19 @@ function toneColor(colors: SemanticColors, tone: TextTone): string {
   }
 }
 
+function fontFamilyForWeight(weight: (typeof typography)[string]["fontWeight"]): string {
+  switch (weight) {
+    case "500":
+      return fontFamilies.medium;
+    case "600":
+      return fontFamilies.semibold;
+    case "700":
+      return fontFamilies.bold;
+    default:
+      return fontFamilies.regular;
+  }
+}
+
 export function Text({ variant = "bodyMd", tone = "default", style, ...props }: BocconeTextProps) {
   const { colors } = useTheme();
   const spec = typography[variant] ?? typography["bodyMd"];
@@ -219,6 +406,7 @@ export function Text({ variant = "bodyMd", tone = "default", style, ...props }: 
           fontSize: spec?.fontSize,
           lineHeight: spec?.lineHeight,
           fontWeight: spec?.fontWeight,
+          fontFamily: fontFamilyForWeight(spec?.fontWeight ?? "400"),
           letterSpacing: spec?.letterSpacing,
           color: toneColor(colors, tone),
         },
@@ -411,7 +599,8 @@ export function Screen({ bleed = false, style, children, ...props }: ScreenProps
 // Actions — Button with variants, sizes, loading, and 44px+ touch targets.
 // ---------------------------------------------------------------------------
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
+export type ButtonVariant =
+  "primary" | "secondary" | "ghost" | "destructive" | "glass" | "glassProminent";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends Omit<PressableProps, "children" | "style"> {
@@ -436,7 +625,7 @@ function buttonPalette(colors: SemanticColors, variant: ButtonVariant): ButtonPa
       return {
         background: colors.interactive.default,
         pressed: colors.interactive.pressed,
-        label: colors.foreground.inverse,
+        label: colors.foreground.onInteractive,
       };
     case "secondary":
       return {
@@ -454,7 +643,19 @@ function buttonPalette(colors: SemanticColors, variant: ButtonVariant): ButtonPa
       return {
         background: colors.status.danger,
         pressed: colors.status.danger,
-        label: "#ffffff",
+        label: colors.foreground.onInteractive,
+      };
+    case "glass":
+      return {
+        background: "transparent",
+        pressed: "transparent",
+        label: colors.foreground.default,
+      };
+    case "glassProminent":
+      return {
+        background: "transparent",
+        pressed: "transparent",
+        label: colors.foreground.onInteractive,
       };
   }
 }
@@ -492,6 +693,7 @@ export function Button({
   const palette = buttonPalette(colors, variant);
   const isDisabled = disabled === true || loading;
   const minHeight = Math.max(buttonHeights[size], minTouchTarget);
+  const isGlass = variant === "glass" || variant === "glassProminent";
 
   return (
     <Pressable
@@ -501,18 +703,28 @@ export function Button({
       disabled={isDisabled}
       style={({ pressed }) => [
         styles.button,
-        {
+        !isGlass && {
           minHeight,
           backgroundColor: palette.background,
           borderRadius: radii.md,
           opacity: isDisabled ? opacities.disabled : 1,
           paddingHorizontal: size === "sm" ? spacing[3] : spacing[5],
         },
+        isGlass && { minHeight, borderRadius: shape.floating, overflow: "hidden" },
         fullWidth && styles.fullWidth,
-        pressed && !isDisabled && { backgroundColor: palette.pressed },
+        pressed && !isDisabled && !isGlass && { backgroundColor: palette.pressed },
+        pressed && !isDisabled && isGlass && { transform: [{ scale: 0.98 }] },
         style,
       ]}
     >
+      {isGlass ? (
+        <GlassSurface
+          pointerEvents="none"
+          variant={variant === "glassProminent" ? "prominent" : "regular"}
+          interactive
+          style={StyleSheet.absoluteFillObject}
+        />
+      ) : null}
       {loading ? (
         <ActivityIndicator color={palette.label} />
       ) : (
@@ -523,6 +735,7 @@ export function Button({
               color: palette.label,
               fontSize: (buttonLabelVariants[size] === "bodyLg" ? bodyLgSpec : labelSpec)?.fontSize,
               fontWeight: labelSpec?.fontWeight,
+              fontFamily: fontFamilies.semibold,
             },
             labelStyle,
           ]}
@@ -531,6 +744,27 @@ export function Button({
         </NativeText>
       )}
     </Pressable>
+  );
+}
+
+export interface GlassButtonProps extends Omit<ButtonProps, "variant"> {
+  prominence?: "regular" | "prominent";
+}
+
+export function GlassButton({ prominence = "regular", ...props }: GlassButtonProps) {
+  return <Button {...props} variant={prominence === "prominent" ? "glassProminent" : "glass"} />;
+}
+
+export interface GlassIconButtonProps extends Omit<GlassButtonProps, "children"> {
+  icon: ReactNode;
+  accessibilityLabel: string;
+}
+
+export function GlassIconButton({ icon, ...props }: GlassIconButtonProps) {
+  return (
+    <GlassButton {...props} size="sm">
+      {icon}
+    </GlassButton>
   );
 }
 
@@ -563,7 +797,7 @@ export function Field({
     <View {...props} accessibilityLabel={label} style={[styles.field, style]}>
       <NativeText style={[styles.fieldLabel, { color: fieldColors.foreground.default }]}>
         {label}
-        {required ? <NativeText style={styles.required}> *</NativeText> : null}
+        {required ? <NativeText style={{ color: fieldColors.status.danger }}> *</NativeText> : null}
       </NativeText>
       {children}
       {description && !error ? (
@@ -593,6 +827,7 @@ export function Input({ invalid = false, style, ...props }: InputProps) {
     <NativeTextInput
       {...props}
       placeholderTextColor={colors.foreground.subtle}
+      selectionColor={colors.interactive.default}
       style={[
         styles.input,
         {
@@ -603,6 +838,40 @@ export function Input({ invalid = false, style, ...props }: InputProps) {
         style,
       ]}
     />
+  );
+}
+
+export interface PasswordInputProps extends InputProps {
+  showLabel?: string;
+  hideLabel?: string;
+}
+
+/** Password field with a visible, touch-friendly show/hide control. */
+export function PasswordInput({
+  showLabel = "Show",
+  hideLabel = "Hide",
+  style,
+  ...props
+}: PasswordInputProps) {
+  const { colors } = useTheme();
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <View style={styles.passwordWrap}>
+      <Input {...props} secureTextEntry={!visible} style={[styles.passwordInput, style]} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={visible ? hideLabel : showLabel}
+        accessibilityState={{ expanded: visible }}
+        hitSlop={4}
+        onPress={() => setVisible((current) => !current)}
+        style={({ pressed }) => [styles.passwordToggle, pressed && { opacity: opacities.pressed }]}
+      >
+        <NativeText style={[styles.passwordToggleLabel, { color: colors.interactive.default }]}>
+          {visible ? hideLabel : showLabel}
+        </NativeText>
+      </Pressable>
+    </View>
   );
 }
 
@@ -636,6 +905,42 @@ export function Alert({ tone = "info", message }: AlertProps) {
   );
 }
 
+export interface ComingSoonProps {
+  title: string;
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  illustration?: ReactNode;
+}
+
+/** Honest placeholder for planned destinations; never implies unavailable data exists. */
+export function ComingSoon({
+  title,
+  message,
+  actionLabel,
+  onAction,
+  illustration,
+}: ComingSoonProps) {
+  return (
+    <View style={styles.comingSoon}>
+      {illustration ? (
+        <GlassSurface style={styles.comingSoonIllustration} variant="clear">
+          {illustration}
+        </GlassSurface>
+      ) : null}
+      <Stack gap="xs">
+        <Text variant="headingLg">{title}</Text>
+        <Text tone="secondary">{message}</Text>
+      </Stack>
+      {actionLabel && onAction ? (
+        <Button variant="ghost" onPress={onAction}>
+          {actionLabel}
+        </Button>
+      ) : null}
+    </View>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Utilities re-exported for app convenience.
 // ---------------------------------------------------------------------------
@@ -644,10 +949,10 @@ export { InlineLink } from "./inline-link";
 
 const styles = StyleSheet.create({
   text: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamilies.regular,
   },
   fieldLabelText: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamilies.semibold,
   },
   screen: {
     flex: 1,
@@ -666,12 +971,19 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
   },
   surface: {},
+  glassSurface: {
+    overflow: "hidden",
+  },
+  floatingGlassBar: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   button: {
     alignItems: "center",
     justifyContent: "center",
   },
   buttonLabel: {
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamilies.semibold,
   },
   fullWidth: {
     alignSelf: "stretch",
@@ -681,14 +993,11 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     ...labelSpec,
-    fontFamily: fontFamily.sans,
-  },
-  required: {
-    color: "#b64747",
+    fontFamily: fontFamilies.semibold,
   },
   fieldHelp: {
     ...captionSpec,
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamilies.regular,
   },
   input: {
     minHeight: controlHeights.md,
@@ -696,7 +1005,28 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     paddingHorizontal: spacing[3],
     fontSize: bodyMdSpec?.fontSize,
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamilies.regular,
+  },
+  passwordWrap: {
+    position: "relative",
+  },
+  passwordInput: {
+    paddingRight: spacing[10],
+  },
+  passwordToggle: {
+    position: "absolute",
+    right: spacing[1],
+    top: spacing[1],
+    minHeight: minTouchTarget,
+    minWidth: minTouchTarget,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing[2],
+    borderRadius: radii.sm,
+  },
+  passwordToggleLabel: {
+    ...labelSpec,
+    fontFamily: fontFamilies.semibold,
   },
   alert: {
     borderWidth: borderWidths.hairline,
@@ -705,6 +1035,15 @@ const styles = StyleSheet.create({
   },
   alertText: {
     ...bodySmSpec,
-    fontFamily: fontFamily.sans,
+    fontFamily: fontFamilies.regular,
+  },
+  comingSoon: {
+    gap: spacing[5],
+  },
+  comingSoonIllustration: {
+    alignItems: "flex-start",
+    justifyContent: "center",
+    minHeight: 148,
+    padding: spacing[4],
   },
 });

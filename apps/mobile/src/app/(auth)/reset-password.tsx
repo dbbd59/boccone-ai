@@ -1,10 +1,10 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 
-import { Button, Input, Screen, Stack, Surface, Text } from "@boccone/ui-mobile";
+import { Alert, Button, Field, PasswordInput, Stack } from "@boccone/ui-mobile";
 
 import { AuthFeedback } from "../../components/AuthFeedback";
-import { LanguageSelector } from "../../components/LanguageSelector";
+import { AuthFrame } from "../../components/AuthFrame";
 import { useI18n } from "../../i18n/context";
 import { authClient } from "../../lib/auth-client";
 
@@ -21,45 +21,54 @@ export default function ResetPasswordScreen() {
       setError(copy.auth.errors.missingResetToken);
       return;
     }
-    setLoading(true);
-    setError(null);
-    const result = await authClient.resetPassword({ token, newPassword: password });
-    setLoading(false);
-    if (result.error) {
-      setError(result.error.message ?? copy.auth.errors.reset);
+    if (!password) {
+      setError(copy.auth.validation.passwordRequired);
       return;
     }
-    router.replace("/(auth)/sign-in");
+    if (password.length < 8) {
+      setError(copy.auth.validation.passwordLength);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await authClient.resetPassword({ token, newPassword: password });
+      if (result.error) {
+        setError(result.error.message ?? copy.auth.errors.reset);
+        return;
+      }
+      router.replace("/(auth)/sign-in");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : copy.auth.errors.reset);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <Screen>
-      <LanguageSelector />
-      <Stack gap="xl" style={{ flex: 1, justifyContent: "center" }}>
-        <Stack gap="sm">
-          <Text variant="title">{copy.auth.resetPassword.title}</Text>
-          <Text tone="secondary">{copy.auth.resetPassword.subtitle}</Text>
-        </Stack>
-        <Surface>
-          <Stack gap="md">
-            <Stack gap="xs">
-              <Text variant="label">{copy.auth.resetPassword.passwordLabel}</Text>
-              <Input
-                accessibilityLabel={copy.auth.resetPassword.passwordLabel}
-                autoComplete="new-password"
-                placeholder={copy.auth.resetPassword.passwordPlaceholder}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-            </Stack>
-            <AuthFeedback message={error} />
-            <Button loading={loading} onPress={() => void resetPassword()}>
-              {copy.auth.resetPassword.submit}
-            </Button>
-          </Stack>
-        </Surface>
+    <AuthFrame title={copy.auth.resetPassword.title} subtitle={copy.auth.resetPassword.subtitle}>
+      <Stack gap="md">
+        {!token ? <Alert tone="danger" message={copy.auth.errors.missingResetToken} /> : null}
+        <Field label={copy.auth.resetPassword.passwordLabel} required>
+          <PasswordInput
+            accessibilityLabel={copy.auth.resetPassword.passwordLabel}
+            autoComplete="new-password"
+            hideLabel={copy.auth.resetPassword.hidePassword}
+            placeholder={copy.auth.resetPassword.passwordPlaceholder}
+            returnKeyType="done"
+            showLabel={copy.auth.resetPassword.showPassword}
+            textContentType="newPassword"
+            value={password}
+            onChangeText={setPassword}
+            onSubmitEditing={() => void resetPassword()}
+          />
+        </Field>
+        <AuthFeedback message={error} />
+        <Button fullWidth size="lg" loading={loading} onPress={() => void resetPassword()}>
+          {copy.auth.resetPassword.submit}
+        </Button>
       </Stack>
-    </Screen>
+    </AuthFrame>
   );
 }

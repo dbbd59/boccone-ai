@@ -1,22 +1,25 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 
-import { colors, radii, spacing } from "@boccone/design-tokens";
-import { Text } from "@boccone/ui-mobile";
+import { radii, spacing } from "@boccone/design-tokens";
+import { GlassSurface, Text, useThemeColors } from "@boccone/ui-mobile";
 
 import { useI18n } from "../i18n/context";
 import { supportedLocales, type Locale } from "../i18n/translations";
+import { selectionFeedback } from "../lib/haptics";
 
 export function LanguageSelector() {
   const { locale, copy, setLocale } = useI18n();
+  const colors = useThemeColors();
   const labels: Record<Locale, string> = {
     en: copy.language.english,
     it: copy.language.italian,
   };
 
   return (
-    <View
+    <GlassSurface
       accessibilityLabel={copy.language.label}
       accessibilityRole="radiogroup"
+      interactive
       style={styles.container}
     >
       {supportedLocales.map((option) => {
@@ -26,14 +29,17 @@ export function LanguageSelector() {
             key={option}
             accessibilityRole="radio"
             accessibilityState={{ selected }}
-            onPress={() => void setLocale(option)}
-            style={[styles.option, selected && styles.selectedOption]}
+            onPress={() => {
+              if (!selected) selectionFeedback();
+              void setLocale(option);
+            }}
+            style={[styles.option, selected && { backgroundColor: colors.background.elevated }]}
           >
             <TextLabel selected={selected}>{labels[option]}</TextLabel>
           </Pressable>
         );
       })}
-    </View>
+    </GlassSurface>
   );
 }
 
@@ -52,7 +58,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     padding: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: colors.background.secondary,
   },
   option: {
     minHeight: 44,
@@ -61,8 +66,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: spacing.sm,
     borderRadius: radii.pill,
-  },
-  selectedOption: {
-    backgroundColor: colors.background.elevated,
   },
 });

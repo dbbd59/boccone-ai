@@ -10,6 +10,10 @@ export interface TranslationCopy {
   loading: {
     tagline: string;
   };
+  navigation: {
+    home: string;
+    settings: string;
+  };
   auth: {
     signIn: {
       title: string;
@@ -21,6 +25,9 @@ export interface TranslationCopy {
       submit: string;
       google: string;
       apple: string;
+      socialDivider: string;
+      showPassword: string;
+      hidePassword: string;
       forgotPassword: string;
       noAccount: string;
       createAccount: string;
@@ -35,6 +42,8 @@ export interface TranslationCopy {
       passwordLabel: string;
       passwordPlaceholder: string;
       submit: string;
+      showPassword: string;
+      hidePassword: string;
       haveAccount: string;
       signIn: string;
     };
@@ -51,6 +60,15 @@ export interface TranslationCopy {
       passwordLabel: string;
       passwordPlaceholder: string;
       submit: string;
+      showPassword: string;
+      hidePassword: string;
+    };
+    validation: {
+      emailRequired: string;
+      emailInvalid: string;
+      passwordRequired: string;
+      passwordLength: string;
+      nameRequired: string;
     };
     errors: {
       signIn: string;
@@ -72,12 +90,26 @@ export interface TranslationCopy {
     signedInAs: (email: string | undefined) => string;
     fallbackName: string;
   };
+  settings: {
+    title: string;
+    subtitle: string;
+    appearanceTitle: string;
+    appearanceBody: string;
+    system: string;
+    light: string;
+    dark: string;
+    languageTitle: string;
+    accountTitle: string;
+    signedInAs: (email: string | undefined) => string;
+    signOut: string;
+  };
 }
 
 export const translations: Record<Locale, TranslationCopy> = {
   en: {
     language: { label: "Language", english: "English", italian: "Italian" },
     loading: { tagline: "Making food tracking feel lighter." },
+    navigation: { home: "Home", settings: "Settings" },
     auth: {
       signIn: {
         title: "Welcome back",
@@ -89,6 +121,9 @@ export const translations: Record<Locale, TranslationCopy> = {
         submit: "Sign in",
         google: "Continue with Google",
         apple: "Continue with Apple",
+        socialDivider: "or continue with",
+        showPassword: "Show password",
+        hidePassword: "Hide password",
         forgotPassword: "Forgot password?",
         noAccount: "New to Boccone?",
         createAccount: "Create an account",
@@ -103,6 +138,8 @@ export const translations: Record<Locale, TranslationCopy> = {
         passwordLabel: "Password",
         passwordPlaceholder: "At least 8 characters",
         submit: "Create account",
+        showPassword: "Show password",
+        hidePassword: "Hide password",
         haveAccount: "Already registered?",
         signIn: "Sign in",
       },
@@ -119,6 +156,15 @@ export const translations: Record<Locale, TranslationCopy> = {
         passwordLabel: "New password",
         passwordPlaceholder: "At least 8 characters",
         submit: "Update password",
+        showPassword: "Show password",
+        hidePassword: "Hide password",
+      },
+      validation: {
+        emailRequired: "Enter your email address.",
+        emailInvalid: "Enter a valid email address.",
+        passwordRequired: "Enter your password.",
+        passwordLength: "Use at least 8 characters.",
+        nameRequired: "Enter your name.",
       },
       errors: {
         signIn: "Unable to sign in",
@@ -134,16 +180,30 @@ export const translations: Record<Locale, TranslationCopy> = {
       subtitle: "Your food diary is ready when you are.",
       mascotTitle: "Boccone AI",
       title: "Your diary starts here",
-      body: "Nutrition and meal tracking will arrive in the next product slice.",
+      body: "Your diary will have a home here soon. We are keeping the first step simple.",
       logout: "Log out",
       refreshError: "Could not refresh your account. Pull to retry later.",
       signedInAs: (email) => `Signed in as ${email ?? "your account"}`,
       fallbackName: "there",
     },
+    settings: {
+      title: "Your space",
+      subtitle: "A few quiet choices, kept close.",
+      appearanceTitle: "Appearance",
+      appearanceBody: "Choose how Boccone looks on this device.",
+      system: "System",
+      light: "Light",
+      dark: "Dark",
+      languageTitle: "Language",
+      accountTitle: "Account",
+      signedInAs: (email) => `Signed in as ${email ?? "your account"}`,
+      signOut: "Log out",
+    },
   },
   it: {
     language: { label: "Lingua", english: "Inglese", italian: "Italiano" },
     loading: { tagline: "Rendere più semplice seguire ciò che mangi." },
+    navigation: { home: "Home", settings: "Impostazioni" },
     auth: {
       signIn: {
         title: "Bentornato",
@@ -155,6 +215,9 @@ export const translations: Record<Locale, TranslationCopy> = {
         submit: "Accedi",
         google: "Continua con Google",
         apple: "Continua con Apple",
+        socialDivider: "oppure continua con",
+        showPassword: "Mostra password",
+        hidePassword: "Nascondi password",
         forgotPassword: "Hai dimenticato la password?",
         noAccount: "È la tua prima volta su Boccone?",
         createAccount: "Crea un account",
@@ -169,6 +232,8 @@ export const translations: Record<Locale, TranslationCopy> = {
         passwordLabel: "Password",
         passwordPlaceholder: "Almeno 8 caratteri",
         submit: "Crea account",
+        showPassword: "Mostra password",
+        hidePassword: "Nascondi password",
         haveAccount: "Hai già un account?",
         signIn: "Accedi",
       },
@@ -185,6 +250,15 @@ export const translations: Record<Locale, TranslationCopy> = {
         passwordLabel: "Nuova password",
         passwordPlaceholder: "Almeno 8 caratteri",
         submit: "Aggiorna password",
+        showPassword: "Mostra password",
+        hidePassword: "Nascondi password",
+      },
+      validation: {
+        emailRequired: "Inserisci il tuo indirizzo email.",
+        emailInvalid: "Inserisci un indirizzo email valido.",
+        passwordRequired: "Inserisci la password.",
+        passwordLength: "Usa almeno 8 caratteri.",
+        nameRequired: "Inserisci il tuo nome.",
       },
       errors: {
         signIn: "Accesso non riuscito",
@@ -200,11 +274,24 @@ export const translations: Record<Locale, TranslationCopy> = {
       subtitle: "Il tuo diario alimentare ti aspetta.",
       mascotTitle: "Boccone AI",
       title: "Il tuo diario inizia qui",
-      body: "Il monitoraggio di alimenti e pasti arriverà nel prossimo blocco di prodotto.",
+      body: "Il tuo diario avrà presto uno spazio qui. Partiamo da un primo passo semplice.",
       logout: "Esci",
       refreshError: "Impossibile aggiornare l’account. Riprova più tardi.",
       signedInAs: (email) => `Accesso effettuato come ${email ?? "il tuo account"}`,
       fallbackName: "te",
+    },
+    settings: {
+      title: "Il tuo spazio",
+      subtitle: "Poche scelte tranquille, sempre a portata di mano.",
+      appearanceTitle: "Aspetto",
+      appearanceBody: "Scegli come appare Boccone su questo dispositivo.",
+      system: "Sistema",
+      light: "Chiaro",
+      dark: "Scuro",
+      languageTitle: "Lingua",
+      accountTitle: "Account",
+      signedInAs: (email) => `Accesso effettuato come ${email ?? "il tuo account"}`,
+      signOut: "Esci",
     },
   },
 };

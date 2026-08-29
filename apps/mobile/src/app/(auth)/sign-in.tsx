@@ -1,13 +1,24 @@
 import { Link, router } from "expo-router";
+import { StyleSheet } from "react-native";
 import { useState } from "react";
 
-import { colors } from "@boccone/design-tokens";
-import { Button, Input, Screen, Stack, Surface, Text } from "@boccone/ui-mobile";
+import {
+  Button,
+  Divider,
+  Field,
+  Inline,
+  Input,
+  PasswordInput,
+  Stack,
+  Text,
+} from "@boccone/ui-mobile";
 
 import { AuthFeedback } from "../../components/AuthFeedback";
-import { LanguageSelector } from "../../components/LanguageSelector";
+import { AuthFrame } from "../../components/AuthFrame";
 import { useI18n } from "../../i18n/context";
 import { authClient } from "../../lib/auth-client";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
@@ -17,95 +28,132 @@ export default function SignInScreen() {
   const { copy } = useI18n();
 
   async function signInWithEmail() {
+    const emailValue = email.trim();
+    if (!emailValue) return setError(copy.auth.validation.emailRequired);
+    if (!EMAIL_PATTERN.test(emailValue)) return setError(copy.auth.validation.emailInvalid);
+    if (!password) return setError(copy.auth.validation.passwordRequired);
+    if (password.length < 8) return setError(copy.auth.validation.passwordLength);
+
     setLoading(true);
     setError(null);
-    const result = await authClient.signIn.email({ email: email.trim(), password });
-    setLoading(false);
-    if (result.error) {
-      setError(result.error.message ?? copy.auth.errors.signIn);
-      return;
+    try {
+      const result = await authClient.signIn.email({ email: emailValue, password });
+      if (result.error) {
+        setError(result.error.message ?? copy.auth.errors.signIn);
+        return;
+      }
+      router.replace("/");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : copy.auth.errors.signIn);
+    } finally {
+      setLoading(false);
     }
-    router.replace("/");
   }
 
   async function signInWithSocial(provider: "google" | "apple") {
     setLoading(true);
     setError(null);
-    const result = await authClient.signIn.social({ provider, callbackURL: "/(app)" });
-    setLoading(false);
-    if (result.error) {
+    try {
+      const result = await authClient.signIn.social({ provider, callbackURL: "/(app)" });
+      if (result.error) {
+        setError(
+          result.error.message ??
+            copy.auth.errors.social(provider === "google" ? "Google" : "Apple"),
+        );
+        return;
+      }
+      router.replace("/");
+    } catch (cause) {
       setError(
-        result.error.message ?? copy.auth.errors.social(provider === "google" ? "Google" : "Apple"),
+        cause instanceof Error
+          ? cause.message
+          : copy.auth.errors.social(provider === "google" ? "Google" : "Apple"),
       );
-      return;
+    } finally {
+      setLoading(false);
     }
-    router.replace("/");
   }
 
   return (
-    <Screen>
-      <LanguageSelector />
-      <Stack gap="xl" style={{ flex: 1, justifyContent: "center" }}>
-        <Stack gap="sm">
-          <Text variant="display">Boccone AI</Text>
-          <Text variant="title">{copy.auth.signIn.title}</Text>
-          <Text tone="secondary">{copy.auth.signIn.subtitle}</Text>
-        </Stack>
-        <Surface>
-          <Stack gap="md">
-            <Stack gap="xs">
-              <Text variant="label">{copy.auth.signIn.emailLabel}</Text>
-              <Input
-                accessibilityLabel={copy.auth.signIn.emailLabel}
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                placeholder={copy.auth.signIn.emailPlaceholder}
-                value={email}
-                onChangeText={setEmail}
-              />
-            </Stack>
-            <Stack gap="xs">
-              <Text variant="label">{copy.auth.signIn.passwordLabel}</Text>
-              <Input
-                accessibilityLabel={copy.auth.signIn.passwordLabel}
-                autoComplete="password"
-                placeholder={copy.auth.signIn.passwordPlaceholder}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-            </Stack>
-            <AuthFeedback message={error} />
-            <Button loading={loading} onPress={() => void signInWithEmail()}>
-              {copy.auth.signIn.submit}
-            </Button>
-            <Button disabled={loading} onPress={() => void signInWithSocial("google")}>
-              {copy.auth.signIn.google}
-            </Button>
-            <Button
-              disabled={loading}
-              onPress={() => void signInWithSocial("apple")}
-              style={{ backgroundColor: colors.text.primary }}
-            >
-              {copy.auth.signIn.apple}
-            </Button>
-            <Link href="/(auth)/forgot-password" asChild>
-              <Text tone="accent" variant="label">
-                {copy.auth.signIn.forgotPassword}
-              </Text>
-            </Link>
-          </Stack>
-        </Surface>
-        <Text tone="secondary">
-          {copy.auth.signIn.noAccount}{" "}
-          <Link href="/(auth)/sign-up" asChild>
-            <Text tone="accent" variant="label">
-              {copy.auth.signIn.createAccount}
-            </Text>
-          </Link>
-        </Text>
+    <AuthFrame title={copy.auth.signIn.title} subtitle={copy.auth.signIn.subtitle}>
+      <Stack gap="md">
+        <Field label={copy.auth.signIn.emailLabel} required>
+          <Input
+            accessibilityLabel={copy.auth.signIn.emailLabel}
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            placeholder={copy.auth.signIn.emailPlaceholder}
+            returnKeyType="next"
+            textContentType="username"
+            value={email}
+            onChangeText={setEmail}
+          />
+        </Field>
+        <Field label={copy.auth.signIn.passwordLabel} required>
+          <PasswordInput
+            accessibilityLabel={copy.auth.signIn.passwordLabel}
+            autoComplete="current-password"
+            hideLabel={copy.auth.signIn.hidePassword}
+            placeholder={copy.auth.signIn.passwordPlaceholder}
+            returnKeyType="done"
+            showLabel={copy.auth.signIn.showPassword}
+            textContentType="password"
+            value={password}
+            onChangeText={setPassword}
+            onSubmitEditing={() => void signInWithEmail()}
+          />
+        </Field>
+        <AuthFeedback message={error} />
+        <Button fullWidth loading={loading} onPress={() => void signInWithEmail()}>
+          {copy.auth.signIn.submit}
+        </Button>
+        <Link href="/(auth)/forgot-password" asChild>
+          <Button fullWidth size="sm" variant="ghost">
+            {copy.auth.signIn.forgotPassword}
+          </Button>
+        </Link>
+        <Inline align="center" gap="sm">
+          <Divider style={styles.divider} />
+          <Text variant="caption" tone="secondary">
+            {copy.auth.signIn.socialDivider}
+          </Text>
+          <Divider style={styles.divider} />
+        </Inline>
+        <Button
+          fullWidth
+          variant="secondary"
+          disabled={loading}
+          onPress={() => void signInWithSocial("google")}
+        >
+          {copy.auth.signIn.google}
+        </Button>
+        <Button
+          fullWidth
+          variant="secondary"
+          disabled={loading}
+          onPress={() => void signInWithSocial("apple")}
+        >
+          {copy.auth.signIn.apple}
+        </Button>
       </Stack>
-    </Screen>
+      <Text variant="bodySm" tone="secondary" style={styles.footerText}>
+        {copy.auth.signIn.noAccount}
+      </Text>
+      <Link href="/(auth)/sign-up" asChild>
+        <Button fullWidth variant="ghost">
+          {copy.auth.signIn.createAccount}
+        </Button>
+      </Link>
+    </AuthFrame>
   );
 }
+
+const styles = StyleSheet.create({
+  divider: {
+    flex: 1,
+  },
+  footerText: {
+    textAlign: "center",
+  },
+});

@@ -1,128 +1,171 @@
 # Boccone AI — Design System
 
-Architecture, conventions, and inventory for the shared UI foundation.
+Shared design language and implementation rules for the mobile app and admin
+workspace.
 
-## Philosophy
+## Product character
 
-1. **Calm, friendly, clear.** Warm cream paper, calm broccoli green, soft
-   borders, generous whitespace. The visual language is derived from the
-   repository brand assets (`docs/images/*`); the broccoli mascot is used
-   sparingly (empty states, onboarding) — never plastered everywhere.
-2. **Tokens before components.** No component reads a raw hex value; all
-   styling flows through `@boccone/design-tokens` semantic names.
-3. **Same language, native behavior.** Web and native share tokens, component
-   names, APIs, variants, and state models — not forced-identical DOM.
-   A mobile app should feel mobile; a web app should feel web.
-4. **Accessibility is a floor, not a feature.** 44px touch targets, visible
-   focus, WCAG AA contrast (tested), screen-reader semantics, OS font scaling.
+Boccone is a calm, warm food companion — not a medical tool, calorie
+spreadsheet, or gamified tracker. The broccoli AI character appears at useful
+brand moments and never wears headphones or sci-fi accessories.
 
-## Architecture (3 packages, no bundler takeover)
+The canvas is content-first: warm paper in light mode, deep ink-green in dark
+mode, readable typography, and generous spacing. Liquid Glass is a functional
+layer for navigation, floating controls, grouped choices, and transient
+surfaces. It is not a default treatment for content or every card.
+
+## Architecture
 
 ```text
-packages/design-tokens    Layer 0 — pure data: palettes, scales, typography,
-      │                   semantic light/dark themes, contrast math, validation.
-      │                   No React / RN / CSS imports, ever.
-      ▼
-packages/ui-mobile        Layer 2 (native) — ThemeProvider (light/dark/system
-      │                   via useColorScheme), RN primitives.
-packages/ui-web           Layer 2 (web) — ThemeProvider (data-bc-theme +
-      │                   prefers-color-scheme), semantic HTML primitives,
-      │                   styles.css with --bc-* variables for both themes.
-      ▼
-apps/mobile, apps/admin   Application UI — imports only from the ui packages.
+packages/design-tokens    pure scales and semantic light/dark themes
+        │
+        ├── packages/ui-mobile   React Native / Expo primitives
+        │       └── guarded iOS 26 Liquid Glass + tokenized fallbacks
+        │
+        └── packages/ui-web      semantic React DOM primitives + CSS
+                └── backdrop-filter glass + high-opacity fallback
+
+apps/mobile                consumer app and native navigation
+apps/admin                 operational workspace and web navigation
 ```
 
-### Why not Tamagui / cross-platform single implementation
+Shared packages never import app packages. App code consumes semantic tokens
+through the UI packages; it must not import raw palette values or invent local
+color, spacing, typography, or radius values.
 
-Evaluated and deliberately not adopted (early-stage decision, cheap to revisit):
+## Material hierarchy
 
-- **Bundler takeover**: Tamagui requires its babel/expo plugin in Metro *and*
-  `@tamagui/vite-plugin` in the admin Vite config — it becomes the styling
-  runtime of both apps. The repo's convention (AGENTS.md §4) is explicit
-  source-in-workspace packages with zero bundler coupling.
-- **It replaces `design-tokens` instead of building on it**: AGENTS.md and the
-  PRD name `design-tokens` as the shared token source consumed by separate
-  `ui-mobile`/`ui-web` packages.
-- **Payoff asymmetry**: only mobile is user-facing; admin is a small
-  English-only internal Vite app. Sharing tokens + APIs + state models
-  captures most of the benefit with none of the build-pipeline risk.
+Use the smallest material that communicates the role:
 
-If the product later needs a truly universal component set, the token layer
-here is already Tamagui-shaped (flat scales + semantic themes) and can be
-adapted without touching app code.
+1. **Content canvas** — standard themed background. Food content, forms, and
+   readable text live here.
+2. **Standard surface** — `Surface` for a meaningful grouping such as an
+   account panel, admin table, or form section.
+3. **Functional glass** — `GlassSurface` for floating navigation, segmented
+   choices, utility clusters, and transient hierarchy.
+4. **Prominent glass** — `GlassButton` with `prominence="prominent"` for one
+   primary floating action or selected control.
 
-## Theming
+Avoid stacking opaque cards inside glass, large blurred hero areas, decorative
+glass panels, gradients, glow, and arbitrary shadows. On web, blur is only a
+progressive enhancement. On unsupported native platforms, the fallback is a
+high-opacity themed surface with a tokenized border.
 
-- **Mobile**: `ThemeProvider` accepts `colorMode` (`light | dark | system`,
-  default `system`), optional controlled `onColorModeChange`, and an
-  `override` for rare per-screen color adjustments. `useTheme()` /
-  `useThemeColors()` expose the resolved `SemanticColors`.
-- **Web**: `ThemeProvider` writes `data-bc-theme="light|dark"` on `<html>`;
-  `system` follows `prefers-color-scheme` live (media-query listener).
-  `styles.css` defines `--bc-*` variables for both themes.
-- **Persistence** is an app concern (mobile: `SecureStore`/`localStorage`
-  pattern already used by i18n; web: localStorage + inline boot script if
-  FOUC matters). The packages expose the hooks, not the storage.
+## Tokens
 
-## Component conventions
+`packages/design-tokens` owns:
 
-- **Variants, not booleans**: `variant="primary|secondary|ghost|destructive"`,
-  `size="sm|md|lg"`, `tone="default|muted|…|danger"`.
-- **Escape hatches exist but are not the default**: `style` /
-  `labelStyle` / `override`.
-- **States**: every interactive component handles default / hover (web) /
-  pressed / focus-visible (web) / disabled / loading. Feedback is always
-  visible.
-- **Accessibility**: RN `accessibilityRole`/`accessibilityState` and web
-  ARIA/semantic elements; labels associate via `htmlFor`/ids (`Field`); errors
-  use `role="alert"` / `accessibilityRole="alert"`.
-- **Mirroring rule**: when a component exists on both platforms, keep the
-  name, props, variants, and tones identical; only the implementation differs.
+- semantic `lightColors` and `darkColors`, including `glass` and
+  `foreground.onInteractive`;
+- `spacing`, `shape`, `radii`, `borderWidths`, `elevation`, and `zIndices`;
+- `typography` and `fontFamily`;
+- `controlHeights` and `minTouchTarget` (`44`);
+- `durations`, `easings`, and `glassOpacities`.
 
-## Inventory / status
+Every semantic color exists in both themes. Contrast and theme-parity tests are
+the gate for token changes.
 
-| Component | API | Mobile | Web | Tests | Notes |
-| --- | --- | --- | --- | --- | --- |
-| ThemeProvider | ✅ | ✅ | ✅ | tokens | system mode both platforms |
-| useTheme / useThemeColors | ✅ | ✅ | ✅ | — | resolved SemanticColors |
-| Text | ✅ | ✅ | ✅ | tokens | 10 typography variants, 9 tones |
-| Box / Stack / Inline | ✅ | ✅ | ✅ | — | layout primitives |
-| Divider / Surface / Screen | ✅ | ✅ | ✅ | — | Surface = elevation card |
-| Container | ✅ | — | ✅ | — | web content widths |
-| Button | ✅ | ✅ | ✅ | tokens | 4 variants, 3 sizes, loading, fullWidth |
-| Field / Input | ✅ | ✅ | ✅ | — | label/description/error association |
-| Alert | ✅ | ✅ | ✅ | — | info/success/warning/danger |
-| InlineLink | ✅ | ✅ | — | — | 44px hit area on native |
+## Native material and navigation
 
-Planned next (in vertical-slice order, built when the consuming feature
-needs them): Badge/Chip, Spinner/Progress/Skeleton, EmptyState/ErrorState,
-Dialog/Sheet, Select/Checkbox/Switch, Tabs/AppBar, Avatar/Card/List.
+The repo currently targets Expo SDK 55. `packages/ui-mobile` uses
+`expo-glass-effect` only when both `isLiquidGlassAvailable()` and
+`isGlassEffectAPIAvailable()` are true, on iOS, and reduced transparency is
+off. The native surface receives the resolved light/dark color scheme and
+does not animate opacity; Expo documents that opacity zero on a `GlassView` or
+its parent can break rendering.
 
-## Testing
+`GlassContainer` maps to the native container on supported iOS and keeps a
+tokenized fallback elsewhere. `useReducedTransparency()` and
+`useReducedMotion()` expose OS preferences to feature code. Reduced
+transparency always selects the solid fallback.
+
+The mobile app uses Expo Router SDK 55 native tabs for the two implemented
+destinations: Home and Settings. This is intentionally a small, real
+destination set: do not add a diary, capture, or AI tab until its route and
+functionality exist. The native tab bar owns safe-area behavior and, on iOS
+26, receives the system Liquid Glass treatment. The web export keeps a basic
+compatible fallback.
+
+Mobile and Admin use different navigation paradigms. Mobile is consumer-first:
+native bottom tabs, one-handed reach, platform gestures, and minimal native
+headers. Admin is a productivity workspace: a persistent tonal side rail on
+wide screens, with identity, current page, account/theme/sign-out controls,
+and one real item per implemented workspace. The rail collapses to icons with
+tooltips on desktop and becomes a labeled drawer with backdrop and Escape
+close behavior below tablet width. Never replace the Admin rail with mobile
+bottom tabs.
+
+## Web material
+
+`packages/ui-web` emits `.bc-glass` with semantic CSS variables and a modest
+blur/saturation enhancement. `prefers-reduced-transparency: reduce` and
+unsupported `backdrop-filter` select the opaque fallback. High-contrast mode
+strengthens the border and removes transparency. Admin utility controls may
+use `GlassSurface`; operational data panels remain standard surfaces.
+
+## Component inventory
+
+| Component                                  | Mobile          | Web          | Role                                     |
+| ------------------------------------------ | --------------- | ------------ | ---------------------------------------- |
+| `ThemeProvider`, `useTheme`                | yes             | yes          | light/dark/system theme resolution       |
+| `Text`, `Box`, `Stack`, `Inline`           | yes             | yes          | semantic type and layout primitives      |
+| `Screen`, `Surface`, `Divider`             | yes             | yes          | canvas and meaningful content grouping   |
+| `GlassSurface`                             | native/fallback | CSS fallback | functional glass layer                   |
+| `GlassContainer` / `FloatingGlassBar`      | native/fallback | —            | merged and floating native controls      |
+| `Button`, `GlassButton`, `GlassIconButton` | yes             | yes          | labeled actions and floating actions     |
+| `Field`, `Input`, `PasswordInput`          | yes             | yes          | accessible forms and recovery            |
+| `Alert`, `ComingSoon`                      | yes             | yes          | feedback and honest planned destinations |
+
+Mirrored components keep names, variants, tones, and state models aligned where
+the platform permits. Native implementation may use platform behavior rather
+than forcing DOM behavior onto mobile.
+
+## Interaction and accessibility
+
+- Interactive mobile controls are at least 44px; icon-only controls require an
+  accessible label.
+- Web controls expose keyboard focus with `:focus-visible`; errors use alert
+  semantics and fields keep label/description associations.
+- Text uses semantic typography and respects Dynamic Type / browser scaling.
+- Motion is short and purposeful. Honor reduced motion; never use opacity
+  fades on native glass surfaces.
+- Use haptics only for meaningful selection, confirmation, or destructive
+  actions once the platform capability is available; never use vibration as
+  decoration.
+- Check light/dark contrast, reduced transparency, reduced motion, larger
+  text, screen-reader order, keyboard flow, safe areas, and keyboard avoidance.
+
+## App rules
+
+Mobile user-facing copy belongs in the typed English/Italian translations.
+Admin remains English-only. Preserve real API/auth behavior and show loading,
+error, empty, and planned states honestly. `ComingSoon` must not imply that an
+endpoint, data source, or product flow already exists.
+
+Admin is operational: it may manage users and inspect audit data, but never
+exposes secrets or silently impersonates users. Keep its layout denser than
+mobile while retaining the same tokens and material hierarchy.
+
+## Verification
 
 ```bash
-bun test packages/design-tokens   # parity, contrast, scales, motion
-bun run typecheck                 # all three packages
+bun test packages/design-tokens
+bun run typecheck
 bun run lint
+bun run build --filter @boccone/admin
+bun run build --filter @boccone/mobile
 ```
 
-Component behavior tests (press/disabled/loading, theme switching, a11y
-semantics) should be added alongside the features that consume each component,
-per the repo's vertical-slice rule.
+For UI changes, visually inspect mobile auth, Home, Settings, and the admin
+login/access-denied/directory/detail/audit states in both themes at narrow and
+wide widths. Native iOS 26 material still requires a device or simulator pass;
+web and static export checks do not prove native rendering.
 
-## How to add a component
+## Official references
 
-1. Design the shared API first (variants, sizes, tones, states) — write it in
-   this file's inventory as "API ✅".
-2. Implement native in `packages/ui-mobile/src` (tokens via `useTheme`,
-   44px floor, accessibility props).
-3. Implement web in `packages/ui-web/src` (+ `styles.css` if CSS is needed;
-   semantic HTML, `:focus-visible`).
-4. Export from the package barrel; keep names/props mirrored.
-5. Typecheck + lint both packages; add tests if the component encodes logic
-   (not just styling).
-
-## How to add a token
-
-See `packages/design-tokens/README.md` — parity and contrast tests run
-automatically.
+- [Apple Human Interface Guidelines — Materials](https://developer.apple.com/design/human-interface-guidelines/materials)
+- [Expo SDK 55 — GlassEffect](https://docs.expo.dev/versions/v55.0.0/sdk/glass-effect/)
+- [Expo Router SDK 55 — Native tabs](https://docs.expo.dev/router/advanced/native-tabs/)
+- [Expo SDK 55 — BlurView](https://docs.expo.dev/versions/v55.0.0/sdk/blur-view/)
+- [Expo SDK 55 — Haptics](https://docs.expo.dev/versions/v55.0.0/sdk/haptics/)
+- [React Native — AccessibilityInfo](https://reactnative.dev/docs/0.76/accessibilityinfo)

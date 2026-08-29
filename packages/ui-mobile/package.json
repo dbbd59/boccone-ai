@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@boccone/design-tokens": "workspace:*"
+    "@boccone/design-tokens": "workspace:*",
+    "expo-glass-effect": "~55.0.11"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

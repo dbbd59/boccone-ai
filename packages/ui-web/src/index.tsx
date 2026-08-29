@@ -1,3 +1,6 @@
+/* Shared UI barrel intentionally exports hooks and components together. */
+/* eslint-disable react-refresh/only-export-components */
+
 /**
  * Boccone AI — React (web) UI primitives.
  *
@@ -29,6 +32,7 @@ import {
   breakpoints,
   fontFamily,
   minTouchTarget,
+  themes,
   type ColorMode,
   type SemanticColors,
   type ThemeName,
@@ -50,6 +54,20 @@ export interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+function resolveOverride(base: SemanticColors, override?: ThemeOverride): SemanticColors {
+  if (!override) return base;
+  return {
+    background: { ...base.background, ...override.background },
+    foreground: { ...base.foreground, ...override.foreground },
+    border: { ...base.border, ...override.border },
+    interactive: { ...base.interactive, ...override.interactive },
+    status: { ...base.status, ...override.status },
+    nutrition: { ...base.nutrition, ...override.nutrition },
+    focus: override.focus ?? base.focus,
+    glass: { ...base.glass, ...override.glass },
+  };
+}
+
 export interface ThemeProviderProps extends PropsWithChildren {
   colorMode?: ColorMode;
   defaultColorMode?: ColorMode;
@@ -62,6 +80,7 @@ export function ThemeProvider({
   colorMode,
   defaultColorMode = "system",
   onColorModeChange,
+  override,
 }: ThemeProviderProps) {
   const [internalMode, setInternalMode] = useState<ColorMode>(defaultColorMode);
   const mode = colorMode ?? internalMode;
@@ -96,8 +115,14 @@ export function ThemeProvider({
   );
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ themeName, colorMode: mode, setColorMode, colors: {} as SemanticColors }),
-    [themeName, mode, setColorMode],
+    () => ({
+      themeName,
+      colorMode: mode,
+      setColorMode,
+      colors: resolveOverride(themes[themeName], override),
+      override,
+    }),
+    [themeName, mode, override, setColorMode],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
@@ -116,7 +141,19 @@ export function useTheme(): ThemeContextValue {
 // ---------------------------------------------------------------------------
 
 export type TextTone =
-  "default" | "muted" | "subtle" | "inverse" | "brand" | "success" | "warning" | "danger" | "info";
+  | "default"
+  | "muted"
+  | "subtle"
+  | "inverse"
+  | "brand"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info"
+  | "secondary"
+  | "accent"
+  | "positive"
+  | "negative";
 
 type TextElement = "p" | "span" | "h1" | "h2" | "h3" | "h4" | "label" | "strong" | "div";
 
@@ -133,7 +170,16 @@ export interface BocconeTextProps extends HTMLAttributes<HTMLElement> {
   tone?: TextTone;
   as?: TextElement;
   children?: ReactNode;
-}export function Text({ variant = "bodyMd", tone = "default", as, style, className, ...props }: BocconeTextProps) {
+}
+
+export function Text({
+  variant = "bodyMd",
+  tone = "default",
+  as,
+  style,
+  className,
+  ...props
+}: BocconeTextProps) {
   const Element = as ?? variantToElement[variant] ?? "p";
   return (
     <Element
@@ -253,10 +299,35 @@ export function Divider({ style }: { style?: React.CSSProperties }) {
 export function Surface({
   children,
   style,
+  className,
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLElement>>) {
   return (
-    <section {...props} className="bc-surface" style={style}>
+    <section {...props} className={`bc-surface${className ? ` ${className}` : ""}`} style={style}>
+      {children}
+    </section>
+  );
+}
+
+export type GlassVariant = "regular" | "clear" | "prominent";
+
+export interface GlassSurfaceProps extends HTMLAttributes<HTMLElement> {
+  variant?: GlassVariant;
+}
+
+/** Web material for functional floating controls; content remains standard surface. */
+export function GlassSurface({
+  variant = "regular",
+  children,
+  className,
+  ...props
+}: PropsWithChildren<GlassSurfaceProps>) {
+  return (
+    <section
+      {...props}
+      data-glass-variant={variant}
+      className={`bc-glass bc-glass-${variant}${className ? ` ${className}` : ""}`}
+    >
       {children}
     </section>
   );
@@ -265,10 +336,11 @@ export function Surface({
 export function Screen({
   children,
   style,
+  className,
   ...props
 }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>) {
   return (
-    <div {...props} className="bc-screen" style={style}>
+    <div {...props} className={`bc-screen${className ? ` ${className}` : ""}`} style={style}>
       {children}
     </div>
   );
@@ -287,11 +359,43 @@ export function Container({
   );
 }
 
+export interface BoxProps extends PropsWithChildren<HTMLAttributes<HTMLDivElement>> {
+  padding?: number;
+  backgroundColor?: "default" | "subtle" | "elevated" | "inverse";
+  borderRadius?: "none" | "sm" | "md" | "lg" | "xl" | "pill";
+}
+
+export function Box({
+  padding,
+  backgroundColor,
+  borderRadius,
+  children,
+  className,
+  style,
+  ...props
+}: BoxProps) {
+  return (
+    <div
+      {...props}
+      className={`bc-box${className ? ` ${className}` : ""}`}
+      data-background={backgroundColor}
+      data-radius={borderRadius}
+      style={{
+        padding: padding !== undefined ? `var(--bc-space-${padding}, ${padding * 4}px)` : undefined,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Actions — Button with variants/sizes/loading; focus-visible ring in CSS.
 // ---------------------------------------------------------------------------
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
+export type ButtonVariant =
+  "primary" | "secondary" | "ghost" | "destructive" | "glass" | "glassProminent";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -325,6 +429,27 @@ export function Button({
       {loading ? <span className="bc-spinner" aria-hidden="true" /> : null}
       <span className="bc-button-label">{children}</span>
     </button>
+  );
+}
+
+export interface GlassButtonProps extends Omit<ButtonProps, "variant"> {
+  prominence?: "regular" | "prominent";
+}
+
+export function GlassButton({ prominence = "regular", ...props }: GlassButtonProps) {
+  return <Button {...props} variant={prominence === "prominent" ? "glassProminent" : "glass"} />;
+}
+
+export interface GlassIconButtonProps extends Omit<GlassButtonProps, "children"> {
+  icon: ReactNode;
+  "aria-label": string;
+}
+
+export function GlassIconButton({ icon, ...props }: GlassIconButtonProps) {
+  return (
+    <GlassButton {...props} size="sm">
+      {icon}
+    </GlassButton>
   );
 }
 
@@ -413,6 +538,42 @@ export function Alert({ tone = "info", message }: AlertProps) {
   );
 }
 
+export interface ComingSoonProps {
+  title: string;
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  illustration?: ReactNode;
+}
+
+/** Honest placeholder for planned destinations; never implies unavailable data exists. */
+export function ComingSoon({
+  title,
+  message,
+  actionLabel,
+  onAction,
+  illustration,
+}: ComingSoonProps) {
+  return (
+    <Surface className="bc-coming-soon">
+      {illustration ? <div className="bc-coming-soon-illustration">{illustration}</div> : null}
+      <Stack gap={2}>
+        <Text variant="headingLg">{title}</Text>
+        <Text tone="secondary">{message}</Text>
+      </Stack>
+      {actionLabel && onAction ? (
+        <Button variant="ghost" onClick={onAction}>
+          {actionLabel}
+        </Button>
+      ) : null}
+    </Surface>
+  );
+}
+
 // Theme tokens re-exported for consumers that need the SemanticColors type.
 export type { SemanticColors, ThemeName, ColorMode } from "@boccone/design-tokens";
 export { fontFamily, minTouchTarget };
+
+export function useThemeColors(): SemanticColors {
+  return useTheme().colors;
+}

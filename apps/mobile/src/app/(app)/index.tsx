@@ -1,16 +1,27 @@
-import { StyleSheet } from "react-native";
+import { Link } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
+import { ScrollView, StyleSheet } from "react-native";
 
 import { getCurrentUserOptions } from "@boccone/api-client";
-import { colors } from "@boccone/design-tokens";
-import { Button, Screen, Stack, Surface, Text } from "@boccone/ui-mobile";
+import { spacing } from "@boccone/design-tokens";
+import {
+  Alert,
+  ComingSoon,
+  GlassButton,
+  GlassSurface,
+  Inline,
+  Screen,
+  Stack,
+  Text,
+} from "@boccone/ui-mobile";
 
+import { BrandMark } from "../../components/BrandMark";
 import { LanguageSelector } from "../../components/LanguageSelector";
 import { useI18n } from "../../i18n/context";
 import { useSession } from "../../session-context";
 
 export default function HomeScreen() {
-  const { session, signOut } = useSession();
+  const { session } = useSession();
   const { copy } = useI18n();
   const meQuery = useQuery({ ...getCurrentUserOptions(), enabled: Boolean(session) });
   const user = meQuery.data?.user ?? session?.user;
@@ -19,36 +30,62 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <LanguageSelector />
-      <Stack gap="xl">
-        <Stack gap="sm">
-          <Text variant="caption" tone="secondary">
-            BOCCONE AI
-          </Text>
-          <Text variant="display">{copy.home.greeting(displayName)}</Text>
-          <Text tone="secondary">{copy.home.subtitle}</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Stack gap="xl">
+          <Inline align="start" justify="between">
+            <Stack gap="sm" style={styles.greeting}>
+              <Text variant="caption" tone="brand">
+                BOCCONE AI
+              </Text>
+              <Text variant="display">{copy.home.greeting(displayName)}</Text>
+              <Text variant="bodyLg" tone="secondary">
+                {copy.home.subtitle}
+              </Text>
+            </Stack>
+            <LanguageSelector />
+          </Inline>
+
+          <ComingSoon
+            title={copy.home.title}
+            message={copy.home.body}
+            illustration={<BrandMark size={112} />}
+          />
+
+          {meQuery.isError ? <Alert tone="danger" message={copy.home.refreshError} /> : null}
+
+          <GlassSurface variant="regular" style={styles.accountPeek}>
+            <Inline align="center" justify="between" gap="md">
+              <Stack gap="xs" style={styles.accountCopy}>
+                <Text variant="label">{copy.home.mascotTitle}</Text>
+                <Text variant="bodySm" tone="secondary">
+                  {copy.home.signedInAs(user?.email)}
+                </Text>
+              </Stack>
+              <Link href="/(app)/settings" asChild>
+                <GlassButton size="sm" accessibilityLabel={copy.navigation.settings}>
+                  {copy.navigation.settings}
+                </GlassButton>
+              </Link>
+            </Inline>
+          </GlassSurface>
         </Stack>
-        <Surface>
-          <Stack gap="md">
-            <Text variant="display" tone="accent" style={styles.mascot}>
-              {copy.home.mascotTitle}
-            </Text>
-            <Text variant="title">{copy.home.title}</Text>
-            <Text tone="secondary">{copy.home.body}</Text>
-            <Button onPress={() => void signOut()}>{copy.home.logout}</Button>
-          </Stack>
-        </Surface>
-        {meQuery.isError ? <Text tone="negative">{copy.home.refreshError}</Text> : null}
-        <Text variant="caption" tone="secondary">
-          {copy.home.signedInAs(user?.email)}
-        </Text>
-      </Stack>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  mascot: {
-    color: colors.accent.primary,
+  greeting: {
+    flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    paddingBottom: spacing[6],
+  },
+  accountPeek: {
+    padding: spacing[4],
+  },
+  accountCopy: {
+    flex: 1,
   },
 });

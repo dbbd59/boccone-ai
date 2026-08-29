@@ -43,6 +43,9 @@ describe("design tokens", () => {
       ).toBeGreaterThanOrEqual(4.5);
       // Primary button: white label on interactive default.
       expect(contrastRatio("#ffffff", theme.interactive.default)).toBeGreaterThanOrEqual(4.5);
+      expect(
+        contrastRatio(theme.foreground.onInteractive, theme.glass.prominent),
+      ).toBeGreaterThanOrEqual(4.5);
     }
   });
 

@@ -36,15 +36,28 @@ export function AuditLogPanel({ refreshToken }: { refreshToken: number }) {
           <Text as="h2" id="audit-heading">
             Audit log
           </Text>
-          <Text className="admin-muted">Recent account-management actions.</Text>
+          <Text variant="bodySm" tone="secondary">
+            Recent account-management actions.
+          </Text>
         </div>
         <Button type="button" disabled={loading} onClick={() => void loadLogs()}>
           Refresh
         </Button>
       </div>
       {error ? <Text className="admin-error">{error}</Text> : null}
-      {loading ? <Text>Loading audit log…</Text> : null}
-      {!loading && logs.length === 0 ? <Text>No admin actions recorded yet.</Text> : null}
+      {loading ? (
+        <Text role="status" tone="secondary">
+          Loading audit log…
+        </Text>
+      ) : null}
+      {!loading && logs.length === 0 ? (
+        <div className="admin-empty-state">
+          <Text variant="headingSm">No actions yet</Text>
+          <Text variant="bodySm" tone="secondary">
+            Successful account changes will appear here.
+          </Text>
+        </div>
+      ) : null}
       {!loading && logs.length > 0 ? (
         <div className="admin-audit-list">
           {logs.map((log) => (

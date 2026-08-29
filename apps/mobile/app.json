@@ -5,8 +5,7 @@
     "version": "0.1.0",
     "scheme": "boccone",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "userInterfaceStyle": "automatic",
     "plugins": ["expo-router", "expo-secure-store"],
     "web": {
       "bundler": "metro",

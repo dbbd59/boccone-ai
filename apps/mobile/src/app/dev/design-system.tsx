@@ -1,7 +1,21 @@
 import { useState } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 
-import { ThemeProvider, useTheme, Text, Button, Field, Input, Alert, Surface, Stack, Inline, Divider, Screen } from "@boccone/ui-mobile";
+import { controlHeights, spacing } from "@boccone/design-tokens";
+import {
+  ThemeProvider,
+  useTheme,
+  Text,
+  Button,
+  Field,
+  Input,
+  Alert,
+  Surface,
+  Stack,
+  Inline,
+  Divider,
+  Screen,
+} from "@boccone/ui-mobile";
 
 /**
  * Dev-only design-system showcase. Not reachable from production navigation;
@@ -25,7 +39,9 @@ function ShowcaseBody() {
       <ScrollView contentContainerStyle={styles.content}>
         <Stack gap={8}>
           <Stack gap={2}>
-            <Text variant="caption" tone="muted">BOCCONE AI / DEV</Text>
+            <Text variant="caption" tone="muted">
+              BOCCONE AI / DEV
+            </Text>
             <Text variant="display">Design system showcase</Text>
             <Text tone="muted">
               Theme: {themeName} (mode: {colorMode}). This screen is dev-only.
@@ -46,12 +62,16 @@ function ShowcaseBody() {
 
           <Stack gap={3}>
             <Text variant="headingLg">Typography</Text>
-            {(Object.keys(TYPOGRAPHY_SAMPLES) as (keyof typeof TYPOGRAPHY_SAMPLES)[]).map((variant) => (
-              <Stack key={variant} gap={0}>
-                <Text variant="caption" tone="muted">{variant}</Text>
-                <Text variant={variant}>{TYPOGRAPHY_SAMPLES[variant]}</Text>
-              </Stack>
-            ))}
+            {(Object.keys(TYPOGRAPHY_SAMPLES) as (keyof typeof TYPOGRAPHY_SAMPLES)[]).map(
+              (variant) => (
+                <Stack key={variant} gap={0}>
+                  <Text variant="caption" tone="muted">
+                    {variant}
+                  </Text>
+                  <Text variant={variant}>{TYPOGRAPHY_SAMPLES[variant]}</Text>
+                </Stack>
+              ),
+            )}
           </Stack>
 
           <Divider />
@@ -107,7 +127,9 @@ function ShowcaseBody() {
             <Surface>
               <Stack gap={2}>
                 <Text variant="headingSm">Surface (raised)</Text>
-                <Text tone="muted">Cards use the elevated background with a soft border and shadow.</Text>
+                <Text tone="muted">
+                  Cards use the elevated background with a soft border and shadow.
+                </Text>
               </Stack>
             </Surface>
             <View style={styles.demoRow}>
@@ -135,10 +157,10 @@ const TYPOGRAPHY_SAMPLES = {
 
 const styles = StyleSheet.create({
   content: {
-    paddingBottom: 48,
+    paddingBottom: spacing[12],
   },
   demoRow: {
-    height: 48,
+    height: controlHeights.md,
     alignItems: "center",
     justifyContent: "center",
   },

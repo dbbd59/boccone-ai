@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import type { AdminUser } from "@boccone/api-client";
-import { Button, Input, Stack, Surface, Text } from "@boccone/ui-web";
+import { Button, Field, Input, Stack, Surface, Text } from "@boccone/ui-web";
 
 import {
   banUser,
@@ -71,7 +71,7 @@ export function UserDetail({
     return (
       <Surface>
         <Text as="h2">User details</Text>
-        <Text className="admin-muted">Select a user to inspect and manage the account.</Text>
+        <Text tone="secondary">Select an account to inspect and manage it.</Text>
       </Surface>
     );
   }
@@ -79,7 +79,9 @@ export function UserDetail({
   if (loading && !user) {
     return (
       <Surface>
-        <Text>Loading user…</Text>
+        <Text role="status" tone="secondary">
+          Loading account…
+        </Text>
       </Surface>
     );
   }
@@ -164,9 +166,14 @@ export function UserDetail({
         <div className="admin-detail-heading">
           <div>
             <Text as="h2">User details</Text>
-            <Text className="admin-muted">{currentUser.id}</Text>
+            <Text variant="bodySm" tone="secondary">
+              {currentUser.id}
+            </Text>
           </div>
-          <span className={`admin-status ${currentUser.banned ? "is-banned" : "is-active"}`}>
+          <span
+            className={`admin-status ${currentUser.banned ? "is-banned" : "is-active"}`}
+            role="status"
+          >
             {currentUser.banned ? "Banned" : "Active"}
           </span>
         </div>
@@ -177,32 +184,40 @@ export function UserDetail({
             void saveProfile();
           }}
         >
-          <label>
-            Name
-            <Input required value={name} onChange={(event) => setName(event.target.value)} />
-          </label>
-          <label>
-            Email
+          <Field fieldId="detail-name" label="Name" required>
             <Input
+              id="detail-name"
+              required
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+          </Field>
+          <Field fieldId="detail-email" label="Email" required>
+            <Input
+              id="detail-email"
               required
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
             />
-          </label>
-          <Button type="submit" disabled={action !== null}>
-            {action === "profile" ? "Saving…" : "Save profile"}
+          </Field>
+          <Button
+            type="submit"
+            loading={action === "profile"}
+            disabled={action !== null && action !== "profile"}
+          >
+            Save profile
           </Button>
         </form>
         <div className="admin-detail-meta">
-          <Text>
+          <Text variant="bodySm">
             Email verified: <strong>{currentUser.emailVerified ? "Yes" : "No"}</strong>
           </Text>
-          <Text>
+          <Text variant="bodySm">
             Created: <strong>{new Date(currentUser.createdAt).toLocaleString()}</strong>
           </Text>
           {currentUser.banned ? (
-            <Text>
+            <Text variant="bodySm">
               Ban reason: <strong>{currentUser.banReason ?? "No reason"}</strong>
               {currentUser.banExpires
                 ? ` · expires ${new Date(currentUser.banExpires).toLocaleString()}`
@@ -211,7 +226,9 @@ export function UserDetail({
           ) : null}
         </div>
         <div className="admin-action-block">
-          <Text as="strong">Role</Text>
+          <Text as="h3" variant="headingSm">
+            Role
+          </Text>
           <div className="admin-inline-form">
             <select
               aria-label="User role"
@@ -224,27 +241,35 @@ export function UserDetail({
             </select>
             <Button
               type="button"
+              loading={action === "role"}
               disabled={isSelf || action !== null}
               onClick={() => void saveRole()}
             >
-              {action === "role" ? "Saving…" : "Save role"}
+              Save role
             </Button>
           </div>
           {isSelf ? (
-            <Text className="admin-muted">Your own admin role cannot be changed here.</Text>
+            <Text variant="bodySm" tone="secondary">
+              Your own admin role cannot be changed here.
+            </Text>
           ) : null}
         </div>
         <div className="admin-action-block">
-          <Text as="strong">Account status</Text>
+          <Text as="h3" variant="headingSm">
+            Account status
+          </Text>
           {!currentUser.banned ? (
             <>
-              <label>
-                Ban reason
-                <Input value={banReason} onChange={(event) => setBanReason(event.target.value)} />
-              </label>
-              <label>
-                Ban duration
+              <Field fieldId="ban-reason" label="Ban reason">
+                <Input
+                  id="ban-reason"
+                  value={banReason}
+                  onChange={(event) => setBanReason(event.target.value)}
+                />
+              </Field>
+              <Field fieldId="ban-duration" label="Ban duration">
                 <select
+                  id="ban-duration"
                   value={banDuration}
                   onChange={(event) => setBanDuration(event.target.value)}
                 >
@@ -252,32 +277,44 @@ export function UserDetail({
                   <option value="604800">7 days</option>
                   <option value="2592000">30 days</option>
                 </select>
-              </label>
+              </Field>
             </>
           ) : null}
           <Button
             type="button"
+            loading={action === "ban"}
             disabled={isSelf || action !== null}
             onClick={() => void toggleBan()}
           >
-            {action === "ban" ? "Updating…" : currentUser.banned ? "Unban user" : "Ban user"}
+            {currentUser.banned ? "Unban user" : "Ban user"}
           </Button>
-          {isSelf ? <Text className="admin-muted">Your own account cannot be banned.</Text> : null}
+          {isSelf ? (
+            <Text variant="bodySm" tone="secondary">
+              Your own account cannot be banned.
+            </Text>
+          ) : null}
         </div>
         <div className="admin-danger-zone">
-          <Text as="strong">Danger zone</Text>
-          <Text className="admin-muted">
+          <Text as="h3" variant="headingSm">
+            Danger zone
+          </Text>
+          <Text variant="bodySm" tone="secondary">
             Removal deletes the account, sessions and linked auth accounts.
           </Text>
           <Button
             type="button"
+            loading={action === "delete"}
             disabled={isSelf || action !== null}
             onClick={() => void deleteAccount()}
           >
-            {action === "delete" ? "Removing…" : "Remove user"}
+            Remove user
           </Button>
         </div>
-        {error ? <Text className="admin-error">{error}</Text> : null}
+        {error ? (
+          <Text className="admin-error" role="alert">
+            {error}
+          </Text>
+        ) : null}
       </Stack>
     </Surface>
   );

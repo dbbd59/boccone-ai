@@ -84,6 +84,7 @@ export const spacing = {
   4: 16,
   5: 20,
   6: 24,
+  7: 28,
   8: 32,
   10: 40,
   12: 48,
@@ -110,6 +111,16 @@ export const radii = {
 } as const;
 
 export type RadiusKey = keyof typeof radii;
+
+/** Semantic geometry. Feature code should choose a role, not invent a radius. */
+export const shape = {
+  compact: 10,
+  control: 14,
+  surface: 16,
+  floating: 20,
+  capsule: 999,
+  full: 999,
+} as const;
 
 /** Border widths in px (density-independent). */
 export const borderWidths = {
@@ -192,6 +203,15 @@ export const opacities = {
   subtle: 0.6,
 } as const;
 
+/** Glass opacity guidance. Native Liquid Glass owns its optical treatment. */
+export const glassOpacities = {
+  regular: 0.82,
+  clear: 0.68,
+  prominent: 0.92,
+  fallback: 0.94,
+  border: 0.35,
+} as const;
+
 /** Breakpoints in px for adaptive web layouts (density-independent). */
 export const breakpoints = {
   sm: 480,
@@ -240,7 +260,18 @@ export const easings = {
 // ---------------------------------------------------------------------------
 
 export const fontFamily = {
-  sans: "System",
+  /** DM Sans is bundled by the mobile app and loaded by the admin web app. */
+  sans: "DM Sans",
+  display: "DM Sans",
+  mono: "ui-monospace",
+} as const;
+
+/** Loaded font faces used by React Native; names match @expo-google-fonts/dm-sans. */
+export const fontFamilies = {
+  regular: "DMSans_400Regular",
+  medium: "DMSans_500Medium",
+  semibold: "DMSans_600SemiBold",
+  bold: "DMSans_700Bold",
 } as const;
 
 export interface TypeSpec {
@@ -253,17 +284,18 @@ export interface TypeSpec {
 }
 
 export const typography: Record<string, TypeSpec> = {
-  display: { fontSize: 32, lineHeight: 40, fontWeight: "700", letterSpacing: 0 },
-  title: { fontSize: 24, lineHeight: 30, fontWeight: "700", letterSpacing: 0 },
-  headingXl: { fontSize: 26, lineHeight: 34, fontWeight: "700", letterSpacing: 0 },
-  headingLg: { fontSize: 22, lineHeight: 30, fontWeight: "700", letterSpacing: 0 },
+  display: { fontSize: 34, lineHeight: 42, fontWeight: "700", letterSpacing: -0.4 },
+  title: { fontSize: 28, lineHeight: 36, fontWeight: "700", letterSpacing: -0.2 },
+  headingXl: { fontSize: 24, lineHeight: 32, fontWeight: "700", letterSpacing: -0.1 },
+  headingLg: { fontSize: 21, lineHeight: 28, fontWeight: "700", letterSpacing: 0 },
   headingMd: { fontSize: 18, lineHeight: 26, fontWeight: "600", letterSpacing: 0 },
   headingSm: { fontSize: 16, lineHeight: 24, fontWeight: "600", letterSpacing: 0 },
   bodyLg: { fontSize: 17, lineHeight: 26, fontWeight: "400", letterSpacing: 0 },
-  bodyMd: { fontSize: 15, lineHeight: 23, fontWeight: "400", letterSpacing: 0 },
-  bodySm: { fontSize: 13, lineHeight: 20, fontWeight: "400", letterSpacing: 0 },
+  bodyMd: { fontSize: 16, lineHeight: 24, fontWeight: "400", letterSpacing: 0 },
+  bodySm: { fontSize: 14, lineHeight: 20, fontWeight: "400", letterSpacing: 0 },
   label: { fontSize: 14, lineHeight: 20, fontWeight: "600", letterSpacing: 0.2 },
   caption: { fontSize: 12, lineHeight: 17, fontWeight: "400", letterSpacing: 0.3 },
+  numeric: { fontSize: 28, lineHeight: 34, fontWeight: "700", letterSpacing: -0.4 },
 };
 
 export type TypographyKey = keyof typeof typography;
@@ -278,7 +310,13 @@ export const typographyKeys = Object.keys(typography);
 
 export interface SemanticColors {
   background: { default: string; subtle: string; elevated: string; inverse: string };
-  foreground: { default: string; muted: string; subtle: string; inverse: string };
+  foreground: {
+    default: string;
+    muted: string;
+    subtle: string;
+    inverse: string;
+    onInteractive: string;
+  };
   border: { default: string; subtle: string; strong: string };
   interactive: { default: string; hover: string; pressed: string; disabled: string };
   status: {
@@ -293,6 +331,15 @@ export interface SemanticColors {
   };
   nutrition: { protein: string; carbs: string; fat: string };
   focus: string;
+  glass: {
+    regular: string;
+    clear: string;
+    prominent: string;
+    tintAccent: string;
+    fallbackLight: string;
+    fallbackDark: string;
+    borderFallback: string;
+  };
 }
 
 export const lightColors: SemanticColors = {
@@ -307,6 +354,7 @@ export const lightColors: SemanticColors = {
     muted: palettes.neutral[600],
     subtle: palettes.neutral[500],
     inverse: palettes.neutral[50],
+    onInteractive: palettes.neutral[0],
   },
   border: {
     default: palettes.neutral[300],
@@ -335,6 +383,15 @@ export const lightColors: SemanticColors = {
     fat: palettes.info[500],
   },
   focus: palettes.brand[500],
+  glass: {
+    regular: palettes.neutral[0],
+    clear: palettes.neutral[50],
+    prominent: palettes.brand[600],
+    tintAccent: palettes.brand[600],
+    fallbackLight: palettes.neutral[0],
+    fallbackDark: palettes.neutral[900],
+    borderFallback: palettes.neutral[0],
+  },
 };
 
 export const darkColors: SemanticColors = {
@@ -349,6 +406,7 @@ export const darkColors: SemanticColors = {
     muted: palettes.neutral[400],
     subtle: palettes.neutral[500],
     inverse: palettes.neutral[900],
+    onInteractive: palettes.neutral[0],
   },
   border: {
     default: palettes.neutral[700],
@@ -377,6 +435,15 @@ export const darkColors: SemanticColors = {
     fat: palettes.info[500],
   },
   focus: palettes.brand[300],
+  glass: {
+    regular: palettes.neutral[800],
+    clear: palettes.neutral[900],
+    prominent: palettes.brand[700],
+    tintAccent: palettes.brand[400],
+    fallbackLight: palettes.neutral[100],
+    fallbackDark: palettes.neutral[950],
+    borderFallback: palettes.neutral[600],
+  },
 };
 
 export const themes = { light: lightColors, dark: darkColors } as const;

@@ -1,61 +1,50 @@
 # @boccone/ui-mobile
 
-Layer 2 of the Boccone AI design system for React Native (Expo). Resolves
-the semantic tokens from `@boccone/design-tokens` into React Native styles
-and components. Mirrors the component names, props, variants, and tones of
-`@boccone/ui-web`.
+React Native / Expo implementation of Boccone’s semantic design system. APIs
+mirror `@boccone/ui-web` where platform behavior is meaningful.
 
-## Theming
-
-Wrap your app root once (the mobile app does this in `_layout.tsx`):
+## Theme
 
 ```tsx
 import { ThemeProvider } from "@boccone/ui-mobile";
 
-<ThemeProvider>
+<ThemeProvider colorMode="system">
   <RootLayout />
-</ThemeProvider>
+</ThemeProvider>;
 ```
 
-Default `colorMode` is `"system"` (follows the OS setting live via
-`useColorScheme`). Pass `colorMode="light" | "dark"` to pin, or control it
-through `colorMode` + `onColorModeChange`. `useTheme()` gives the resolved
-`SemanticColors`; `useThemeColors()` is a shorthand for just the colors.
+`colorMode` accepts `system`, `light`, or `dark`; controlled mode also accepts
+`onColorModeChange`. `useTheme()` exposes resolved semantic colors.
+
+## Materials
+
+```tsx
+import { GlassButton, GlassContainer, GlassSurface } from "@boccone/ui-mobile";
+
+<GlassContainer>
+  <GlassSurface variant="clear">
+    <GlassButton prominence="prominent">Save</GlassButton>
+  </GlassSurface>
+</GlassContainer>;
+```
+
+`GlassView`/`GlassContainer` from `expo-glass-effect` are used only on iOS
+when the runtime APIs are available and reduced transparency is disabled.
+Other platforms use a high-opacity tokenized surface. `useReducedTransparency`
+and `useReducedMotion` expose the system preferences. Do not fade a native
+glass view with opacity.
 
 ## Components
 
-| Component | API |
-| --- | --- |
-| `Text` | `variant` (display…caption), `tone` (default…danger). Sizes scale with the OS font setting (Dynamic Type). |
-| `Box` / `Stack` / `Inline` | Flex primitives with token-based `gap`, `align`, `padding`. |
-| `Divider`, `Surface`, `Screen` | Structure primitives; `Screen` is the padded full-bleed root. |
-| `Button` | `variant="primary|secondary|ghost|destructive"`, `size="sm|md|lg"`, `loading`, `fullWidth`. Pressed feedback via `Pressable`; ≥44px touch target always. |
-| `Field` + `Input` | `label`, `description`, `error` (`accessibilityRole="alert"`), `required`. |
-| `Alert` | `tone="info|success|warning|danger"`, `accessibilityRole="alert"`. |
-| `InlineLink` | Underlined text link with a 44px pressable hit area. |
-
-## Example
-
-```tsx
-import { ThemeProvider, Screen, Stack, Text, Button, Field, Input } from "@boccone/ui-mobile";
-
-<ThemeProvider>
-  <Screen>
-    <Stack gap={4}>
-      <Text variant="headingLg">Welcome</Text>
-      <Field label="Email" required>
-        <Input keyboardType="email-address" autoComplete="email" />
-      </Field>
-      <Button variant="primary">Continue</Button>
-    </Stack>
-  </Screen>
-</ThemeProvider>
-```
+`Text`, `Box`, `Stack`, `Inline`, `Divider`, `Surface`, `Screen`, `Button`,
+`GlassButton`, `GlassIconButton`, `Field`, `Input`, `PasswordInput`, `Alert`,
+and `ComingSoon` are exported. Buttons and fields preserve a 44px minimum
+target; text respects Dynamic Type by default.
 
 ## Rules
 
-- Never hardcode colors or sizes in app code — use components and tokens.
-- Touch-first behaviors (press feedback, hit slop) live here; do not force
-  them onto the web package.
-- Text sizes scale with the OS font setting (Dynamic Type); do not hardcode
-  `allowFontScaling={false}`.
+- Resolve colors from `useTheme()` or shared components; no raw app colors.
+- Keep mobile copy in the typed English/Italian localization layer.
+- Provide labels for icon-only actions and alert semantics for errors.
+- Honor reduced motion/transparency, safe areas, keyboard avoidance, and
+  loading/error/empty states.
