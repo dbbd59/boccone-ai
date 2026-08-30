@@ -25,6 +25,7 @@
         "react-dom": "19.2.0",
       },
       "devDependencies": {
+        "@types/bun": "^1.4.0",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
         "@vitejs/plugin-react": "^5.0.4",
@@ -42,6 +43,7 @@
         "@boccone/utils": "workspace:*",
         "@elysiajs/cors": "^1.4.1",
         "elysia": "^1.4.30",
+        "zod": "4.1.13",
       },
       "devDependencies": {
         "@types/bun": "^1.4.0",
@@ -399,6 +401,8 @@
     "@boccone/admin": ["@boccone/admin@workspace:apps/admin"],
 
     "@boccone/api": ["@boccone/api@workspace:apps/api"],
+
+    "@boccone/api/zod": ["zod@4.1.13", "", {}, "sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig=="],
 
     "@boccone/api-client": ["@boccone/api-client@workspace:packages/api-client"],
 

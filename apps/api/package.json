@@ -18,7 +18,8 @@
     "@boccone/db": "workspace:*",
     "@boccone/utils": "workspace:*",
     "elysia": "^1.4.30",
-    "@elysiajs/cors": "^1.4.1"
+    "@elysiajs/cors": "^1.4.1",
+    "zod": "4.1.13"
   },
   "devDependencies": {
     "@types/bun": "^1.4.0",
