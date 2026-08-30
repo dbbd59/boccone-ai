@@ -43,6 +43,11 @@ describe("loadConfig", () => {
     expect(() => loadConfig(envWith({ API_PORT: "abc" }))).toThrow();
   });
 
+  test("uses Railway PORT when API_PORT is not set", () => {
+    const config = loadConfig(envWith({ PORT: "8080" }));
+    expect(config.apiPort).toBe(8080);
+  });
+
   test("rejects partially configured Google OAuth", () => {
     expect(() => loadConfig(envWith({ GOOGLE_CLIENT_ID: "id-only" }))).toThrow(
       /GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET/,

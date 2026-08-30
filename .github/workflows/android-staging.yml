@@ -1,0 +1,95 @@
+name: Android staging APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-staging-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build staging APK
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    env:
+      EXPO_PUBLIC_API_URL: ${{ vars.STAGING_API_URL }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate staging API target
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${EXPO_PUBLIC_API_URL}" ]]; then
+            echo "::error::GitHub staging environment variable STAGING_API_URL is not set."
+            exit 1
+          fi
+          if [[ "${EXPO_PUBLIC_API_URL}" != https://* ]]; then
+            echo "::error::STAGING_API_URL must be an HTTPS URL."
+            exit 1
+          fi
+          if [[ "${EXPO_PUBLIC_API_URL}" == *localhost* || "${EXPO_PUBLIC_API_URL}" == *127.0.0.1* || "${EXPO_PUBLIC_API_URL}" == *production* ]]; then
+            echo "::error::STAGING_API_URL must not target localhost or production."
+            exit 1
+          fi
+
+      - name: Typecheck mobile
+        run: bun run --filter @boccone/mobile typecheck
+
+      - name: Generate Android native project
+        working-directory: apps/mobile
+        env:
+          CI: "1"
+          EXPO_NO_TELEMETRY: "1"
+        run: bunx expo prebuild --platform android --no-install
+
+      - name: Build staging APK
+        working-directory: apps/mobile/android
+        run: ./gradlew :app:assembleRelease --no-daemon --stacktrace
+
+      - name: Verify and name APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$apk"
+          unzip -l "$apk" | grep -q 'assets/index.android.bundle'
+          unzip -p "$apk" assets/index.android.bundle | grep -F "$EXPO_PUBLIC_API_URL" >/dev/null
+          mkdir -p artifact
+          cp "$apk" artifact/boccone-staging-android.apk
+
+      - name: Upload staging APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: boccone-staging-apk
+          path: artifact/boccone-staging-android.apk
+          if-no-files-found: error
+          retention-days: 14
