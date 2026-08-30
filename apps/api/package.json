@@ -9,7 +9,9 @@
     "start": "bun dist/index.js",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "food:download": "bun src/scripts/download-food-data.ts",
+    "food:import": "bun src/scripts/import-food-data.ts"
   },
   "dependencies": {
     "@boccone/auth": "workspace:*",

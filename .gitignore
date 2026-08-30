@@ -36,4 +36,5 @@ coverage/
 *.log
 npm-debug.log*
 Expo.plist
+apps/api/data/food-exports/
 tasks/

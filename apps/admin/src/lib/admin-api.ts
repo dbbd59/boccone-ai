@@ -2,8 +2,11 @@ import {
   banAdminUser,
   createAdminUser,
   createAdminUserMeal,
+  getAdminUserMeal,
   getAdminUserDailyTargets,
+  getAdminMeal,
   getAdminUser,
+  listAdminMeals,
   listAdminUserMeals,
   listAdminAuditLogs,
   listAdminUsers,
@@ -15,7 +18,17 @@ import {
   updateAdminUserDailyTargets,
   updateAdminUser,
   updateAdminUserMeal,
+  listAdminFoods,
+  getAdminFood,
+  updateAdminFood,
+  listAdminFoodSubmissions,
+  getAdminFoodSubmission,
+  approveFoodSubmission,
+  rejectFoodSubmission,
+  mergeFoodSubmission,
   type AdminAuditLogsResponse,
+  type AdminGlobalMeal,
+  type AdminGlobalMealsResponse,
   type AdminUser,
   type DailyTargets,
   type AdminUserBanRequest,
@@ -27,6 +40,11 @@ import {
   type Meal,
   type UpdateMealRequest,
   type AdminMealsResponse,
+  type AdminFoodsResponse,
+  type Food,
+  type AdminFoodSubmission,
+  type AdminFoodSubmissionsResponse,
+  type AdminFoodUpdateRequest,
 } from "@boccone/api-client";
 
 import { apiClient } from "./api-client";
@@ -74,13 +92,120 @@ export async function removeAdminTargets(userId: string): Promise<void> {
   unwrap(result, "Unable to remove user targets");
 }
 
-export async function fetchAdminUserMeals(userId: string): Promise<AdminMealsResponse> {
+export async function fetchAdminUserMeals(
+  userId: string,
+  input: { date?: string; limit?: number; offset?: number } = {},
+): Promise<AdminMealsResponse> {
   const result = await listAdminUserMeals({
     client: apiClient,
     path: { id: userId },
-    query: { limit: 50, offset: 0 },
+    query: {
+      limit: input.limit ?? 20,
+      offset: input.offset ?? 0,
+      ...(input.date ? { date: input.date } : {}),
+    },
   });
   return unwrap(result, "Unable to load user meals");
+}
+
+export async function fetchAdminUserMeal(userId: string, mealId: string): Promise<Meal> {
+  const result = await getAdminUserMeal({
+    client: apiClient,
+    path: { id: userId, mealId },
+  });
+  return unwrap(result, "Unable to load meal").meal;
+}
+
+export async function fetchAdminMeals(input: {
+  search?: string;
+  date?: string;
+  category?: "breakfast" | "lunch" | "dinner" | "snack";
+  limit: number;
+  offset: number;
+}): Promise<AdminGlobalMealsResponse> {
+  const result = await listAdminMeals({
+    client: apiClient,
+    query: {
+      limit: input.limit,
+      offset: input.offset,
+      ...(input.search ? { search: input.search } : {}),
+      ...(input.date ? { date: input.date } : {}),
+      ...(input.category ? { category: input.category } : {}),
+    },
+  });
+  return unwrap(result, "Unable to load meals");
+}
+
+export async function fetchAdminMeal(mealId: string): Promise<AdminGlobalMeal> {
+  const result = await getAdminMeal({ client: apiClient, path: { id: mealId } });
+  return unwrap(result, "Unable to load meal").meal;
+}
+
+export async function fetchAdminFoods(input: {
+  search?: string;
+  status?: "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "MERGED";
+  sourceType?:
+    "USDA" | "OPEN_FOOD_FACTS" | "CREA" | "BOCCONE_CURATED" | "USER_SUBMITTED" | "AI_ESTIMATE";
+  limit: number;
+  offset: number;
+}): Promise<AdminFoodsResponse> {
+  const result = await listAdminFoods({ client: apiClient, query: { ...input } });
+  return unwrap(result, "Unable to load foods");
+}
+
+export async function fetchAdminFood(foodId: string): Promise<Food> {
+  const result = await getAdminFood({ client: apiClient, path: { id: foodId } });
+  return unwrap(result, "Unable to load food").food;
+}
+
+export async function saveAdminFood(foodId: string, input: AdminFoodUpdateRequest): Promise<Food> {
+  const result = await updateAdminFood({ client: apiClient, path: { id: foodId }, body: input });
+  return unwrap(result, "Unable to update food").food;
+}
+
+export async function fetchAdminFoodSubmissions(input: {
+  status?: "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "MERGED";
+  limit: number;
+  offset: number;
+}): Promise<AdminFoodSubmissionsResponse> {
+  const result = await listAdminFoodSubmissions({ client: apiClient, query: { ...input } });
+  return unwrap(result, "Unable to load food submissions");
+}
+
+export async function fetchAdminFoodSubmission(submissionId: string): Promise<AdminFoodSubmission> {
+  const result = await getAdminFoodSubmission({ client: apiClient, path: { id: submissionId } });
+  return unwrap(result, "Unable to load food submission").submission;
+}
+
+export async function approveAdminFoodSubmission(
+  submissionId: string,
+): Promise<AdminFoodSubmission> {
+  const result = await approveFoodSubmission({ client: apiClient, path: { id: submissionId } });
+  return unwrap(result, "Unable to approve food submission").submission;
+}
+
+export async function rejectAdminFoodSubmission(
+  submissionId: string,
+  reason?: string,
+): Promise<AdminFoodSubmission> {
+  const result = await rejectFoodSubmission({
+    client: apiClient,
+    path: { id: submissionId },
+    body: reason ? { reason } : undefined,
+  });
+  return unwrap(result, "Unable to reject food submission").submission;
+}
+
+export async function mergeAdminFoodSubmission(
+  submissionId: string,
+  foodId: string,
+): Promise<AdminFoodSubmission> {
+  const result = await mergeFoodSubmission({
+    client: apiClient,
+    path: { id: submissionId },
+    body: { foodId },
+  });
+  return unwrap(result, "Unable to merge food submission").submission;
 }
 
 export async function createAdminMeal(userId: string, data: CreateMealRequest): Promise<Meal> {

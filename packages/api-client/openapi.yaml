@@ -199,6 +199,343 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         "404":
           $ref: "#/components/responses/ErrorResponse"
+  /api/me/foods/search:
+    get:
+      operationId: searchFoods
+      tags:
+        - foods
+      summary: Search the local Boccone food catalog
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 120
+        - name: locale
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [en, it]
+            default: it
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: Foods matching the query and the user's personal foods
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodSearchResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/food-submissions:
+    post:
+      operationId: createFoodSubmission
+      tags:
+        - foods
+      summary: Propose a food for moderation and use it privately
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFoodSubmissionRequest"
+      responses:
+        "200":
+          description: Private food and pending submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodSubmissionResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/meals:
+    get:
+      operationId: listAdminMeals
+      tags:
+        - admin
+      summary: List meals for administrators
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 255
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: category
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/MealCategory"
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Meals visible to operations staff
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGlobalMealsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/meals/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getAdminMeal
+      tags:
+        - admin
+      summary: Get one meal for administrators
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Meal details and owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminGlobalMealResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/foods:
+    get:
+      operationId: listAdminFoods
+      tags:
+        - admin
+      summary: Browse the food catalog
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema: { type: string, minLength: 1, maxLength: 255 }
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/FoodStatus" }
+        - name: sourceType
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/FoodSourceType" }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: Catalog foods
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFoodsResponse" }
+        "401": { $ref: "#/components/responses/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ErrorResponse" }
+  /api/admin/foods/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getAdminFood
+      tags: [admin]
+      summary: Inspect one catalog food
+      security: [{ sessionCookie: [] }]
+      responses:
+        "200":
+          description: Food details
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFoodResponse" }
+        "401": { $ref: "#/components/responses/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ErrorResponse" }
+        "404": { $ref: "#/components/responses/ErrorResponse" }
+    patch:
+      operationId: updateAdminFood
+      tags: [admin]
+      summary: Correct catalog food data
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminFoodUpdateRequest" }
+      responses:
+        "200":
+          description: Updated food
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFoodResponse" }
+        "400": { $ref: "#/components/responses/ErrorResponse" }
+        "401": { $ref: "#/components/responses/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ErrorResponse" }
+  /api/admin/food-submissions:
+    get:
+      operationId: listAdminFoodSubmissions
+      tags: [admin]
+      summary: List food submissions for moderation
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/FoodStatus", default: PENDING_REVIEW }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: offset
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          description: Moderation queue
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFoodSubmissionsResponse" }
+        "401": { $ref: "#/components/responses/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ErrorResponse" }
+  /api/admin/food-submissions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getAdminFoodSubmission
+      tags: [admin]
+      summary: Inspect one food submission
+      security: [{ sessionCookie: [] }]
+      responses:
+        "200":
+          description: Submission review workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFoodSubmissionResponse" }
+        "401": { $ref: "#/components/responses/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ErrorResponse" }
+        "404": { $ref: "#/components/responses/ErrorResponse" }
+  /api/admin/food-submissions/{id}/approve:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: approveFoodSubmission
+      tags: [admin]
+      summary: Approve a food submission
+      security: [{ sessionCookie: [] }]
+      responses:
+        "200":
+          description: Approved submission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFoodSubmissionResponse" }
+        "401": { $ref: "#/components/responses/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ErrorResponse" }
+        "409": { $ref: "#/components/responses/ErrorResponse" }
+  /api/admin/food-submissions/{id}/reject:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: rejectFoodSubmission
+      tags: [admin]
+      summary: Reject a food submission
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminFoodRejectRequest" }
+      responses:
+        "200":
+          description: Rejected submission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFoodSubmissionResponse" }
+        "401": { $ref: "#/components/responses/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ErrorResponse" }
+        "409": { $ref: "#/components/responses/ErrorResponse" }
+  /api/admin/food-submissions/{id}/merge:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: mergeFoodSubmission
+      tags: [admin]
+      summary: Merge a duplicate submission into a catalog food
+      security: [{ sessionCookie: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminFoodMergeRequest" }
+      responses:
+        "200":
+          description: Merged submission
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminFoodSubmissionResponse" }
+        "401": { $ref: "#/components/responses/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ErrorResponse" }
+        "404": { $ref: "#/components/responses/ErrorResponse" }
   /api/admin/users:
     get:
       operationId: listAdminUsers
@@ -842,6 +1179,10 @@ components:
       type: string
       enum: [breakfast, lunch, dinner, snack]
     CreateMealRequest:
+      oneOf:
+        - $ref: "#/components/schemas/ManualMealRequest"
+        - $ref: "#/components/schemas/FoodMealRequest"
+    ManualMealRequest:
       type: object
       required:
         - name
@@ -881,6 +1222,33 @@ components:
           type: string
           maxLength: 2000
           nullable: true
+    FoodMealRequest:
+      type: object
+      required:
+        - name
+        - category
+        - date
+        - entries
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 160
+        category:
+          $ref: "#/components/schemas/MealCategory"
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+        entries:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/MealFoodEntryInput"
     UpdateMealRequest:
       type: object
       minProperties: 1
@@ -914,32 +1282,74 @@ components:
           type: string
           maxLength: 2000
           nullable: true
+        entries:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/MealFoodEntryInput"
     Meal:
-      allOf:
-        - $ref: "#/components/schemas/CreateMealRequest"
-        - type: object
-          required:
-            - id
-            - notes
-            - source
-            - createdAt
-            - updatedAt
-          properties:
-            id:
-              type: string
-            source:
-              type: string
-              enum: [manual]
-            notes:
-              type: string
-              maxLength: 2000
-              nullable: true
-            createdAt:
-              type: string
-              format: date-time
-            updatedAt:
-              type: string
-              format: date-time
+      type: object
+      required:
+        - id
+        - name
+        - category
+        - date
+        - calories
+        - proteinGrams
+        - carbohydratesGrams
+        - fatGrams
+        - nutritionIncomplete
+        - notes
+        - source
+        - entries
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          $ref: "#/components/schemas/MealCategory"
+        date:
+          type: string
+          format: date
+        calories:
+          type: integer
+          minimum: 0
+          maximum: 100000
+        proteinGrams:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        carbohydratesGrams:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        fatGrams:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        nutritionIncomplete:
+          type: boolean
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+        source:
+          type: string
+          enum: [manual]
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealFoodEntry"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     MealResponse:
       type: object
       required:
@@ -981,6 +1391,7 @@ components:
         - date
         - meals
         - totals
+        - nutritionIncomplete
       properties:
         date:
           type: string
@@ -991,6 +1402,8 @@ components:
             $ref: "#/components/schemas/Meal"
         totals:
           $ref: "#/components/schemas/MealTotals"
+        nutritionIncomplete:
+          type: boolean
     AdminMealsResponse:
       type: object
       required:
@@ -1012,6 +1425,330 @@ components:
           type: integer
         offset:
           type: integer
+    AdminMealOwner:
+      type: object
+      required:
+        - id
+        - name
+        - email
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+    AdminGlobalMeal:
+      allOf:
+        - $ref: "#/components/schemas/Meal"
+        - type: object
+          required:
+            - user
+          properties:
+            user:
+              $ref: "#/components/schemas/AdminMealOwner"
+    AdminGlobalMealResponse:
+      type: object
+      required:
+        - meal
+      properties:
+        meal:
+          $ref: "#/components/schemas/AdminGlobalMeal"
+    AdminGlobalMealsResponse:
+      type: object
+      required:
+        - meals
+        - total
+        - limit
+        - offset
+      properties:
+        meals:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminGlobalMeal"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+    FoodType:
+      type: string
+      enum: [generic, branded, dish]
+    FoodSourceType:
+      type: string
+      enum: [USDA, OPEN_FOOD_FACTS, CREA, BOCCONE_CURATED, USER_SUBMITTED, AI_ESTIMATE]
+    FoodQualityLevel:
+      type: string
+      enum:
+        [
+          authoritative,
+          branded_label,
+          boccone_verified,
+          community_approved,
+          user_private,
+          ai_estimated,
+        ]
+    FoodStatus:
+      type: string
+      enum: [DRAFT, PENDING_REVIEW, APPROVED, REJECTED, MERGED]
+    NutritionPer100g:
+      type: object
+      required:
+        [energyKcal, proteinG, carbohydratesG, fatG, fiberG, sugarG, saturatedFatG, sodiumMg]
+      properties:
+        energyKcal: { type: number, minimum: 0, nullable: true }
+        proteinG: { type: number, minimum: 0, nullable: true }
+        carbohydratesG: { type: number, minimum: 0, nullable: true }
+        fatG: { type: number, minimum: 0, nullable: true }
+        fiberG: { type: number, minimum: 0, nullable: true }
+        sugarG: { type: number, minimum: 0, nullable: true }
+        saturatedFatG: { type: number, minimum: 0, nullable: true }
+        sodiumMg: { type: number, minimum: 0, nullable: true }
+    FoodSubmissionNutritionPer100g:
+      type: object
+      required:
+        [energyKcal, proteinG, carbohydratesG, fatG, fiberG, sugarG, saturatedFatG, sodiumMg]
+      properties:
+        energyKcal: { type: number, minimum: 0 }
+        proteinG: { type: number, minimum: 0 }
+        carbohydratesG: { type: number, minimum: 0 }
+        fatG: { type: number, minimum: 0 }
+        fiberG: { type: number, minimum: 0, nullable: true }
+        sugarG: { type: number, minimum: 0, nullable: true }
+        saturatedFatG: { type: number, minimum: 0, nullable: true }
+        sodiumMg: { type: number, minimum: 0, nullable: true }
+    FoodPortion:
+      type: object
+      required: [id, name, amount, unit, gramWeight, isDefault, sourceType]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        amount: { type: number, exclusiveMinimum: 0 }
+        unit: { type: string }
+        gramWeight: { type: number, exclusiveMinimum: 0 }
+        isDefault: { type: boolean }
+        sourceType: { $ref: "#/components/schemas/FoodSourceType" }
+    FoodAlias:
+      type: object
+      required: [id, locale, name]
+      properties:
+        id: { type: string }
+        locale: { type: string }
+        name: { type: string }
+    Food:
+      type: object
+      required:
+        [
+          id,
+          name,
+          type,
+          category,
+          brand,
+          barcode,
+          nutritionPer100g,
+          sourceType,
+          sourceId,
+          sourceName,
+          sourceUrl,
+          qualityLevel,
+          status,
+          portions,
+          aliases,
+          isPrivate,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        type: { $ref: "#/components/schemas/FoodType" }
+        category: { type: string, nullable: true }
+        brand: { type: string, nullable: true }
+        barcode: { type: string, nullable: true }
+        nutritionPer100g: { $ref: "#/components/schemas/NutritionPer100g" }
+        sourceType: { $ref: "#/components/schemas/FoodSourceType" }
+        sourceId: { type: string, nullable: true }
+        sourceName: { type: string, nullable: true }
+        sourceUrl: { type: string, format: uri, nullable: true }
+        qualityLevel: { $ref: "#/components/schemas/FoodQualityLevel" }
+        status: { $ref: "#/components/schemas/FoodStatus" }
+        portions: { type: array, items: { $ref: "#/components/schemas/FoodPortion" } }
+        aliases: { type: array, items: { $ref: "#/components/schemas/FoodAlias" } }
+        isPrivate: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MealFoodEntryInput:
+      type: object
+      required: [foodId, portionName, quantity, grams]
+      properties:
+        foodId: { type: string }
+        portionName: { type: string }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        grams: { type: number, exclusiveMinimum: 0 }
+    MealFoodEntry:
+      type: object
+      required:
+        [
+          id,
+          foodId,
+          foodName,
+          portionName,
+          quantity,
+          grams,
+          energyKcal,
+          proteinG,
+          carbohydratesG,
+          fatG,
+          fiberG,
+          sugarG,
+          saturatedFatG,
+          sodiumMg,
+        ]
+      properties:
+        id: { type: string }
+        foodId: { type: string }
+        foodName: { type: string }
+        portionName: { type: string }
+        quantity: { type: number, minimum: 0 }
+        grams: { type: number, minimum: 0 }
+        energyKcal: { type: number, minimum: 0, nullable: true }
+        proteinG: { type: number, minimum: 0, nullable: true }
+        carbohydratesG: { type: number, minimum: 0, nullable: true }
+        fatG: { type: number, minimum: 0, nullable: true }
+        fiberG: { type: number, minimum: 0, nullable: true }
+        sugarG: { type: number, minimum: 0, nullable: true }
+        saturatedFatG: { type: number, minimum: 0, nullable: true }
+        sodiumMg: { type: number, minimum: 0, nullable: true }
+    FoodSearchResponse:
+      type: object
+      required: [foods, recent, frequent]
+      properties:
+        foods: { type: array, items: { $ref: "#/components/schemas/Food" } }
+        recent: { type: array, items: { $ref: "#/components/schemas/Food" } }
+        frequent: { type: array, items: { $ref: "#/components/schemas/Food" } }
+    CreateFoodSubmissionRequest:
+      type: object
+      required: [name, nutritionPer100g]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        brand: { type: string, maxLength: 160, nullable: true }
+        type: { $ref: "#/components/schemas/FoodType", default: generic }
+        category: { type: string, maxLength: 120, nullable: true }
+        portionName: { type: string, maxLength: 120, default: 100 g }
+        portionGrams: { type: number, exclusiveMinimum: 0, default: 100 }
+        nutritionPer100g: { $ref: "#/components/schemas/FoodSubmissionNutritionPer100g" }
+    FoodSubmission:
+      type: object
+      required:
+        [
+          id,
+          foodId,
+          submittedBy,
+          status,
+          reviewedBy,
+          reviewedAt,
+          reviewReason,
+          mergedIntoFoodId,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id: { type: string }
+        foodId: { type: string }
+        submittedBy: { type: string }
+        status: { $ref: "#/components/schemas/FoodStatus" }
+        reviewedBy: { type: string, nullable: true }
+        reviewedAt: { type: string, format: date-time, nullable: true }
+        reviewReason: { type: string, nullable: true }
+        mergedIntoFoodId: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    FoodSubmissionResponse:
+      type: object
+      required: [food, submission]
+      properties:
+        food: { $ref: "#/components/schemas/Food" }
+        submission: { $ref: "#/components/schemas/FoodSubmission" }
+    AdminFoodResponse:
+      type: object
+      required: [food]
+      properties:
+        food: { $ref: "#/components/schemas/Food" }
+    AdminFoodsResponse:
+      type: object
+      required: [foods, total, limit, offset]
+      properties:
+        foods: { type: array, items: { $ref: "#/components/schemas/Food" } }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+    AdminFoodUpdateRequest:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        category: { type: string, maxLength: 120, nullable: true }
+        type: { $ref: "#/components/schemas/FoodType" }
+        brand: { type: string, maxLength: 160, nullable: true }
+        aliases:
+          type: array
+          maxItems: 50
+          items:
+            type: object
+            required: [locale, name]
+            properties: { locale: { type: string }, name: { type: string } }
+        portions:
+          type: array
+          maxItems: 50
+          items:
+            type: object
+            required: [name, amount, unit, gramWeight, isDefault]
+            properties:
+              name: { type: string }
+              amount: { type: number, exclusiveMinimum: 0 }
+              unit: { type: string }
+              gramWeight: { type: number, exclusiveMinimum: 0 }
+              isDefault: { type: boolean }
+        nutritionPer100g: { $ref: "#/components/schemas/NutritionPer100g" }
+    AdminFoodSubmission:
+      allOf:
+        - $ref: "#/components/schemas/FoodSubmission"
+        - type: object
+          required: [food, submitter, possibleDuplicates, validationFlags]
+          properties:
+            food: { $ref: "#/components/schemas/Food" }
+            submitter:
+              type: object
+              required: [id, name, email]
+              properties:
+                {
+                  id: { type: string },
+                  name: { type: string },
+                  email: { type: string, format: email },
+                }
+            possibleDuplicates: { type: array, items: { $ref: "#/components/schemas/Food" } }
+            validationFlags: { type: array, items: { type: string } }
+    AdminFoodSubmissionsResponse:
+      type: object
+      required: [submissions, total, limit, offset]
+      properties:
+        submissions: { type: array, items: { $ref: "#/components/schemas/AdminFoodSubmission" } }
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+    AdminFoodSubmissionResponse:
+      type: object
+      required: [submission]
+      properties:
+        submission: { $ref: "#/components/schemas/AdminFoodSubmission" }
+    AdminFoodRejectRequest:
+      type: object
+      properties: { reason: { type: string, maxLength: 500, nullable: true } }
+    AdminFoodMergeRequest:
+      type: object
+      required: [foodId]
+      properties: { foodId: { type: string } }
     AdminUser:
       type: object
       required:
@@ -1152,6 +1889,10 @@ components:
         - user_meal_created
         - user_meal_updated
         - user_meal_removed
+        - food_updated
+        - food_submission_approved
+        - food_submission_rejected
+        - food_submission_merged
     AdminAuditPrincipal:
       type: object
       required:

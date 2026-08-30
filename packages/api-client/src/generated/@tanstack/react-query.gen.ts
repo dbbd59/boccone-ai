@@ -9,10 +9,15 @@ import {
 
 import { client } from "../client.gen";
 import {
+  approveFoodSubmission,
   banAdminUser,
   createAdminUser,
   createAdminUserMeal,
+  createFoodSubmission,
   createMeal,
+  getAdminFood,
+  getAdminFoodSubmission,
+  getAdminMeal,
   getAdminUser,
   getAdminUserDailyTargets,
   getAdminUserMeal,
@@ -22,15 +27,22 @@ import {
   getHealth,
   getMeal,
   listAdminAuditLogs,
+  listAdminFoods,
+  listAdminFoodSubmissions,
+  listAdminMeals,
   listAdminUserMeals,
   listAdminUsers,
+  mergeFoodSubmission,
   type Options,
+  rejectFoodSubmission,
   removeAdminUser,
   removeAdminUserDailyTargets,
   removeAdminUserMeal,
   removeMeal,
+  searchFoods,
   setAdminUserRole,
   unbanAdminUser,
+  updateAdminFood,
   updateAdminUser,
   updateAdminUserDailyTargets,
   updateAdminUserMeal,
@@ -38,6 +50,9 @@ import {
   updateMeal,
 } from "../sdk.gen";
 import type {
+  ApproveFoodSubmissionData,
+  ApproveFoodSubmissionError,
+  ApproveFoodSubmissionResponse,
   BanAdminUserData,
   BanAdminUserError,
   BanAdminUserResponse,
@@ -47,9 +62,21 @@ import type {
   CreateAdminUserMealError,
   CreateAdminUserMealResponse,
   CreateAdminUserResponse,
+  CreateFoodSubmissionData,
+  CreateFoodSubmissionError,
+  CreateFoodSubmissionResponse,
   CreateMealData,
   CreateMealError,
   CreateMealResponse,
+  GetAdminFoodData,
+  GetAdminFoodError,
+  GetAdminFoodResponse,
+  GetAdminFoodSubmissionData,
+  GetAdminFoodSubmissionError,
+  GetAdminFoodSubmissionResponse,
+  GetAdminMealData,
+  GetAdminMealError,
+  GetAdminMealResponse,
   GetAdminUserDailyTargetsData,
   GetAdminUserDailyTargetsError,
   GetAdminUserDailyTargetsResponse,
@@ -77,12 +104,27 @@ import type {
   ListAdminAuditLogsData,
   ListAdminAuditLogsError,
   ListAdminAuditLogsResponse,
+  ListAdminFoodsData,
+  ListAdminFoodsError,
+  ListAdminFoodsResponse,
+  ListAdminFoodSubmissionsData,
+  ListAdminFoodSubmissionsError,
+  ListAdminFoodSubmissionsResponse,
+  ListAdminMealsData,
+  ListAdminMealsError,
+  ListAdminMealsResponse,
   ListAdminUserMealsData,
   ListAdminUserMealsError,
   ListAdminUserMealsResponse,
   ListAdminUsersData,
   ListAdminUsersError,
   ListAdminUsersResponse,
+  MergeFoodSubmissionData,
+  MergeFoodSubmissionError,
+  MergeFoodSubmissionResponse,
+  RejectFoodSubmissionData,
+  RejectFoodSubmissionError,
+  RejectFoodSubmissionResponse,
   RemoveAdminUserDailyTargetsData,
   RemoveAdminUserDailyTargetsError,
   RemoveAdminUserDailyTargetsResponse,
@@ -95,12 +137,18 @@ import type {
   RemoveMealData,
   RemoveMealError,
   RemoveMealResponse,
+  SearchFoodsData,
+  SearchFoodsError,
+  SearchFoodsResponse,
   SetAdminUserRoleData,
   SetAdminUserRoleError,
   SetAdminUserRoleResponse,
   UnbanAdminUserData,
   UnbanAdminUserError,
   UnbanAdminUserResponse,
+  UpdateAdminFoodData,
+  UpdateAdminFoodError,
+  UpdateAdminFoodResponse,
   UpdateAdminUserDailyTargetsData,
   UpdateAdminUserDailyTargetsError,
   UpdateAdminUserDailyTargetsResponse,
@@ -373,21 +421,21 @@ export const updateMealMutation = (
   return mutationOptions;
 };
 
-export const listAdminUsersQueryKey = (options?: Options<ListAdminUsersData>) =>
-  createQueryKey("listAdminUsers", options);
+export const searchFoodsQueryKey = (options?: Options<SearchFoodsData>) =>
+  createQueryKey("searchFoods", options);
 
 /**
- * List users for administrators
+ * Search the local Boccone food catalog
  */
-export const listAdminUsersOptions = (options?: Options<ListAdminUsersData>) =>
+export const searchFoodsOptions = (options?: Options<SearchFoodsData>) =>
   queryOptions<
-    ListAdminUsersResponse,
-    ListAdminUsersError,
-    ListAdminUsersResponse,
-    ReturnType<typeof listAdminUsersQueryKey>
+    SearchFoodsResponse,
+    SearchFoodsError,
+    SearchFoodsResponse,
+    ReturnType<typeof searchFoodsQueryKey>
   >({
     queryFn: async ({ queryKey, signal }) => {
-      const { data } = await listAdminUsers({
+      const { data } = await searchFoods({
         ...options,
         ...queryKey[0],
         signal,
@@ -395,7 +443,59 @@ export const listAdminUsersOptions = (options?: Options<ListAdminUsersData>) =>
       });
       return data;
     },
-    queryKey: listAdminUsersQueryKey(options),
+    queryKey: searchFoodsQueryKey(options),
+  });
+
+/**
+ * Propose a food for moderation and use it privately
+ */
+export const createFoodSubmissionMutation = (
+  options?: Partial<Options<CreateFoodSubmissionData>>,
+): UseMutationOptions<
+  CreateFoodSubmissionResponse,
+  CreateFoodSubmissionError,
+  Options<CreateFoodSubmissionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateFoodSubmissionResponse,
+    CreateFoodSubmissionError,
+    Options<CreateFoodSubmissionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createFoodSubmission({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listAdminMealsQueryKey = (options?: Options<ListAdminMealsData>) =>
+  createQueryKey("listAdminMeals", options);
+
+/**
+ * List meals for administrators
+ */
+export const listAdminMealsOptions = (options?: Options<ListAdminMealsData>) =>
+  queryOptions<
+    ListAdminMealsResponse,
+    ListAdminMealsError,
+    ListAdminMealsResponse,
+    ReturnType<typeof listAdminMealsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listAdminMeals({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listAdminMealsQueryKey(options),
   });
 
 const createInfiniteParams = <
@@ -431,6 +531,406 @@ const createInfiniteParams = <
   }
   return params as unknown as typeof page;
 };
+
+export const listAdminMealsInfiniteQueryKey = (
+  options?: Options<ListAdminMealsData>,
+): QueryKey<Options<ListAdminMealsData>> => createQueryKey("listAdminMeals", options, true);
+
+/**
+ * List meals for administrators
+ */
+export const listAdminMealsInfiniteOptions = (options?: Options<ListAdminMealsData>) => {
+  const opts = infiniteQueryOptions<
+    ListAdminMealsResponse,
+    ListAdminMealsError,
+    InfiniteData<ListAdminMealsResponse>,
+    QueryKey<Options<ListAdminMealsData>>,
+    number | Pick<QueryKey<Options<ListAdminMealsData>>[0], "body" | "headers" | "path" | "query">
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListAdminMealsData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  offset: pageParam,
+                },
+              };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await listAdminMeals({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        });
+        return data;
+      },
+      queryKey: listAdminMealsInfiniteQueryKey(options),
+    },
+  );
+  return opts as Omit<typeof opts, "initialData">;
+};
+
+export const getAdminMealQueryKey = (options: Options<GetAdminMealData>) =>
+  createQueryKey("getAdminMeal", options);
+
+/**
+ * Get one meal for administrators
+ */
+export const getAdminMealOptions = (options: Options<GetAdminMealData>) =>
+  queryOptions<
+    GetAdminMealResponse,
+    GetAdminMealError,
+    GetAdminMealResponse,
+    ReturnType<typeof getAdminMealQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAdminMeal({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAdminMealQueryKey(options),
+  });
+
+export const listAdminFoodsQueryKey = (options?: Options<ListAdminFoodsData>) =>
+  createQueryKey("listAdminFoods", options);
+
+/**
+ * Browse the food catalog
+ */
+export const listAdminFoodsOptions = (options?: Options<ListAdminFoodsData>) =>
+  queryOptions<
+    ListAdminFoodsResponse,
+    ListAdminFoodsError,
+    ListAdminFoodsResponse,
+    ReturnType<typeof listAdminFoodsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listAdminFoods({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listAdminFoodsQueryKey(options),
+  });
+
+export const listAdminFoodsInfiniteQueryKey = (
+  options?: Options<ListAdminFoodsData>,
+): QueryKey<Options<ListAdminFoodsData>> => createQueryKey("listAdminFoods", options, true);
+
+/**
+ * Browse the food catalog
+ */
+export const listAdminFoodsInfiniteOptions = (options?: Options<ListAdminFoodsData>) => {
+  const opts = infiniteQueryOptions<
+    ListAdminFoodsResponse,
+    ListAdminFoodsError,
+    InfiniteData<ListAdminFoodsResponse>,
+    QueryKey<Options<ListAdminFoodsData>>,
+    number | Pick<QueryKey<Options<ListAdminFoodsData>>[0], "body" | "headers" | "path" | "query">
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListAdminFoodsData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  offset: pageParam,
+                },
+              };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await listAdminFoods({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        });
+        return data;
+      },
+      queryKey: listAdminFoodsInfiniteQueryKey(options),
+    },
+  );
+  return opts as Omit<typeof opts, "initialData">;
+};
+
+export const getAdminFoodQueryKey = (options: Options<GetAdminFoodData>) =>
+  createQueryKey("getAdminFood", options);
+
+/**
+ * Inspect one catalog food
+ */
+export const getAdminFoodOptions = (options: Options<GetAdminFoodData>) =>
+  queryOptions<
+    GetAdminFoodResponse,
+    GetAdminFoodError,
+    GetAdminFoodResponse,
+    ReturnType<typeof getAdminFoodQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAdminFood({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAdminFoodQueryKey(options),
+  });
+
+/**
+ * Correct catalog food data
+ */
+export const updateAdminFoodMutation = (
+  options?: Partial<Options<UpdateAdminFoodData>>,
+): UseMutationOptions<
+  UpdateAdminFoodResponse,
+  UpdateAdminFoodError,
+  Options<UpdateAdminFoodData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateAdminFoodResponse,
+    UpdateAdminFoodError,
+    Options<UpdateAdminFoodData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateAdminFood({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listAdminFoodSubmissionsQueryKey = (options?: Options<ListAdminFoodSubmissionsData>) =>
+  createQueryKey("listAdminFoodSubmissions", options);
+
+/**
+ * List food submissions for moderation
+ */
+export const listAdminFoodSubmissionsOptions = (options?: Options<ListAdminFoodSubmissionsData>) =>
+  queryOptions<
+    ListAdminFoodSubmissionsResponse,
+    ListAdminFoodSubmissionsError,
+    ListAdminFoodSubmissionsResponse,
+    ReturnType<typeof listAdminFoodSubmissionsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listAdminFoodSubmissions({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listAdminFoodSubmissionsQueryKey(options),
+  });
+
+export const listAdminFoodSubmissionsInfiniteQueryKey = (
+  options?: Options<ListAdminFoodSubmissionsData>,
+): QueryKey<Options<ListAdminFoodSubmissionsData>> =>
+  createQueryKey("listAdminFoodSubmissions", options, true);
+
+/**
+ * List food submissions for moderation
+ */
+export const listAdminFoodSubmissionsInfiniteOptions = (
+  options?: Options<ListAdminFoodSubmissionsData>,
+) => {
+  const opts = infiniteQueryOptions<
+    ListAdminFoodSubmissionsResponse,
+    ListAdminFoodSubmissionsError,
+    InfiniteData<ListAdminFoodSubmissionsResponse>,
+    QueryKey<Options<ListAdminFoodSubmissionsData>>,
+    | number
+    | Pick<
+        QueryKey<Options<ListAdminFoodSubmissionsData>>[0],
+        "body" | "headers" | "path" | "query"
+      >
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListAdminFoodSubmissionsData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  offset: pageParam,
+                },
+              };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await listAdminFoodSubmissions({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        });
+        return data;
+      },
+      queryKey: listAdminFoodSubmissionsInfiniteQueryKey(options),
+    },
+  );
+  return opts as Omit<typeof opts, "initialData">;
+};
+
+export const getAdminFoodSubmissionQueryKey = (options: Options<GetAdminFoodSubmissionData>) =>
+  createQueryKey("getAdminFoodSubmission", options);
+
+/**
+ * Inspect one food submission
+ */
+export const getAdminFoodSubmissionOptions = (options: Options<GetAdminFoodSubmissionData>) =>
+  queryOptions<
+    GetAdminFoodSubmissionResponse,
+    GetAdminFoodSubmissionError,
+    GetAdminFoodSubmissionResponse,
+    ReturnType<typeof getAdminFoodSubmissionQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAdminFoodSubmission({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAdminFoodSubmissionQueryKey(options),
+  });
+
+/**
+ * Approve a food submission
+ */
+export const approveFoodSubmissionMutation = (
+  options?: Partial<Options<ApproveFoodSubmissionData>>,
+): UseMutationOptions<
+  ApproveFoodSubmissionResponse,
+  ApproveFoodSubmissionError,
+  Options<ApproveFoodSubmissionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ApproveFoodSubmissionResponse,
+    ApproveFoodSubmissionError,
+    Options<ApproveFoodSubmissionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await approveFoodSubmission({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Reject a food submission
+ */
+export const rejectFoodSubmissionMutation = (
+  options?: Partial<Options<RejectFoodSubmissionData>>,
+): UseMutationOptions<
+  RejectFoodSubmissionResponse,
+  RejectFoodSubmissionError,
+  Options<RejectFoodSubmissionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RejectFoodSubmissionResponse,
+    RejectFoodSubmissionError,
+    Options<RejectFoodSubmissionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await rejectFoodSubmission({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Merge a duplicate submission into a catalog food
+ */
+export const mergeFoodSubmissionMutation = (
+  options?: Partial<Options<MergeFoodSubmissionData>>,
+): UseMutationOptions<
+  MergeFoodSubmissionResponse,
+  MergeFoodSubmissionError,
+  Options<MergeFoodSubmissionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    MergeFoodSubmissionResponse,
+    MergeFoodSubmissionError,
+    Options<MergeFoodSubmissionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await mergeFoodSubmission({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listAdminUsersQueryKey = (options?: Options<ListAdminUsersData>) =>
+  createQueryKey("listAdminUsers", options);
+
+/**
+ * List users for administrators
+ */
+export const listAdminUsersOptions = (options?: Options<ListAdminUsersData>) =>
+  queryOptions<
+    ListAdminUsersResponse,
+    ListAdminUsersError,
+    ListAdminUsersResponse,
+    ReturnType<typeof listAdminUsersQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listAdminUsers({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listAdminUsersQueryKey(options),
+  });
 
 export const listAdminUsersInfiniteQueryKey = (
   options?: Options<ListAdminUsersData>,

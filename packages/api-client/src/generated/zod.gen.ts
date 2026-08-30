@@ -52,7 +52,7 @@ export const zDailyTargetsResponse = z.object({
 
 export const zMealCategory = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 
-export const zCreateMealRequest = z.object({
+export const zManualMealRequest = z.object({
   name: z.string().min(1).max(160),
   category: zMealCategory,
   date: z.iso.date(),
@@ -61,31 +61,6 @@ export const zCreateMealRequest = z.object({
   carbohydratesGrams: z.int().gte(0).lte(10000),
   fatGrams: z.int().gte(0).lte(10000),
   notes: z.string().max(2000).nullish(),
-});
-
-export const zUpdateMealRequest = z.object({
-  name: z.string().min(1).max(160).optional(),
-  category: zMealCategory.optional(),
-  date: z.iso.date().optional(),
-  calories: z.int().gte(0).lte(100000).optional(),
-  proteinGrams: z.int().gte(0).lte(10000).optional(),
-  carbohydratesGrams: z.int().gte(0).lte(10000).optional(),
-  fatGrams: z.int().gte(0).lte(10000).optional(),
-  notes: z.string().max(2000).nullish(),
-});
-
-export const zMeal = zCreateMealRequest.and(
-  z.object({
-    id: z.string(),
-    source: z.enum(["manual"]),
-    notes: z.string().max(2000).nullable(),
-    createdAt: z.iso.datetime(),
-    updatedAt: z.iso.datetime(),
-  }),
-);
-
-export const zMealResponse = z.object({
-  meal: zMeal,
 });
 
 export const zMealMutationResponse = z.object({
@@ -99,10 +74,165 @@ export const zMealTotals = z.object({
   fatGrams: z.int().gte(0),
 });
 
+export const zAdminMealOwner = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.email(),
+});
+
+export const zFoodType = z.enum(["generic", "branded", "dish"]);
+
+export const zFoodSourceType = z.enum([
+  "USDA",
+  "OPEN_FOOD_FACTS",
+  "CREA",
+  "BOCCONE_CURATED",
+  "USER_SUBMITTED",
+  "AI_ESTIMATE",
+]);
+
+export const zFoodQualityLevel = z.enum([
+  "authoritative",
+  "branded_label",
+  "boccone_verified",
+  "community_approved",
+  "user_private",
+  "ai_estimated",
+]);
+
+export const zFoodStatus = z.enum(["DRAFT", "PENDING_REVIEW", "APPROVED", "REJECTED", "MERGED"]);
+
+export const zNutritionPer100g = z.object({
+  energyKcal: z.number().gte(0).nullable(),
+  proteinG: z.number().gte(0).nullable(),
+  carbohydratesG: z.number().gte(0).nullable(),
+  fatG: z.number().gte(0).nullable(),
+  fiberG: z.number().gte(0).nullable(),
+  sugarG: z.number().gte(0).nullable(),
+  saturatedFatG: z.number().gte(0).nullable(),
+  sodiumMg: z.number().gte(0).nullable(),
+});
+
+export const zFoodSubmissionNutritionPer100g = z.object({
+  energyKcal: z.number().gte(0),
+  proteinG: z.number().gte(0),
+  carbohydratesG: z.number().gte(0),
+  fatG: z.number().gte(0),
+  fiberG: z.number().gte(0).nullable(),
+  sugarG: z.number().gte(0).nullable(),
+  saturatedFatG: z.number().gte(0).nullable(),
+  sodiumMg: z.number().gte(0).nullable(),
+});
+
+export const zFoodPortion = z.object({
+  id: z.string(),
+  name: z.string(),
+  amount: z.number(),
+  unit: z.string(),
+  gramWeight: z.number(),
+  isDefault: z.boolean(),
+  sourceType: zFoodSourceType,
+});
+
+export const zFoodAlias = z.object({
+  id: z.string(),
+  locale: z.string(),
+  name: z.string(),
+});
+
+export const zFood = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: zFoodType,
+  category: z.string().nullable(),
+  brand: z.string().nullable(),
+  barcode: z.string().nullable(),
+  nutritionPer100g: zNutritionPer100g,
+  sourceType: zFoodSourceType,
+  sourceId: z.string().nullable(),
+  sourceName: z.string().nullable(),
+  sourceUrl: z.url().nullable(),
+  qualityLevel: zFoodQualityLevel,
+  status: zFoodStatus,
+  portions: z.array(zFoodPortion),
+  aliases: z.array(zFoodAlias),
+  isPrivate: z.boolean(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const zMealFoodEntryInput = z.object({
+  foodId: z.string(),
+  portionName: z.string(),
+  quantity: z.number(),
+  grams: z.number(),
+});
+
+export const zFoodMealRequest = z.object({
+  name: z.string().min(1).max(160),
+  category: zMealCategory,
+  date: z.iso.date(),
+  notes: z.string().max(2000).nullish(),
+  entries: z.array(zMealFoodEntryInput).min(1).max(100),
+});
+
+export const zCreateMealRequest = z.union([zManualMealRequest, zFoodMealRequest]);
+
+export const zUpdateMealRequest = z.object({
+  name: z.string().min(1).max(160).optional(),
+  category: zMealCategory.optional(),
+  date: z.iso.date().optional(),
+  calories: z.int().gte(0).lte(100000).optional(),
+  proteinGrams: z.int().gte(0).lte(10000).optional(),
+  carbohydratesGrams: z.int().gte(0).lte(10000).optional(),
+  fatGrams: z.int().gte(0).lte(10000).optional(),
+  notes: z.string().max(2000).nullish(),
+  entries: z.array(zMealFoodEntryInput).min(1).max(100).optional(),
+});
+
+export const zMealFoodEntry = z.object({
+  id: z.string(),
+  foodId: z.string(),
+  foodName: z.string(),
+  portionName: z.string(),
+  quantity: z.number().gte(0),
+  grams: z.number().gte(0),
+  energyKcal: z.number().gte(0).nullable(),
+  proteinG: z.number().gte(0).nullable(),
+  carbohydratesG: z.number().gte(0).nullable(),
+  fatG: z.number().gte(0).nullable(),
+  fiberG: z.number().gte(0).nullable(),
+  sugarG: z.number().gte(0).nullable(),
+  saturatedFatG: z.number().gte(0).nullable(),
+  sodiumMg: z.number().gte(0).nullable(),
+});
+
+export const zMeal = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: zMealCategory,
+  date: z.iso.date(),
+  calories: z.int().gte(0).lte(100000),
+  proteinGrams: z.int().gte(0).lte(10000),
+  carbohydratesGrams: z.int().gte(0).lte(10000),
+  fatGrams: z.int().gte(0).lte(10000),
+  nutritionIncomplete: z.boolean(),
+  notes: z.string().max(2000).nullable(),
+  source: z.enum(["manual"]),
+  entries: z.array(zMealFoodEntry),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const zMealResponse = z.object({
+  meal: zMeal,
+});
+
 export const zDailyMealsResponse = z.object({
   date: z.iso.date(),
   meals: z.array(zMeal),
   totals: zMealTotals,
+  nutritionIncomplete: z.boolean(),
 });
 
 export const zAdminMealsResponse = z.object({
@@ -111,6 +241,129 @@ export const zAdminMealsResponse = z.object({
   total: z.int(),
   limit: z.int(),
   offset: z.int(),
+});
+
+export const zAdminGlobalMeal = zMeal.and(
+  z.object({
+    user: zAdminMealOwner,
+  }),
+);
+
+export const zAdminGlobalMealResponse = z.object({
+  meal: zAdminGlobalMeal,
+});
+
+export const zAdminGlobalMealsResponse = z.object({
+  meals: z.array(zAdminGlobalMeal),
+  total: z.int(),
+  limit: z.int(),
+  offset: z.int(),
+});
+
+export const zFoodSearchResponse = z.object({
+  foods: z.array(zFood),
+  recent: z.array(zFood),
+  frequent: z.array(zFood),
+});
+
+export const zCreateFoodSubmissionRequest = z.object({
+  name: z.string().min(1).max(160),
+  brand: z.string().max(160).nullish(),
+  type: zFoodType.optional(),
+  category: z.string().max(120).nullish(),
+  portionName: z.string().max(120).optional().default("100 g"),
+  portionGrams: z.number().optional().default(100),
+  nutritionPer100g: zFoodSubmissionNutritionPer100g,
+});
+
+export const zFoodSubmission = z.object({
+  id: z.string(),
+  foodId: z.string(),
+  submittedBy: z.string(),
+  status: zFoodStatus,
+  reviewedBy: z.string().nullable(),
+  reviewedAt: z.iso.datetime().nullable(),
+  reviewReason: z.string().nullable(),
+  mergedIntoFoodId: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const zFoodSubmissionResponse = z.object({
+  food: zFood,
+  submission: zFoodSubmission,
+});
+
+export const zAdminFoodResponse = z.object({
+  food: zFood,
+});
+
+export const zAdminFoodsResponse = z.object({
+  foods: z.array(zFood),
+  total: z.int(),
+  limit: z.int(),
+  offset: z.int(),
+});
+
+export const zAdminFoodUpdateRequest = z.object({
+  name: z.string().min(1).max(160).optional(),
+  category: z.string().max(120).nullish(),
+  type: zFoodType.optional(),
+  brand: z.string().max(160).nullish(),
+  aliases: z
+    .array(
+      z.object({
+        locale: z.string(),
+        name: z.string(),
+      }),
+    )
+    .max(50)
+    .optional(),
+  portions: z
+    .array(
+      z.object({
+        name: z.string(),
+        amount: z.number(),
+        unit: z.string(),
+        gramWeight: z.number(),
+        isDefault: z.boolean(),
+      }),
+    )
+    .max(50)
+    .optional(),
+  nutritionPer100g: zNutritionPer100g.optional(),
+});
+
+export const zAdminFoodSubmission = zFoodSubmission.and(
+  z.object({
+    food: zFood,
+    submitter: z.object({
+      id: z.string(),
+      name: z.string(),
+      email: z.email(),
+    }),
+    possibleDuplicates: z.array(zFood),
+    validationFlags: z.array(z.string()),
+  }),
+);
+
+export const zAdminFoodSubmissionsResponse = z.object({
+  submissions: z.array(zAdminFoodSubmission),
+  total: z.int(),
+  limit: z.int(),
+  offset: z.int(),
+});
+
+export const zAdminFoodSubmissionResponse = z.object({
+  submission: zAdminFoodSubmission,
+});
+
+export const zAdminFoodRejectRequest = z.object({
+  reason: z.string().max(500).nullish(),
+});
+
+export const zAdminFoodMergeRequest = z.object({
+  foodId: z.string(),
 });
 
 export const zAdminUser = z.object({
@@ -174,6 +427,10 @@ export const zAdminAuditAction = z.enum([
   "user_meal_created",
   "user_meal_updated",
   "user_meal_removed",
+  "food_updated",
+  "food_submission_approved",
+  "food_submission_rejected",
+  "food_submission_merged",
 ]);
 
 export const zAdminAuditPrincipal = z.object({
@@ -266,6 +523,130 @@ export const zUpdateMealPath = z.object({
  * Updated meal
  */
 export const zUpdateMealResponse = zMealResponse;
+
+export const zSearchFoodsQuery = z.object({
+  query: z.string().max(120).optional(),
+  locale: z.enum(["en", "it"]).optional().default("it"),
+  limit: z.int().gte(1).lte(50).optional().default(20),
+});
+
+/**
+ * Foods matching the query and the user's personal foods
+ */
+export const zSearchFoodsResponse = zFoodSearchResponse;
+
+export const zCreateFoodSubmissionBody = zCreateFoodSubmissionRequest;
+
+/**
+ * Private food and pending submission
+ */
+export const zCreateFoodSubmissionResponse = zFoodSubmissionResponse;
+
+export const zListAdminMealsQuery = z.object({
+  search: z.string().min(1).max(255).optional(),
+  date: z.iso.date().optional(),
+  category: zMealCategory.optional(),
+  limit: z.int().gte(1).lte(100).optional().default(20),
+  offset: z.int().gte(0).optional().default(0),
+});
+
+/**
+ * Meals visible to operations staff
+ */
+export const zListAdminMealsResponse = zAdminGlobalMealsResponse;
+
+export const zGetAdminMealPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Meal details and owner
+ */
+export const zGetAdminMealResponse = zAdminGlobalMealResponse;
+
+export const zListAdminFoodsQuery = z.object({
+  search: z.string().min(1).max(255).optional(),
+  status: zFoodStatus.optional(),
+  sourceType: zFoodSourceType.optional(),
+  limit: z.int().gte(1).lte(100).optional().default(20),
+  offset: z.int().gte(0).optional().default(0),
+});
+
+/**
+ * Catalog foods
+ */
+export const zListAdminFoodsResponse = zAdminFoodsResponse;
+
+export const zGetAdminFoodPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Food details
+ */
+export const zGetAdminFoodResponse = zAdminFoodResponse;
+
+export const zUpdateAdminFoodBody = zAdminFoodUpdateRequest;
+
+export const zUpdateAdminFoodPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Updated food
+ */
+export const zUpdateAdminFoodResponse = zAdminFoodResponse;
+
+export const zListAdminFoodSubmissionsQuery = z.object({
+  status: zFoodStatus.optional(),
+  limit: z.int().gte(1).lte(100).optional().default(20),
+  offset: z.int().gte(0).optional().default(0),
+});
+
+/**
+ * Moderation queue
+ */
+export const zListAdminFoodSubmissionsResponse = zAdminFoodSubmissionsResponse;
+
+export const zGetAdminFoodSubmissionPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Submission review workspace
+ */
+export const zGetAdminFoodSubmissionResponse = zAdminFoodSubmissionResponse;
+
+export const zApproveFoodSubmissionPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Approved submission
+ */
+export const zApproveFoodSubmissionResponse = zAdminFoodSubmissionResponse;
+
+export const zRejectFoodSubmissionBody = zAdminFoodRejectRequest;
+
+export const zRejectFoodSubmissionPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Rejected submission
+ */
+export const zRejectFoodSubmissionResponse = zAdminFoodSubmissionResponse;
+
+export const zMergeFoodSubmissionBody = zAdminFoodMergeRequest;
+
+export const zMergeFoodSubmissionPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Merged submission
+ */
+export const zMergeFoodSubmissionResponse = zAdminFoodSubmissionResponse;
 
 export const zListAdminUsersQuery = z.object({
   search: z.string().min(1).max(255).optional(),

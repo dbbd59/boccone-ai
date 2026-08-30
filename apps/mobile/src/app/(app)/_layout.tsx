@@ -11,6 +11,7 @@ export default function AuthenticatedLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="meals" />
       <Stack.Screen name="add-meal" />
     </Stack>
   );

@@ -4,6 +4,7 @@ export const supportedLocales = ["en", "it"] as const;
 export type Locale = (typeof supportedLocales)[number];
 
 export interface TranslationCopy {
+  appName: string;
   language: {
     label: string;
     english: string;
@@ -14,7 +15,11 @@ export interface TranslationCopy {
   };
   navigation: {
     home: string;
+    meals: string;
+    calendar: string;
+    diary: string;
     settings: string;
+    back: string;
   };
   auth: {
     signIn: {
@@ -94,25 +99,72 @@ export interface TranslationCopy {
     todayTitle: string;
     todayDate: (date: string) => string;
     caloriesLabel: string;
-    caloriesValue: (value: number) => string;
+    caloriesValue: (value: number | null | undefined) => string;
     caloriesTarget: (target: number) => string;
     caloriesUnset: string;
     macrosTitle: string;
     proteinLabel: string;
     carbohydratesLabel: string;
     fatLabel: string;
-    gramsValue: (value: number) => string;
+    gramsValue: (value: number | null | undefined) => string;
     gramsTarget: (value: number, target: number) => string;
     mealsTitle: string;
     addMeal: string;
     editMeal: string;
-    mealSummary: (name: string, calories: number) => string;
+    viewMeals: string;
+    openMeal: (name: string) => string;
+    moreMeals: (count: number) => string;
+    mealSummary: (name: string, calories: number | null | undefined) => string;
+    mealMeta: (category: string, calories: number | null | undefined) => string;
     emptyTitle: string;
     emptyBody: string;
     loadError: string;
+    retry: string;
     categoryLabels: Record<MealCategory, string>;
   };
+  meals: {
+    title: string;
+    subtitle: string;
+    today: string;
+    add: string;
+    addFirst: string;
+    loading: string;
+    loadError: string;
+    retry: string;
+    emptyTitle: string;
+    emptyBody: string;
+    total: string;
+    openMeal: (name: string) => string;
+    mealSummary: (name: string, calories: number | null | undefined) => string;
+    mealMeta: (category: string, calories: number | null | undefined) => string;
+  };
+  calendar: {
+    title: string;
+    subtitle: string;
+    previousWeek: string;
+    nextWeek: string;
+    today: string;
+    selectedDate: string;
+    loadingWeek: string;
+    loadingDay: string;
+    loadError: string;
+    retry: string;
+    emptyTitle: string;
+    emptyBody: string;
+    total: string;
+    dayAccessibility: (date: string, mealCount: number) => string;
+  };
+  diary: {
+    title: string;
+    subtitle: string;
+    comingSoonTitle: string;
+    comingSoonMessage: string;
+  };
   meal: {
+    detailEyebrow: string;
+    detailDate: (category: string, date: string) => string;
+    editAction: string;
+    retry: string;
     addTitle: string;
     editTitle: string;
     subtitle: string;
@@ -121,6 +173,7 @@ export interface TranslationCopy {
     categoryLabel: string;
     categories: Record<MealCategory, string>;
     dateLabel: string;
+    datePlaceholder: string;
     dateDescription: string;
     nutritionTitle: string;
     caloriesLabel: string;
@@ -140,6 +193,53 @@ export interface TranslationCopy {
     saveError: string;
     loadError: string;
     loading: string;
+  };
+  food: {
+    title: string;
+    searchPlaceholder: string;
+    searchHint: string;
+    recent: string;
+    frequent: string;
+    suggestions: string;
+    possibleMatches: string;
+    results: string;
+    noResults: string;
+    notFoundTitle: string;
+    propose: (name: string) => string;
+    addFood: string;
+    cancel: string;
+    portionTitle: string;
+    quantityLabel: string;
+    gramsLabel: string;
+    customGrams: string;
+    addToMeal: string;
+    editEntry: string;
+    updateEntry: string;
+    selectedFoods: string;
+    remove: string;
+    mealTotal: string;
+    saveMeal: string;
+    nameLabel: string;
+    brandLabel: string;
+    brandPlaceholder: string;
+    typeLabel: string;
+    types: { generic: string; branded: string; dish: string };
+    categoryLabel: string;
+    categoryPlaceholder: string;
+    portionNameLabel: string;
+    portionNamePlaceholder: string;
+    portionGramsLabel: string;
+    caloriesPer100g: string;
+    proteinPer100g: string;
+    carbsPer100g: string;
+    fatPer100g: string;
+    submitFood: string;
+    submissionNote: string;
+    submissionSuccess: string;
+    loading: string;
+    error: string;
+    validation: string;
+    approximate: string;
   };
   settings: {
     title: string;
@@ -163,6 +263,20 @@ export interface TranslationCopy {
     targetsInvalid: string;
     languageTitle: string;
     accountTitle: string;
+    preferencesTitle: string;
+    profileTitle: string;
+    profileBody: string;
+    profileReadOnly: string;
+    profileLoadError: string;
+    nameLabel: string;
+    emailLabel: string;
+    aboutTitle: string;
+    aboutBody: string;
+    aboutPrincipleTitle: string;
+    aboutPrincipleBody: string;
+    aboutMoreTitle: string;
+    aboutMoreBody: string;
+    signedInTitle: string;
     signedInAs: (email: string | undefined) => string;
     signOut: string;
   };
@@ -170,9 +284,17 @@ export interface TranslationCopy {
 
 export const translations: Record<Locale, TranslationCopy> = {
   en: {
+    appName: "BOCCONE AI",
     language: { label: "Language", english: "English", italian: "Italian" },
     loading: { tagline: "Making food tracking feel lighter." },
-    navigation: { home: "Home", settings: "Settings" },
+    navigation: {
+      home: "Home",
+      meals: "Meals",
+      calendar: "Calendar",
+      diary: "Diary",
+      settings: "Settings",
+      back: "Back",
+    },
     auth: {
       signIn: {
         title: "Welcome back",
@@ -251,25 +373,78 @@ export const translations: Record<Locale, TranslationCopy> = {
       todayTitle: "Today",
       todayDate: (date) => date,
       caloriesLabel: "Calories",
-      caloriesValue: (value) => `${value} kcal`,
+      caloriesValue: (value) => (value === null || value === undefined ? "—" : `${value} kcal`),
       caloriesTarget: (target) => `of ${target} kcal target`,
       caloriesUnset: "No calorie target set",
       macrosTitle: "Macros",
       proteinLabel: "Protein",
       carbohydratesLabel: "Carbohydrates",
       fatLabel: "Fat",
-      gramsValue: (value) => `${value} g`,
+      gramsValue: (value) => (value === null || value === undefined ? "—" : `${value} g`),
       gramsTarget: (value, target) => `${value} / ${target} g`,
       mealsTitle: "Meals",
       addMeal: "Add meal",
       editMeal: "Edit meal",
-      mealSummary: (name, calories) => `${name} · ${calories} kcal`,
+      viewMeals: "See all",
+      openMeal: (name) => `Open ${name}`,
+      moreMeals: (count) => `+${count} more today`,
+      mealSummary: (name, calories) =>
+        `${name} · ${calories === null || calories === undefined ? "—" : `${calories} kcal`}`,
+      mealMeta: (category, calories) =>
+        `${category} · ${calories === null || calories === undefined ? "—" : `${calories} kcal`}`,
       emptyTitle: "Nothing logged yet",
       emptyBody: "Add your first meal manually. You can review it here anytime.",
       loadError: "Could not load today's meals. Try again later.",
+      retry: "Try again",
       categoryLabels: { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" },
     },
+    meals: {
+      title: "Meals",
+      subtitle: "Keep the food you log in one clear place.",
+      today: "Today",
+      add: "Add meal",
+      addFirst: "Log your first meal",
+      loading: "Loading today's meals…",
+      loadError: "Could not load today's meals. Try again later.",
+      retry: "Try again",
+      emptyTitle: "No meals today",
+      emptyBody: "Start with a meal you want to remember.",
+      total: "Today's total",
+      openMeal: (name) => `Open ${name}`,
+      mealSummary: (name, calories) =>
+        `${name} · ${calories === null || calories === undefined ? "—" : `${calories} kcal`}`,
+      mealMeta: (category, calories) =>
+        `${category} · ${calories === null || calories === undefined ? "—" : `${calories} kcal`}`,
+    },
+    calendar: {
+      title: "Calendar",
+      subtitle: "Choose a day to see what you logged.",
+      previousWeek: "Previous week",
+      nextWeek: "Next week",
+      today: "Back to today",
+      selectedDate: "Selected day",
+      loadingWeek: "Checking this week…",
+      loadingDay: "Loading this day…",
+      loadError: "Could not load this day. Try again later.",
+      retry: "Try again",
+      emptyTitle: "Nothing logged for this day",
+      emptyBody: "When you add a meal for this date, it will appear here.",
+      total: "Day total",
+      dayAccessibility: (date, mealCount) =>
+        `${date}, ${mealCount} ${mealCount === 1 ? "meal" : "meals"}`,
+    },
+    diary: {
+      title: "Diary",
+      subtitle: "Your longer view of meals and food memories.",
+      comingSoonTitle: "Your history is taking shape",
+      comingSoonMessage:
+        "A calm chronological view of your meals is coming soon. Your logged meals already live in Meals and Calendar.",
+    },
     meal: {
+      detailEyebrow: "MEAL DETAIL",
+      detailDate: (category, date) => `${category} · ${date}`,
+      editAction: "Edit meal",
+      retry: "Try again",
       addTitle: "Add a meal",
       editTitle: "Edit meal",
       subtitle: "Record what you ate with values you trust.",
@@ -278,6 +453,7 @@ export const translations: Record<Locale, TranslationCopy> = {
       categoryLabel: "Category",
       categories: { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" },
       dateLabel: "Date",
+      datePlaceholder: "YYYY-MM-DD",
       dateDescription: "Use your local calendar date: YYYY-MM-DD.",
       nutritionTitle: "Nutrition",
       caloriesLabel: "Calories (kcal)",
@@ -297,6 +473,53 @@ export const translations: Record<Locale, TranslationCopy> = {
       saveError: "Could not save the meal. Try again.",
       loadError: "Could not load this meal. Try again later.",
       loading: "Loading meal…",
+    },
+    food: {
+      title: "Add food",
+      searchPlaceholder: "Search food…",
+      searchHint: "Search by name, like apple or pasta.",
+      recent: "Recent",
+      frequent: "Frequent",
+      suggestions: "Try these",
+      possibleMatches: "Possible matches",
+      results: "Results",
+      noResults: "No matching food yet.",
+      notFoundTitle: "Can’t find it?",
+      propose: (name) => `Add “${name}” to your foods`,
+      addFood: "Add food",
+      cancel: "Cancel",
+      portionTitle: "Choose a portion",
+      quantityLabel: "Quantity",
+      gramsLabel: "Grams",
+      customGrams: "Custom grams",
+      addToMeal: "Add to meal",
+      editEntry: "Edit",
+      updateEntry: "Update entry",
+      selectedFoods: "In this meal",
+      remove: "Remove",
+      mealTotal: "Meal total",
+      saveMeal: "Save meal",
+      nameLabel: "Food name",
+      brandLabel: "Brand (optional)",
+      brandPlaceholder: "e.g. local bakery",
+      typeLabel: "Food type",
+      types: { generic: "Generic", branded: "Branded", dish: "Dish" },
+      categoryLabel: "Category (optional)",
+      categoryPlaceholder: "e.g. dessert",
+      portionNameLabel: "Typical portion",
+      portionNamePlaceholder: "e.g. 1 slice",
+      portionGramsLabel: "Portion grams",
+      caloriesPer100g: "Calories / 100 g",
+      proteinPer100g: "Protein / 100 g",
+      carbsPer100g: "Carbs / 100 g",
+      fatPer100g: "Fat / 100 g",
+      submitFood: "Use and propose food",
+      submissionNote: "You can use it now. An admin will review it before it appears for everyone.",
+      submissionSuccess: "Food added to your private foods.",
+      loading: "Looking in your food catalog…",
+      error: "Could not load foods. Try again.",
+      validation: "Enter a name, portion grams, and valid nutrition values.",
+      approximate: "Approximate",
     },
     settings: {
       title: "Your space",
@@ -320,14 +543,39 @@ export const translations: Record<Locale, TranslationCopy> = {
       targetsInvalid: "Use a whole number or leave the field blank.",
       languageTitle: "Language",
       accountTitle: "Account",
+      preferencesTitle: "Preferences",
+      profileTitle: "Profile",
+      profileBody: "The account details Boccone currently has for you.",
+      profileReadOnly:
+        "Profile editing will be available here when the account update flow is ready.",
+      profileLoadError: "Could not load your profile. Showing the signed-in account instead.",
+      nameLabel: "Name",
+      emailLabel: "Email",
+      aboutTitle: "About Boccone",
+      aboutBody: "A calm, transparent companion for remembering what you eat.",
+      aboutPrincipleTitle: "Estimates stay estimates",
+      aboutPrincipleBody:
+        "Boccone helps you record food and understand your own patterns. It is not medical advice or a clinical nutrition tool.",
+      aboutMoreTitle: "More details are coming",
+      aboutMoreBody:
+        "Version and privacy details will have a dedicated home as those product surfaces land.",
+      signedInTitle: "Signed in",
       signedInAs: (email) => `Signed in as ${email ?? "your account"}`,
       signOut: "Log out",
     },
   },
   it: {
+    appName: "BOCCONE AI",
     language: { label: "Lingua", english: "Inglese", italian: "Italiano" },
     loading: { tagline: "Rendere più semplice seguire ciò che mangi." },
-    navigation: { home: "Home", settings: "Impostazioni" },
+    navigation: {
+      home: "Home",
+      meals: "Pasti",
+      calendar: "Calendario",
+      diary: "Diario",
+      settings: "Impostazioni",
+      back: "Indietro",
+    },
     auth: {
       signIn: {
         title: "Bentornato",
@@ -406,22 +654,29 @@ export const translations: Record<Locale, TranslationCopy> = {
       todayTitle: "Oggi",
       todayDate: (date) => date,
       caloriesLabel: "Calorie",
-      caloriesValue: (value) => `${value} kcal`,
+      caloriesValue: (value) => (value === null || value === undefined ? "—" : `${value} kcal`),
       caloriesTarget: (target) => `su ${target} kcal obiettivo`,
       caloriesUnset: "Nessun obiettivo calorico impostato",
       macrosTitle: "Macronutrienti",
       proteinLabel: "Proteine",
       carbohydratesLabel: "Carboidrati",
       fatLabel: "Grassi",
-      gramsValue: (value) => `${value} g`,
+      gramsValue: (value) => (value === null || value === undefined ? "—" : `${value} g`),
       gramsTarget: (value, target) => `${value} / ${target} g`,
       mealsTitle: "Pasti",
       addMeal: "Aggiungi pasto",
       editMeal: "Modifica pasto",
-      mealSummary: (name, calories) => `${name} · ${calories} kcal`,
+      viewMeals: "Vedi tutti",
+      openMeal: (name) => `Apri ${name}`,
+      moreMeals: (count) => `+${count} altri oggi`,
+      mealSummary: (name, calories) =>
+        `${name} · ${calories === null || calories === undefined ? "—" : `${calories} kcal`}`,
+      mealMeta: (category, calories) =>
+        `${category} · ${calories === null || calories === undefined ? "—" : `${calories} kcal`}`,
       emptyTitle: "Nessun pasto registrato",
       emptyBody: "Aggiungi il tuo primo pasto manualmente. Potrai rivederlo quando vuoi.",
       loadError: "Impossibile caricare i pasti di oggi. Riprova più tardi.",
+      retry: "Riprova",
       categoryLabels: {
         breakfast: "Colazione",
         lunch: "Pranzo",
@@ -429,7 +684,53 @@ export const translations: Record<Locale, TranslationCopy> = {
         snack: "Spuntino",
       },
     },
+    meals: {
+      title: "Pasti",
+      subtitle: "Tieni ciò che registri in un unico spazio chiaro.",
+      today: "Oggi",
+      add: "Aggiungi pasto",
+      addFirst: "Registra il primo pasto",
+      loading: "Caricamento dei pasti di oggi…",
+      loadError: "Impossibile caricare i pasti di oggi. Riprova più tardi.",
+      retry: "Riprova",
+      emptyTitle: "Nessun pasto oggi",
+      emptyBody: "Inizia da un pasto che vuoi ricordare.",
+      total: "Totale di oggi",
+      openMeal: (name) => `Apri ${name}`,
+      mealSummary: (name, calories) =>
+        `${name} · ${calories === null || calories === undefined ? "—" : `${calories} kcal`}`,
+      mealMeta: (category, calories) =>
+        `${category} · ${calories === null || calories === undefined ? "—" : `${calories} kcal`}`,
+    },
+    calendar: {
+      title: "Calendario",
+      subtitle: "Scegli un giorno per vedere cosa hai registrato.",
+      previousWeek: "Settimana precedente",
+      nextWeek: "Settimana successiva",
+      today: "Torna a oggi",
+      selectedDate: "Giorno selezionato",
+      loadingWeek: "Controllo la settimana…",
+      loadingDay: "Caricamento del giorno…",
+      loadError: "Impossibile caricare questo giorno. Riprova più tardi.",
+      retry: "Riprova",
+      emptyTitle: "Nessun dato per questo giorno",
+      emptyBody: "Quando aggiungerai un pasto per questa data, apparirà qui.",
+      total: "Totale del giorno",
+      dayAccessibility: (date, mealCount) =>
+        `${date}, ${mealCount} ${mealCount === 1 ? "pasto" : "pasti"}`,
+    },
+    diary: {
+      title: "Diario",
+      subtitle: "Una visione nel tempo dei tuoi pasti e dei tuoi ricordi.",
+      comingSoonTitle: "La tua storia sta prendendo forma",
+      comingSoonMessage:
+        "Una vista cronologica e calma dei tuoi pasti arriverà presto. Quelli che hai registrato sono già in Pasti e Calendario.",
+    },
     meal: {
+      detailEyebrow: "DETTAGLIO PASTO",
+      detailDate: (category, date) => `${category} · ${date}`,
+      editAction: "Modifica pasto",
+      retry: "Riprova",
       addTitle: "Aggiungi un pasto",
       editTitle: "Modifica pasto",
       subtitle: "Registra ciò che hai mangiato con valori che conosci.",
@@ -438,6 +739,7 @@ export const translations: Record<Locale, TranslationCopy> = {
       categoryLabel: "Categoria",
       categories: { breakfast: "Colazione", lunch: "Pranzo", dinner: "Cena", snack: "Spuntino" },
       dateLabel: "Data",
+      datePlaceholder: "AAAA-MM-GG",
       dateDescription: "Usa la data del tuo calendario locale: AAAA-MM-GG.",
       nutritionTitle: "Valori nutrizionali",
       caloriesLabel: "Calorie (kcal)",
@@ -457,6 +759,54 @@ export const translations: Record<Locale, TranslationCopy> = {
       saveError: "Impossibile salvare il pasto. Riprova.",
       loadError: "Impossibile caricare questo pasto. Riprova più tardi.",
       loading: "Caricamento del pasto…",
+    },
+    food: {
+      title: "Aggiungi alimento",
+      searchPlaceholder: "Cerca un alimento…",
+      searchHint: "Cerca per nome, ad esempio mela o pasta.",
+      recent: "Recenti",
+      frequent: "Più usati",
+      suggestions: "Puoi provare",
+      possibleMatches: "Possibili corrispondenze",
+      results: "Risultati",
+      noResults: "Nessun alimento trovato.",
+      notFoundTitle: "Non lo trovi?",
+      propose: (name) => `Aggiungi “${name}” ai tuoi alimenti`,
+      addFood: "Aggiungi alimento",
+      cancel: "Annulla",
+      portionTitle: "Scegli una porzione",
+      quantityLabel: "Quantità",
+      gramsLabel: "Grammi",
+      customGrams: "Grammi personalizzati",
+      addToMeal: "Aggiungi al pasto",
+      editEntry: "Modifica",
+      updateEntry: "Aggiorna voce",
+      selectedFoods: "Nel pasto",
+      remove: "Rimuovi",
+      mealTotal: "Totale pasto",
+      saveMeal: "Salva pasto",
+      nameLabel: "Nome alimento",
+      brandLabel: "Marca (facoltativa)",
+      brandPlaceholder: "es. panificio di quartiere",
+      typeLabel: "Tipo di alimento",
+      types: { generic: "Generico", branded: "Confezionato", dish: "Piatto" },
+      categoryLabel: "Categoria (facoltativa)",
+      categoryPlaceholder: "es. dolce",
+      portionNameLabel: "Porzione abituale",
+      portionNamePlaceholder: "es. 1 fetta",
+      portionGramsLabel: "Grammi porzione",
+      caloriesPer100g: "Calorie / 100 g",
+      proteinPer100g: "Proteine / 100 g",
+      carbsPer100g: "Carboidrati / 100 g",
+      fatPer100g: "Grassi / 100 g",
+      submitFood: "Usa e proponi alimento",
+      submissionNote:
+        "Puoi usarlo subito. Un admin lo verificherà prima di renderlo disponibile a tutti.",
+      submissionSuccess: "Alimento aggiunto ai tuoi alimenti privati.",
+      loading: "Cerco nel tuo catalogo…",
+      error: "Impossibile caricare gli alimenti. Riprova.",
+      validation: "Inserisci nome, grammi della porzione e valori nutrizionali validi.",
+      approximate: "Valore approssimativo",
     },
     settings: {
       title: "Il tuo spazio",
@@ -480,6 +830,23 @@ export const translations: Record<Locale, TranslationCopy> = {
       targetsInvalid: "Usa un numero intero o lascia vuoto il campo.",
       languageTitle: "Lingua",
       accountTitle: "Account",
+      preferencesTitle: "Preferenze",
+      profileTitle: "Profilo",
+      profileBody: "I dati dell’account che Boccone ha attualmente per te.",
+      profileReadOnly:
+        "La modifica del profilo sarà disponibile qui quando il flusso di aggiornamento dell’account sarà pronto.",
+      profileLoadError: "Impossibile caricare il profilo. Mostro comunque l’account attivo.",
+      nameLabel: "Nome",
+      emailLabel: "Email",
+      aboutTitle: "Informazioni su Boccone",
+      aboutBody: "Un compagno calmo e trasparente per ricordare ciò che mangi.",
+      aboutPrincipleTitle: "Le stime restano stime",
+      aboutPrincipleBody:
+        "Boccone ti aiuta a registrare il cibo e a capire i tuoi schemi. Non offre consigli medici e non è uno strumento di nutrizione clinica.",
+      aboutMoreTitle: "Altri dettagli in arrivo",
+      aboutMoreBody:
+        "Versione e dettagli sulla privacy avranno uno spazio dedicato quando queste funzioni saranno disponibili.",
+      signedInTitle: "Account attivo",
       signedInAs: (email) => `Accesso effettuato come ${email ?? "il tuo account"}`,
       signOut: "Esci",
     },

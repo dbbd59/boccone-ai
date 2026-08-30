@@ -2,6 +2,8 @@ import { Elysia, type AnyElysia } from "elysia";
 
 import {
   adminMealParamsSchema,
+  adminMealIdParamsSchema,
+  adminGlobalMealsQuerySchema,
   adminMealsQuerySchema,
   adminUserParamsSchema,
   createMealSchema,
@@ -14,7 +16,9 @@ import { requireSession } from "../../middleware/auth";
 import { recordAdminAuditLog } from "../../services/admin-audit";
 import {
   createAdminMeal,
+  getAdminGlobalMeal,
   getAdminMeal,
+  listAdminMealsGlobal,
   listAdminMeals,
   removeAdminMeal,
   updateAdminMeal,
@@ -23,6 +27,27 @@ import { getRequest, type RouteContext } from "../context";
 
 export function createAdminMealRoutes(auth: BocconeAuth, db: Database): AnyElysia {
   const routes: AnyElysia = new Elysia({ name: "boccone-admin-meal-routes" });
+
+  routes.get("/api/admin/meals", async (context: RouteContext) => {
+    const request = getRequest(context);
+    await requireSession(auth, request, "admin");
+    const searchParams = new URL(request.url).searchParams;
+    const query = adminGlobalMealsQuerySchema.parse({
+      search: searchParams.get("search") ?? undefined,
+      date: searchParams.get("date") ?? undefined,
+      category: searchParams.get("category") ?? undefined,
+      limit: searchParams.get("limit") ?? undefined,
+      offset: searchParams.get("offset") ?? undefined,
+    });
+    return listAdminMealsGlobal(db, query);
+  });
+
+  routes.get("/api/admin/meals/:id", async (context: RouteContext) => {
+    const request = getRequest(context);
+    await requireSession(auth, request, "admin");
+    const { id } = adminMealIdParamsSchema.parse(context.params);
+    return { meal: await getAdminGlobalMeal(db, id) };
+  });
 
   routes.get("/api/admin/users/:id/meals", async (context: RouteContext) => {
     const request = getRequest(context);

@@ -1,4 +1,4 @@
-import { index, integer, pgTable, text, timestamp, date } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 import { user } from "./auth";
 
@@ -17,6 +17,7 @@ export const meals = pgTable(
     proteinGrams: integer("protein_grams").notNull(),
     carbohydratesGrams: integer("carbohydrates_grams").notNull(),
     fatGrams: integer("fat_grams").notNull(),
+    nutritionIncomplete: boolean("nutrition_incomplete").notNull().default(false),
     notes: text("notes"),
     source: text("source").default("manual").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

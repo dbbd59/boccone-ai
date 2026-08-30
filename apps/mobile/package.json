@@ -15,6 +15,8 @@
     "@boccone/contracts": "workspace:*",
     "@boccone/design-tokens": "workspace:*",
     "@boccone/ui-mobile": "workspace:*",
+    "@boccone/utils": "workspace:*",
+    "@expo/vector-icons": "^15.1.1",
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@react-navigation/native": "^7.1.33",
     "@tanstack/react-query": "5.102.8",

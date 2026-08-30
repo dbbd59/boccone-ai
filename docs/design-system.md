@@ -79,12 +79,12 @@ tokenized fallback elsewhere. `useReducedTransparency()` and
 `useReducedMotion()` expose OS preferences to feature code. Reduced
 transparency always selects the solid fallback.
 
-The mobile app uses Expo Router SDK 55 native tabs for the two implemented
-destinations: Home and Settings. This is intentionally a small, real
-destination set: do not add a diary, capture, or AI tab until its route and
-functionality exist. The native tab bar owns safe-area behavior and, on iOS
-26, receives the system Liquid Glass treatment. The web export keeps a basic
-compatible fallback.
+The mobile app uses Expo Router SDK 55 native tabs for five stable destinations:
+Home, Meals, Calendar, Diary, and Settings. Meals and Calendar use the current
+authenticated API surface; Diary is an established Coming Soon destination
+until the longitudinal history endpoint exists. The native tab bar owns
+safe-area behavior and, on iOS 26, receives the system Liquid Glass treatment.
+The web export keeps a basic compatible fallback.
 
 Mobile and Admin use different navigation paradigms. Mobile is consumer-first:
 native bottom tabs, one-handed reach, platform gestures, and minimal native
@@ -162,10 +162,11 @@ bun run build --filter @boccone/admin
 bun run build --filter @boccone/mobile
 ```
 
-For UI changes, visually inspect mobile auth, Home, Settings, and the admin
-login/access-denied/directory/detail/audit states in both themes at narrow and
-wide widths. Native iOS 26 material still requires a device or simulator pass;
-web and static export checks do not prove native rendering.
+For UI changes, visually inspect mobile auth, Home, Meals, Calendar, Diary,
+Meal detail, nested Settings, and the admin login/access-denied/directory/
+detail/audit states in both themes at narrow and wide widths. Native iOS 26
+material still requires a device or simulator pass; web and static export
+checks do not prove native rendering.
 
 ## Official references
 

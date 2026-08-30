@@ -53,7 +53,9 @@ export type DailyTargetsResponse = {
 
 export type MealCategory = "breakfast" | "lunch" | "dinner" | "snack";
 
-export type CreateMealRequest = {
+export type CreateMealRequest = ManualMealRequest | FoodMealRequest;
+
+export type ManualMealRequest = {
   name: string;
   category: MealCategory;
   date: string;
@@ -62,6 +64,14 @@ export type CreateMealRequest = {
   carbohydratesGrams: number;
   fatGrams: number;
   notes?: string | null;
+};
+
+export type FoodMealRequest = {
+  name: string;
+  category: MealCategory;
+  date: string;
+  notes?: string | null;
+  entries: Array<MealFoodEntryInput>;
 };
 
 export type UpdateMealRequest = {
@@ -73,12 +83,22 @@ export type UpdateMealRequest = {
   carbohydratesGrams?: number;
   fatGrams?: number;
   notes?: string | null;
+  entries?: Array<MealFoodEntryInput>;
 };
 
-export type Meal = CreateMealRequest & {
+export type Meal = {
   id: string;
-  source: "manual";
+  name: string;
+  category: MealCategory;
+  date: string;
+  calories: number;
+  proteinGrams: number;
+  carbohydratesGrams: number;
+  fatGrams: number;
+  nutritionIncomplete: boolean;
   notes: string | null;
+  source: "manual";
+  entries: Array<MealFoodEntry>;
   createdAt: string;
   updatedAt: string;
 };
@@ -102,6 +122,7 @@ export type DailyMealsResponse = {
   date: string;
   meals: Array<Meal>;
   totals: MealTotals;
+  nutritionIncomplete: boolean;
 };
 
 export type AdminMealsResponse = {
@@ -110,6 +131,219 @@ export type AdminMealsResponse = {
   total: number;
   limit: number;
   offset: number;
+};
+
+export type AdminMealOwner = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+export type AdminGlobalMeal = Meal & {
+  user: AdminMealOwner;
+};
+
+export type AdminGlobalMealResponse = {
+  meal: AdminGlobalMeal;
+};
+
+export type AdminGlobalMealsResponse = {
+  meals: Array<AdminGlobalMeal>;
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type FoodType = "generic" | "branded" | "dish";
+
+export type FoodSourceType =
+  "USDA" | "OPEN_FOOD_FACTS" | "CREA" | "BOCCONE_CURATED" | "USER_SUBMITTED" | "AI_ESTIMATE";
+
+export type FoodQualityLevel =
+  | "authoritative"
+  | "branded_label"
+  | "boccone_verified"
+  | "community_approved"
+  | "user_private"
+  | "ai_estimated";
+
+export type FoodStatus = "DRAFT" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "MERGED";
+
+export type NutritionPer100g = {
+  energyKcal: number | null;
+  proteinG: number | null;
+  carbohydratesG: number | null;
+  fatG: number | null;
+  fiberG: number | null;
+  sugarG: number | null;
+  saturatedFatG: number | null;
+  sodiumMg: number | null;
+};
+
+export type FoodSubmissionNutritionPer100g = {
+  energyKcal: number;
+  proteinG: number;
+  carbohydratesG: number;
+  fatG: number;
+  fiberG: number | null;
+  sugarG: number | null;
+  saturatedFatG: number | null;
+  sodiumMg: number | null;
+};
+
+export type FoodPortion = {
+  id: string;
+  name: string;
+  amount: number;
+  unit: string;
+  gramWeight: number;
+  isDefault: boolean;
+  sourceType: FoodSourceType;
+};
+
+export type FoodAlias = {
+  id: string;
+  locale: string;
+  name: string;
+};
+
+export type Food = {
+  id: string;
+  name: string;
+  type: FoodType;
+  category: string | null;
+  brand: string | null;
+  barcode: string | null;
+  nutritionPer100g: NutritionPer100g;
+  sourceType: FoodSourceType;
+  sourceId: string | null;
+  sourceName: string | null;
+  sourceUrl: string | null;
+  qualityLevel: FoodQualityLevel;
+  status: FoodStatus;
+  portions: Array<FoodPortion>;
+  aliases: Array<FoodAlias>;
+  isPrivate: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MealFoodEntryInput = {
+  foodId: string;
+  portionName: string;
+  quantity: number;
+  grams: number;
+};
+
+export type MealFoodEntry = {
+  id: string;
+  foodId: string;
+  foodName: string;
+  portionName: string;
+  quantity: number;
+  grams: number;
+  energyKcal: number | null;
+  proteinG: number | null;
+  carbohydratesG: number | null;
+  fatG: number | null;
+  fiberG: number | null;
+  sugarG: number | null;
+  saturatedFatG: number | null;
+  sodiumMg: number | null;
+};
+
+export type FoodSearchResponse = {
+  foods: Array<Food>;
+  recent: Array<Food>;
+  frequent: Array<Food>;
+};
+
+export type CreateFoodSubmissionRequest = {
+  name: string;
+  brand?: string | null;
+  type?: FoodType;
+  category?: string | null;
+  portionName?: string;
+  portionGrams?: number;
+  nutritionPer100g: FoodSubmissionNutritionPer100g;
+};
+
+export type FoodSubmission = {
+  id: string;
+  foodId: string;
+  submittedBy: string;
+  status: FoodStatus;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  reviewReason: string | null;
+  mergedIntoFoodId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FoodSubmissionResponse = {
+  food: Food;
+  submission: FoodSubmission;
+};
+
+export type AdminFoodResponse = {
+  food: Food;
+};
+
+export type AdminFoodsResponse = {
+  foods: Array<Food>;
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type AdminFoodUpdateRequest = {
+  name?: string;
+  category?: string | null;
+  type?: FoodType;
+  brand?: string | null;
+  aliases?: Array<{
+    locale: string;
+    name: string;
+  }>;
+  portions?: Array<{
+    name: string;
+    amount: number;
+    unit: string;
+    gramWeight: number;
+    isDefault: boolean;
+  }>;
+  nutritionPer100g?: NutritionPer100g;
+};
+
+export type AdminFoodSubmission = FoodSubmission & {
+  food: Food;
+  submitter: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  possibleDuplicates: Array<Food>;
+  validationFlags: Array<string>;
+};
+
+export type AdminFoodSubmissionsResponse = {
+  submissions: Array<AdminFoodSubmission>;
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type AdminFoodSubmissionResponse = {
+  submission: AdminFoodSubmission;
+};
+
+export type AdminFoodRejectRequest = {
+  reason?: string | null;
+};
+
+export type AdminFoodMergeRequest = {
+  foodId: string;
 };
 
 export type AdminUser = {
@@ -172,7 +406,11 @@ export type AdminAuditAction =
   | "user_targets_removed"
   | "user_meal_created"
   | "user_meal_updated"
-  | "user_meal_removed";
+  | "user_meal_removed"
+  | "food_updated"
+  | "food_submission_approved"
+  | "food_submission_rejected"
+  | "food_submission_merged";
 
 export type AdminAuditPrincipal = {
   id: string;
@@ -461,6 +699,423 @@ export type UpdateMealResponses = {
 };
 
 export type UpdateMealResponse = UpdateMealResponses[keyof UpdateMealResponses];
+
+export type SearchFoodsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    query?: string;
+    locale?: "en" | "it";
+    limit?: number;
+  };
+  url: "/api/me/foods/search";
+};
+
+export type SearchFoodsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type SearchFoodsError = SearchFoodsErrors[keyof SearchFoodsErrors];
+
+export type SearchFoodsResponses = {
+  /**
+   * Foods matching the query and the user's personal foods
+   */
+  200: FoodSearchResponse;
+};
+
+export type SearchFoodsResponse = SearchFoodsResponses[keyof SearchFoodsResponses];
+
+export type CreateFoodSubmissionData = {
+  body: CreateFoodSubmissionRequest;
+  path?: never;
+  query?: never;
+  url: "/api/me/food-submissions";
+};
+
+export type CreateFoodSubmissionErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type CreateFoodSubmissionError =
+  CreateFoodSubmissionErrors[keyof CreateFoodSubmissionErrors];
+
+export type CreateFoodSubmissionResponses = {
+  /**
+   * Private food and pending submission
+   */
+  200: FoodSubmissionResponse;
+};
+
+export type CreateFoodSubmissionResponse =
+  CreateFoodSubmissionResponses[keyof CreateFoodSubmissionResponses];
+
+export type ListAdminMealsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    search?: string;
+    date?: string;
+    category?: MealCategory;
+    limit?: number;
+    offset?: number;
+  };
+  url: "/api/admin/meals";
+};
+
+export type ListAdminMealsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type ListAdminMealsError = ListAdminMealsErrors[keyof ListAdminMealsErrors];
+
+export type ListAdminMealsResponses = {
+  /**
+   * Meals visible to operations staff
+   */
+  200: AdminGlobalMealsResponse;
+};
+
+export type ListAdminMealsResponse = ListAdminMealsResponses[keyof ListAdminMealsResponses];
+
+export type GetAdminMealData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/meals/{id}";
+};
+
+export type GetAdminMealErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type GetAdminMealError = GetAdminMealErrors[keyof GetAdminMealErrors];
+
+export type GetAdminMealResponses = {
+  /**
+   * Meal details and owner
+   */
+  200: AdminGlobalMealResponse;
+};
+
+export type GetAdminMealResponse = GetAdminMealResponses[keyof GetAdminMealResponses];
+
+export type ListAdminFoodsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    search?: string;
+    status?: FoodStatus;
+    sourceType?: FoodSourceType;
+    limit?: number;
+    offset?: number;
+  };
+  url: "/api/admin/foods";
+};
+
+export type ListAdminFoodsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type ListAdminFoodsError = ListAdminFoodsErrors[keyof ListAdminFoodsErrors];
+
+export type ListAdminFoodsResponses = {
+  /**
+   * Catalog foods
+   */
+  200: AdminFoodsResponse;
+};
+
+export type ListAdminFoodsResponse = ListAdminFoodsResponses[keyof ListAdminFoodsResponses];
+
+export type GetAdminFoodData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/foods/{id}";
+};
+
+export type GetAdminFoodErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type GetAdminFoodError = GetAdminFoodErrors[keyof GetAdminFoodErrors];
+
+export type GetAdminFoodResponses = {
+  /**
+   * Food details
+   */
+  200: AdminFoodResponse;
+};
+
+export type GetAdminFoodResponse = GetAdminFoodResponses[keyof GetAdminFoodResponses];
+
+export type UpdateAdminFoodData = {
+  body: AdminFoodUpdateRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/foods/{id}";
+};
+
+export type UpdateAdminFoodErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type UpdateAdminFoodError = UpdateAdminFoodErrors[keyof UpdateAdminFoodErrors];
+
+export type UpdateAdminFoodResponses = {
+  /**
+   * Updated food
+   */
+  200: AdminFoodResponse;
+};
+
+export type UpdateAdminFoodResponse = UpdateAdminFoodResponses[keyof UpdateAdminFoodResponses];
+
+export type ListAdminFoodSubmissionsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    status?: FoodStatus;
+    limit?: number;
+    offset?: number;
+  };
+  url: "/api/admin/food-submissions";
+};
+
+export type ListAdminFoodSubmissionsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type ListAdminFoodSubmissionsError =
+  ListAdminFoodSubmissionsErrors[keyof ListAdminFoodSubmissionsErrors];
+
+export type ListAdminFoodSubmissionsResponses = {
+  /**
+   * Moderation queue
+   */
+  200: AdminFoodSubmissionsResponse;
+};
+
+export type ListAdminFoodSubmissionsResponse =
+  ListAdminFoodSubmissionsResponses[keyof ListAdminFoodSubmissionsResponses];
+
+export type GetAdminFoodSubmissionData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/food-submissions/{id}";
+};
+
+export type GetAdminFoodSubmissionErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type GetAdminFoodSubmissionError =
+  GetAdminFoodSubmissionErrors[keyof GetAdminFoodSubmissionErrors];
+
+export type GetAdminFoodSubmissionResponses = {
+  /**
+   * Submission review workspace
+   */
+  200: AdminFoodSubmissionResponse;
+};
+
+export type GetAdminFoodSubmissionResponse =
+  GetAdminFoodSubmissionResponses[keyof GetAdminFoodSubmissionResponses];
+
+export type ApproveFoodSubmissionData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/food-submissions/{id}/approve";
+};
+
+export type ApproveFoodSubmissionErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  409: ErrorResponse;
+};
+
+export type ApproveFoodSubmissionError =
+  ApproveFoodSubmissionErrors[keyof ApproveFoodSubmissionErrors];
+
+export type ApproveFoodSubmissionResponses = {
+  /**
+   * Approved submission
+   */
+  200: AdminFoodSubmissionResponse;
+};
+
+export type ApproveFoodSubmissionResponse =
+  ApproveFoodSubmissionResponses[keyof ApproveFoodSubmissionResponses];
+
+export type RejectFoodSubmissionData = {
+  body?: AdminFoodRejectRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/food-submissions/{id}/reject";
+};
+
+export type RejectFoodSubmissionErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  409: ErrorResponse;
+};
+
+export type RejectFoodSubmissionError =
+  RejectFoodSubmissionErrors[keyof RejectFoodSubmissionErrors];
+
+export type RejectFoodSubmissionResponses = {
+  /**
+   * Rejected submission
+   */
+  200: AdminFoodSubmissionResponse;
+};
+
+export type RejectFoodSubmissionResponse =
+  RejectFoodSubmissionResponses[keyof RejectFoodSubmissionResponses];
+
+export type MergeFoodSubmissionData = {
+  body: AdminFoodMergeRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/admin/food-submissions/{id}/merge";
+};
+
+export type MergeFoodSubmissionErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type MergeFoodSubmissionError = MergeFoodSubmissionErrors[keyof MergeFoodSubmissionErrors];
+
+export type MergeFoodSubmissionResponses = {
+  /**
+   * Merged submission
+   */
+  200: AdminFoodSubmissionResponse;
+};
+
+export type MergeFoodSubmissionResponse =
+  MergeFoodSubmissionResponses[keyof MergeFoodSubmissionResponses];
 
 export type ListAdminUsersData = {
   body?: never;

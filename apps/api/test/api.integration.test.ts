@@ -2,6 +2,8 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import {
   adminAuditLogsResponseSchema,
+  adminGlobalMealResponseSchema,
+  adminGlobalMealsResponseSchema,
   adminMealsResponseSchema,
   adminMutationResponseSchema,
   adminUserResponseSchema,
@@ -744,5 +746,52 @@ describe("manual meals", () => {
         audit.logs.filter((log) => log.targetUserId === targetIdentity.id).map((log) => log.action),
       ),
     ).toEqual(new Set(["user_meal_created", "user_meal_updated", "user_meal_removed"]));
+  });
+
+  test("admins can browse meals globally and open the owning user", async () => {
+    const target = await signUpAndSignIn(uniqueEmail("global-meal-target"));
+    const targetIdentity = meResponseSchema.parse(
+      await (await requestWithCookie("/api/me", target.jar)).json(),
+    ).user;
+    const adminEmail = uniqueEmail("global-meal-admin");
+    const admin = await signUpAndSignIn(adminEmail);
+    await harness.db.update(user).set({ role: "admin" }).where(eq(user.email, adminEmail));
+
+    const createResponse = await requestWithCookie(
+      `/api/admin/users/${targetIdentity.id}/meals`,
+      admin.jar,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: "Global salad",
+          category: "lunch",
+          date: "2026-08-29",
+          calories: 320,
+          proteinGrams: 18,
+          carbohydratesGrams: 22,
+          fatGrams: 16,
+        }),
+      },
+    );
+    const created = mealResponseSchema.parse(await createResponse.json()).meal;
+
+    const listResponse = await requestWithCookie(
+      "/api/admin/meals?search=Global%20salad&category=lunch&limit=20&offset=0",
+      admin.jar,
+    );
+    expect(listResponse.status).toBe(200);
+    const listed = adminGlobalMealsResponseSchema.parse(await listResponse.json());
+    expect(listed.total).toBe(1);
+    expect(listed.meals[0]).toMatchObject({
+      id: created.id,
+      user: { id: targetIdentity.id },
+    });
+
+    const detailResponse = await requestWithCookie(`/api/admin/meals/${created.id}`, admin.jar);
+    expect(detailResponse.status).toBe(200);
+    expect(adminGlobalMealResponseSchema.parse(await detailResponse.json()).meal.user.id).toBe(
+      targetIdentity.id,
+    );
   });
 });

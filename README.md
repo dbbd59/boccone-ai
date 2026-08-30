@@ -15,7 +15,7 @@
 Boccone AI is being built for people who want a calmer, more transparent way to understand what they eat. The product direction combines self-defined nutrition targets, manual and AI-assisted meal logging, a diary, simple statistics, and an assistant grounded in a user’s own history.
 
 > [!IMPORTANT]
-> Boccone AI is in early development. The current repository delivers the monorepo, API, authentication foundation, database migrations, shared contracts, an OpenAPI-generated client, UI primitives, initial mobile/admin auth surfaces, authenticated daily nutrition targets, and manual meal logging with Today aggregation. Diary history, statistics, known meals, and AI orchestration are planned product slices, not finished features.
+> Boccone AI is in early development. The current repository delivers the monorepo, API, authentication foundation, database migrations, shared contracts, an OpenAPI-generated client, UI primitives, mobile/admin auth surfaces, authenticated daily nutrition targets, manual meal logging with Today aggregation, a five-area mobile navigation shell, and date-based Calendar browsing. Longitudinal Diary history, statistics, known meals, and AI orchestration are planned product slices, not finished features.
 
 ## Product direction
 
@@ -59,9 +59,10 @@ The implemented foundation is intentionally small and explicit:
 - **Authentication** — Better Auth with email/password, optional Google and Apple OAuth, password-reset hooks, session-cookie identity, a simple <code>user</code>/<code>admin</code> role model, and rate limiting.
 - **Authorization** — protected <code>/api/me</code> and <code>/api/admin/*</code> routes resolve identity from the server-side session; client-supplied user IDs are ignored.
 - **Database** — PostgreSQL via Drizzle ORM and <code>postgres-js</code>, with versioned migrations for Better Auth’s user, session, account, verification, admin-audit, daily-target, and confirmed-meal tables. Meal photos and provider payloads are not persisted.
+- **Food catalog** — local normalized foods, Italian aliases, gram-weight portions, provenance, private user submissions, admin moderation, and immutable meal nutrition snapshots. Download/import workflow is documented in <a href="docs/food-catalog.md">docs/food-catalog.md</a>.
 - **Contracts** — Zod schemas define public health, user, admin-user, daily-target, meal, and error response shapes. Raw database rows do not form the public API.
 - **API client** — the checked-in OpenAPI description generates fetch, Zod, and TanStack Query artifacts in <code>packages/api-client</code>; clients share one typed HTTP boundary.
-- **Clients** — an Expo Router mobile app with persisted English/Italian localization, native Home/Settings navigation, system/light/dark appearance, a Today meal summary, manual add/edit/delete meal flow, and daily-target editing in Settings; plus a Vite/React admin surface for sign-in, server-side admin access checks, user search, user detail/edit, role changes, ban/unban, removal, audit-log inspection, daily-target CRUD, and meal CRUD. The admin surface is English-only for now.
+- **Clients** — an Expo Router mobile app with persisted English/Italian localization, native Home/Meals/Calendar/Diary/Settings navigation, system/light/dark appearance, a Today summary, a dedicated Meals area, date-based Calendar browsing, a canonical meal detail route, manual add/edit/delete meal flow, and nested Settings for profile, appearance, targets, language, and account controls. Diary is present as an honest Coming Soon destination until the history API exists. The Vite/React admin surface provides sign-in, server-side admin access checks, user search, user detail/edit, role changes, ban/unban, removal, audit-log inspection, daily-target CRUD, and meal CRUD. The admin surface is English-only for now.
 - **UI foundation** — a layered design system (<a href="docs/design-system.md">docs/design-system.md</a>): <code>design-tokens</code> (semantic light/dark themes, spacing, typography, motion, WCAG-tested contrast, and material roles) plus mirrored React Native and web primitives (<code>Text</code>, <code>Button</code>, <code>Input</code>, <code>Field</code>, <code>Screen</code>, <code>Surface</code>, <code>GlassSurface</code>, <code>Stack</code>, <code>Alert</code>, …). Native iOS 26 Liquid Glass is guarded at runtime with tokenized fallbacks for older iOS, Android, and web; a dev-only showcase remains available at <code>/dev/design-system</code> on mobile.
 
 ## Architecture
@@ -93,6 +94,20 @@ The implemented foundation is intentionally small and explicit:
 ```
 
 Shared contracts sit in <code>packages/contracts</code>; the generated client is configured in <code>packages/api-client</code>; design tokens are consumed by both UI packages. The API composes route modules and injects auth dependencies so integration tests can build a complete app against an isolated database.
+
+### Mobile information architecture
+
+The authenticated mobile shell has five stable destinations, each with one job:
+
+| Area     | Responsibility                                                                                           |
+| -------- | -------------------------------------------------------------------------------------------------------- |
+| Home     | What matters today: a concise nutrition/activity summary and the primary Add meal action.                |
+| Meals    | The current day’s logged food, grouped by meal category, with one canonical meal detail route.           |
+| Calendar | Date-oriented browsing backed by the existing daily-meals API.                                           |
+| Diary    | Longitudinal history; the route is established with a Coming Soon state until a history endpoint exists. |
+| Settings | Account and app configuration, with nested profile, appearance, and target screens.                      |
+
+Meal details live at <code>/meals/{mealId}</code>, so Home, Meals, Calendar, and the future Diary can share one resource representation. Manual creation and editing use <code>/meals/new</code> and <code>/meals/{mealId}/edit</code>; the legacy <code>/add-meal</code> path redirects for existing deep links.
 
 ## Tech stack
 

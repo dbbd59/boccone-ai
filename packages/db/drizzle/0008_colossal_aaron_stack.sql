@@ -1,0 +1,1 @@
+ALTER TABLE "meals" ADD COLUMN "nutrition_incomplete" boolean DEFAULT false NOT NULL;

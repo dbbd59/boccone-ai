@@ -19,6 +19,10 @@ const ACTION_LABELS: Record<AdminAuditAction, string> = {
   user_meal_created: "Created meal",
   user_meal_updated: "Updated meal",
   user_meal_removed: "Removed meal",
+  food_updated: "Updated food",
+  food_submission_approved: "Approved food submission",
+  food_submission_rejected: "Rejected food submission",
+  food_submission_merged: "Merged food submission",
 };
 
 const FIELD_LABELS: Record<string, string> = {

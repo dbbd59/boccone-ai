@@ -11,6 +11,7 @@ import { createAdminRoutes } from "./routes/admin";
 import { createHealthRoutes } from "./routes/health";
 import { createMeRoutes } from "./routes/me";
 import { createMealRoutes } from "./routes/meals";
+import { createFoodRoutes } from "./routes/foods";
 import { createTargetRoutes } from "./routes/targets";
 import type { LogLevel } from "./config/env";
 
@@ -53,6 +54,7 @@ export function createApp(options: CreateAppOptions): AnyElysia {
       .use(createHealthRoutes(options.version))
       .use(createMeRoutes(options.auth))
       .use(createMealRoutes(options.auth, options.db))
+      .use(createFoodRoutes(options.auth, options.db))
       .use(createTargetRoutes(options.auth, options.db))
       .use(createAdminRoutes(options.auth, options.db))
   );

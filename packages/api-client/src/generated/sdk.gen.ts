@@ -5,6 +5,9 @@ import * as z from "zod";
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from "./client";
 import { client } from "./client.gen";
 import type {
+  ApproveFoodSubmissionData,
+  ApproveFoodSubmissionErrors,
+  ApproveFoodSubmissionResponses,
   BanAdminUserData,
   BanAdminUserErrors,
   BanAdminUserResponses,
@@ -14,9 +17,21 @@ import type {
   CreateAdminUserMealErrors,
   CreateAdminUserMealResponses,
   CreateAdminUserResponses,
+  CreateFoodSubmissionData,
+  CreateFoodSubmissionErrors,
+  CreateFoodSubmissionResponses,
   CreateMealData,
   CreateMealErrors,
   CreateMealResponses,
+  GetAdminFoodData,
+  GetAdminFoodErrors,
+  GetAdminFoodResponses,
+  GetAdminFoodSubmissionData,
+  GetAdminFoodSubmissionErrors,
+  GetAdminFoodSubmissionResponses,
+  GetAdminMealData,
+  GetAdminMealErrors,
+  GetAdminMealResponses,
   GetAdminUserDailyTargetsData,
   GetAdminUserDailyTargetsErrors,
   GetAdminUserDailyTargetsResponses,
@@ -44,12 +59,27 @@ import type {
   ListAdminAuditLogsData,
   ListAdminAuditLogsErrors,
   ListAdminAuditLogsResponses,
+  ListAdminFoodsData,
+  ListAdminFoodsErrors,
+  ListAdminFoodsResponses,
+  ListAdminFoodSubmissionsData,
+  ListAdminFoodSubmissionsErrors,
+  ListAdminFoodSubmissionsResponses,
+  ListAdminMealsData,
+  ListAdminMealsErrors,
+  ListAdminMealsResponses,
   ListAdminUserMealsData,
   ListAdminUserMealsErrors,
   ListAdminUserMealsResponses,
   ListAdminUsersData,
   ListAdminUsersErrors,
   ListAdminUsersResponses,
+  MergeFoodSubmissionData,
+  MergeFoodSubmissionErrors,
+  MergeFoodSubmissionResponses,
+  RejectFoodSubmissionData,
+  RejectFoodSubmissionErrors,
+  RejectFoodSubmissionResponses,
   RemoveAdminUserDailyTargetsData,
   RemoveAdminUserDailyTargetsErrors,
   RemoveAdminUserDailyTargetsResponses,
@@ -62,12 +92,18 @@ import type {
   RemoveMealData,
   RemoveMealErrors,
   RemoveMealResponses,
+  SearchFoodsData,
+  SearchFoodsErrors,
+  SearchFoodsResponses,
   SetAdminUserRoleData,
   SetAdminUserRoleErrors,
   SetAdminUserRoleResponses,
   UnbanAdminUserData,
   UnbanAdminUserErrors,
   UnbanAdminUserResponses,
+  UpdateAdminFoodData,
+  UpdateAdminFoodErrors,
+  UpdateAdminFoodResponses,
   UpdateAdminUserDailyTargetsData,
   UpdateAdminUserDailyTargetsErrors,
   UpdateAdminUserDailyTargetsResponses,
@@ -85,6 +121,8 @@ import type {
   UpdateMealResponses,
 } from "./types.gen";
 import {
+  zApproveFoodSubmissionPath,
+  zApproveFoodSubmissionResponse,
   zBanAdminUserBody,
   zBanAdminUserPath,
   zBanAdminUserResponse,
@@ -93,8 +131,16 @@ import {
   zCreateAdminUserMealPath,
   zCreateAdminUserMealResponse,
   zCreateAdminUserResponse,
+  zCreateFoodSubmissionBody,
+  zCreateFoodSubmissionResponse,
   zCreateMealBody,
   zCreateMealResponse,
+  zGetAdminFoodPath,
+  zGetAdminFoodResponse,
+  zGetAdminFoodSubmissionPath,
+  zGetAdminFoodSubmissionResponse,
+  zGetAdminMealPath,
+  zGetAdminMealResponse,
   zGetAdminUserDailyTargetsPath,
   zGetAdminUserDailyTargetsResponse,
   zGetAdminUserMealPath,
@@ -110,11 +156,23 @@ import {
   zGetMealResponse,
   zListAdminAuditLogsQuery,
   zListAdminAuditLogsResponse,
+  zListAdminFoodsQuery,
+  zListAdminFoodsResponse,
+  zListAdminFoodSubmissionsQuery,
+  zListAdminFoodSubmissionsResponse,
+  zListAdminMealsQuery,
+  zListAdminMealsResponse,
   zListAdminUserMealsPath,
   zListAdminUserMealsQuery,
   zListAdminUserMealsResponse,
   zListAdminUsersQuery,
   zListAdminUsersResponse,
+  zMergeFoodSubmissionBody,
+  zMergeFoodSubmissionPath,
+  zMergeFoodSubmissionResponse,
+  zRejectFoodSubmissionBody,
+  zRejectFoodSubmissionPath,
+  zRejectFoodSubmissionResponse,
   zRemoveAdminUserDailyTargetsPath,
   zRemoveAdminUserDailyTargetsResponse,
   zRemoveAdminUserMealPath,
@@ -123,11 +181,16 @@ import {
   zRemoveAdminUserResponse,
   zRemoveMealPath,
   zRemoveMealResponse,
+  zSearchFoodsQuery,
+  zSearchFoodsResponse,
   zSetAdminUserRoleBody,
   zSetAdminUserRolePath,
   zSetAdminUserRoleResponse,
   zUnbanAdminUserPath,
   zUnbanAdminUserResponse,
+  zUpdateAdminFoodBody,
+  zUpdateAdminFoodPath,
+  zUpdateAdminFoodResponse,
   zUpdateAdminUserBody,
   zUpdateAdminUserDailyTargetsBody,
   zUpdateAdminUserDailyTargetsPath,
@@ -407,6 +470,370 @@ export const updateMeal = <ThrowOnError extends boolean = false>(
       },
     ],
     url: "/api/me/meals/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Search the local Boccone food catalog
+ */
+export const searchFoods = <ThrowOnError extends boolean = false>(
+  options?: Options<SearchFoodsData, ThrowOnError>,
+): RequestResult<SearchFoodsResponses, SearchFoodsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<SearchFoodsResponses, SearchFoodsErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zSearchFoodsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zSearchFoodsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/foods/search",
+    ...options,
+  });
+
+/**
+ * Propose a food for moderation and use it privately
+ */
+export const createFoodSubmission = <ThrowOnError extends boolean = false>(
+  options: Options<CreateFoodSubmissionData, ThrowOnError>,
+): RequestResult<CreateFoodSubmissionResponses, CreateFoodSubmissionErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    CreateFoodSubmissionResponses,
+    CreateFoodSubmissionErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateFoodSubmissionBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateFoodSubmissionResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/food-submissions",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List meals for administrators
+ */
+export const listAdminMeals = <ThrowOnError extends boolean = false>(
+  options?: Options<ListAdminMealsData, ThrowOnError>,
+): RequestResult<ListAdminMealsResponses, ListAdminMealsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<ListAdminMealsResponses, ListAdminMealsErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zListAdminMealsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zListAdminMealsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/meals",
+    ...options,
+  });
+
+/**
+ * Get one meal for administrators
+ */
+export const getAdminMeal = <ThrowOnError extends boolean = false>(
+  options: Options<GetAdminMealData, ThrowOnError>,
+): RequestResult<GetAdminMealResponses, GetAdminMealErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetAdminMealResponses, GetAdminMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetAdminMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/meals/{id}",
+    ...options,
+  });
+
+/**
+ * Browse the food catalog
+ */
+export const listAdminFoods = <ThrowOnError extends boolean = false>(
+  options?: Options<ListAdminFoodsData, ThrowOnError>,
+): RequestResult<ListAdminFoodsResponses, ListAdminFoodsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<ListAdminFoodsResponses, ListAdminFoodsErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zListAdminFoodsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zListAdminFoodsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/foods",
+    ...options,
+  });
+
+/**
+ * Inspect one catalog food
+ */
+export const getAdminFood = <ThrowOnError extends boolean = false>(
+  options: Options<GetAdminFoodData, ThrowOnError>,
+): RequestResult<GetAdminFoodResponses, GetAdminFoodErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetAdminFoodResponses, GetAdminFoodErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetAdminFoodPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminFoodResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/foods/{id}",
+    ...options,
+  });
+
+/**
+ * Correct catalog food data
+ */
+export const updateAdminFood = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateAdminFoodData, ThrowOnError>,
+): RequestResult<UpdateAdminFoodResponses, UpdateAdminFoodErrors, ThrowOnError> =>
+  (options.client ?? client).patch<UpdateAdminFoodResponses, UpdateAdminFoodErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateAdminFoodBody,
+          path: zUpdateAdminFoodPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateAdminFoodResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/foods/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List food submissions for moderation
+ */
+export const listAdminFoodSubmissions = <ThrowOnError extends boolean = false>(
+  options?: Options<ListAdminFoodSubmissionsData, ThrowOnError>,
+): RequestResult<ListAdminFoodSubmissionsResponses, ListAdminFoodSubmissionsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    ListAdminFoodSubmissionsResponses,
+    ListAdminFoodSubmissionsErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zListAdminFoodSubmissionsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zListAdminFoodSubmissionsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/food-submissions",
+    ...options,
+  });
+
+/**
+ * Inspect one food submission
+ */
+export const getAdminFoodSubmission = <ThrowOnError extends boolean = false>(
+  options: Options<GetAdminFoodSubmissionData, ThrowOnError>,
+): RequestResult<GetAdminFoodSubmissionResponses, GetAdminFoodSubmissionErrors, ThrowOnError> =>
+  (options.client ?? client).get<
+    GetAdminFoodSubmissionResponses,
+    GetAdminFoodSubmissionErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetAdminFoodSubmissionPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminFoodSubmissionResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/food-submissions/{id}",
+    ...options,
+  });
+
+/**
+ * Approve a food submission
+ */
+export const approveFoodSubmission = <ThrowOnError extends boolean = false>(
+  options: Options<ApproveFoodSubmissionData, ThrowOnError>,
+): RequestResult<ApproveFoodSubmissionResponses, ApproveFoodSubmissionErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    ApproveFoodSubmissionResponses,
+    ApproveFoodSubmissionErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zApproveFoodSubmissionPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zApproveFoodSubmissionResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/food-submissions/{id}/approve",
+    ...options,
+  });
+
+/**
+ * Reject a food submission
+ */
+export const rejectFoodSubmission = <ThrowOnError extends boolean = false>(
+  options: Options<RejectFoodSubmissionData, ThrowOnError>,
+): RequestResult<RejectFoodSubmissionResponses, RejectFoodSubmissionErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    RejectFoodSubmissionResponses,
+    RejectFoodSubmissionErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zRejectFoodSubmissionBody.optional(),
+          path: zRejectFoodSubmissionPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zRejectFoodSubmissionResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/food-submissions/{id}/reject",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Merge a duplicate submission into a catalog food
+ */
+export const mergeFoodSubmission = <ThrowOnError extends boolean = false>(
+  options: Options<MergeFoodSubmissionData, ThrowOnError>,
+): RequestResult<MergeFoodSubmissionResponses, MergeFoodSubmissionErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    MergeFoodSubmissionResponses,
+    MergeFoodSubmissionErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zMergeFoodSubmissionBody,
+          path: zMergeFoodSubmissionPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zMergeFoodSubmissionResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/food-submissions/{id}/merge",
     ...options,
     headers: {
       "Content-Type": "application/json",

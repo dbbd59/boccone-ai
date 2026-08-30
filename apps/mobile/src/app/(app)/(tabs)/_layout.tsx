@@ -28,14 +28,40 @@ export default function AuthenticatedTabsLayout() {
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <NativeTabs
-        tintColor={colors.interactive.default}
-        labelStyle={{ color: colors.foreground.muted }}
+        iconColor={{ default: colors.foreground.muted, selected: colors.interactive.default }}
+        labelStyle={{
+          default: { color: colors.foreground.muted },
+          selected: { color: colors.interactive.default },
+        }}
         minimizeBehavior="onScrollDown"
         disableTransparentOnScrollEdge
+        backBehavior="history"
+        labelVisibilityMode="labeled"
       >
         <NativeTabs.Trigger name="index">
           <NativeTabs.Trigger.Label>{copy.navigation.home}</NativeTabs.Trigger.Label>
           <NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} md="home" />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="meals">
+          <NativeTabs.Trigger.Label>{copy.navigation.meals}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "fork.knife", selected: "fork.knife.circle.fill" }}
+            md="restaurant"
+          />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="calendar">
+          <NativeTabs.Trigger.Label>{copy.navigation.calendar}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "calendar", selected: "calendar.circle.fill" }}
+            md="calendar_month"
+          />
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="diary">
+          <NativeTabs.Trigger.Label>{copy.navigation.diary}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            sf={{ default: "book.closed", selected: "book.closed.fill" }}
+            md="menu_book"
+          />
         </NativeTabs.Trigger>
         <NativeTabs.Trigger name="settings">
           <NativeTabs.Trigger.Label>{copy.navigation.settings}</NativeTabs.Trigger.Label>
