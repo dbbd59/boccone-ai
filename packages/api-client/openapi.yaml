@@ -39,6 +39,156 @@ paths:
                 $ref: "#/components/schemas/MeResponse"
         "401":
           $ref: "#/components/responses/ErrorResponse"
+  /api/me/ai/settings:
+    get:
+      operationId: getAiSettings
+      tags:
+        - ai
+      summary: Get the current user's AI provider settings
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: AI settings without secret values
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiSettingsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+    put:
+      operationId: updateAiSettings
+      tags:
+        - ai
+      summary: Configure the current user's AI provider
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAiSettingsRequest"
+      responses:
+        "200":
+          description: Updated AI settings without secret values
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiSettingsResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/ai/settings/api-key:
+    delete:
+      operationId: deleteAiApiKey
+      tags:
+        - ai
+      summary: Delete the current user's stored AI API key
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Updated AI settings without secret values
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiSettingsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/ai/models:
+    get:
+      operationId: getAiModels
+      tags:
+        - ai
+      summary: Discover models from the configured AI provider
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: refresh
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Normalized provider models without secret values
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiModelsResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "502":
+          $ref: "#/components/responses/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ErrorResponse"
+        "504":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/ai/test-connection:
+    post:
+      operationId: testAiConnection
+      tags:
+        - ai
+      summary: Test the configured AI provider
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Provider connection succeeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiConnectionTestResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "502":
+          $ref: "#/components/responses/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/ai/interpret-meal:
+    post:
+      operationId: interpretMealWithAi
+      tags:
+        - ai
+      summary: Interpret natural-language meal text into a reviewable draft
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealInterpretationRequest"
+      responses:
+        "200":
+          description: Reviewable meal draft; no meal is created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealDraftResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "429":
+          $ref: "#/components/responses/ErrorResponse"
+        "502":
+          $ref: "#/components/responses/ErrorResponse"
+        "503":
+          $ref: "#/components/responses/ErrorResponse"
+        "504":
+          $ref: "#/components/responses/ErrorResponse"
   /api/me/targets:
     get:
       operationId: getDailyTargets
@@ -126,6 +276,75 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MealResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/diary:
+    get:
+      operationId: getMealDiary
+      tags:
+        - meals
+      summary: Get the authenticated user's paginated meal diary
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: before
+          in: query
+          required: true
+          description: Exclusive local calendar-date upper bound.
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 14
+            default: 7
+        - name: foodId
+          in: query
+          required: false
+          description: Return only meals containing this catalog food identifier.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+      responses:
+        "200":
+          description: Populated meal days, newest first
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiaryResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/calendar:
+    get:
+      operationId: getCalendarMonth
+      tags:
+        - calendar
+      summary: Get lightweight meal activity for a calendar month
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+      responses:
+        "200":
+          description: Dates with logged meals in the requested month
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarMonthResponse"
         "400":
           $ref: "#/components/responses/ErrorResponse"
         "401":
@@ -259,6 +478,47 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FoodSubmissionResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/saved-meals:
+    get:
+      operationId: listSavedMeals
+      tags:
+        - saved-meals
+      summary: List the authenticated user's saved meal templates with routines
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Saved meal templates ranked for quick reuse
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedMealsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+    post:
+      operationId: createSavedMeal
+      tags:
+        - saved-meals
+      summary: Create a saved meal template, optionally with routine metadata
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSavedMealRequest"
+      responses:
+        "200":
+          description: Created saved meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedMealResponse"
         "400":
           $ref: "#/components/responses/ErrorResponse"
         "401":
@@ -536,6 +796,159 @@ paths:
         "401": { $ref: "#/components/responses/ErrorResponse" }
         "403": { $ref: "#/components/responses/ErrorResponse" }
         "404": { $ref: "#/components/responses/ErrorResponse" }
+  /api/me/saved-meals/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getSavedMeal
+      tags:
+        - saved-meals
+      summary: Get one authenticated user's saved meal template
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Saved meal template with current catalog nutrition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedMealResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    patch:
+      operationId: updateSavedMeal
+      tags:
+        - saved-meals
+      summary: Update one authenticated user's saved meal template
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSavedMealRequest"
+      responses:
+        "200":
+          description: Updated saved meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedMealResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: removeSavedMeal
+      tags:
+        - saved-meals
+      summary: Remove a saved meal template (historical meals are untouched)
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Saved meal removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedMealMutationResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/saved-meals/{id}/routine:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      operationId: putSavedMealRoutine
+      tags:
+        - saved-meals
+      summary: Create or replace the routine metadata for a saved meal
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedMealRoutineInput"
+      responses:
+        "200":
+          description: Saved meal with upserted routine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedMealResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+    delete:
+      operationId: deleteSavedMealRoutine
+      tags:
+        - saved-meals
+      summary: Remove the routine metadata (the saved meal itself is preserved)
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Saved meal without routine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedMealResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/saved-meals/{id}/use:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      operationId: useSavedMeal
+      tags:
+        - saved-meals
+      summary: Record usage after a meal created from this template is persisted
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UseSavedMealRequest"
+      responses:
+        "200":
+          description: Updated usage metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedMealResponse"
+        "400":
+          $ref: "#/components/responses/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/ErrorResponse"
   /api/admin/users:
     get:
       operationId: listAdminUsers
@@ -1047,12 +1460,242 @@ paths:
           $ref: "#/components/responses/ErrorResponse"
         "403":
           $ref: "#/components/responses/ErrorResponse"
+  /api/admin/ai/usage:
+    get:
+      operationId: listAdminAiUsage
+      tags:
+        - admin-ai
+      summary: List privacy-safe AI usage records
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: feature
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/AiFeature"
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/AiProvider"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [succeeded, failed, cancelled]
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: AI usage records
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAiUsageResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/insights:
+    get:
+      operationId: getPersonalInsights
+      tags:
+        - insights
+      summary: Get aggregated nutrition insights for the authenticated user
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: range
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/InsightsRange"
+        - name: today
+          in: query
+          required: false
+          description: The user's local calendar date, used as the period end.
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Aggregated personal insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonalInsightsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/me/insights/nutrition:
+    get:
+      operationId: getPersonalNutritionDetail
+      tags:
+        - insights
+      summary: Get one nutrient trend and its food contributors
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: range
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/InsightsRange"
+        - name: today
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: metric
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/InsightsMetric"
+      responses:
+        "200":
+          description: Aggregated nutrient detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonalNutritionDetail"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/analytics/overview:
+    get:
+      operationId: getAdminAnalyticsOverview
+      tags:
+        - admin-analytics
+      summary: Get product activity analytics
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/AdminAnalyticsRange"
+        - $ref: "#/components/parameters/AdminAnalyticsFrom"
+        - $ref: "#/components/parameters/AdminAnalyticsTo"
+      responses:
+        "200":
+          description: Product activity analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverviewResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/analytics/nutrition:
+    get:
+      operationId: getAdminAnalyticsNutrition
+      tags:
+        - admin-analytics
+      summary: Get product-wide nutrition analytics
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/AdminAnalyticsRange"
+        - $ref: "#/components/parameters/AdminAnalyticsFrom"
+        - $ref: "#/components/parameters/AdminAnalyticsTo"
+      responses:
+        "200":
+          description: Product-wide nutrition analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminNutritionResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/analytics/foods:
+    get:
+      operationId: getAdminAnalyticsFoods
+      tags:
+        - admin-analytics
+      summary: Get food catalog and moderation analytics
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/AdminAnalyticsRange"
+        - $ref: "#/components/parameters/AdminAnalyticsFrom"
+        - $ref: "#/components/parameters/AdminAnalyticsTo"
+      responses:
+        "200":
+          description: Food catalog analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCatalogResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
+  /api/admin/analytics/ai:
+    get:
+      operationId: getAdminAnalyticsAi
+      tags:
+        - admin-analytics
+      summary: Get privacy-safe AI analytics
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/AdminAnalyticsRange"
+        - $ref: "#/components/parameters/AdminAnalyticsFrom"
+        - $ref: "#/components/parameters/AdminAnalyticsTo"
+      responses:
+        "200":
+          description: AI analytics without prompts or secrets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminAiAnalyticsResponse"
+        "401":
+          $ref: "#/components/responses/ErrorResponse"
+        "403":
+          $ref: "#/components/responses/ErrorResponse"
 components:
   securitySchemes:
     sessionCookie:
       type: apiKey
       in: cookie
       name: better-auth.session_token
+  parameters:
+    AdminAnalyticsRange:
+      name: range
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [7d, 30d, 90d, custom]
+        default: 30d
+    AdminAnalyticsFrom:
+      name: from
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date
+    AdminAnalyticsTo:
+      name: to
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date
   responses:
     ErrorResponse:
       description: API error
@@ -1082,6 +1725,20 @@ components:
                 - conflict
                 - validation_error
                 - internal_error
+                - ai_not_configured
+                - ai_invalid_credentials
+                - ai_rate_limited
+                - ai_provider_unavailable
+                - ai_model_not_found
+                - ai_model_not_accessible
+                - ai_model_not_selected
+                - ai_model_discovery_unavailable
+                - ai_model_unsupported
+                - ai_timeout
+                - ai_cancelled
+                - ai_invalid_response
+                - ai_secret_unavailable
+                - ai_unknown_error
             message:
               type: string
             requestId:
@@ -1287,7 +1944,7 @@ components:
           minItems: 1
           maxItems: 100
           items:
-            $ref: "#/components/schemas/MealFoodEntryInput"
+            $ref: "#/components/schemas/MealFoodEntryUpdateInput"
     Meal:
       type: object
       required:
@@ -1404,6 +2061,45 @@ components:
           $ref: "#/components/schemas/MealTotals"
         nutritionIncomplete:
           type: boolean
+    DiaryResponse:
+      type: object
+      required:
+        - days
+        - nextBefore
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyMealsResponse"
+        nextBefore:
+          type: string
+          format: date
+          nullable: true
+    CalendarActivity:
+      type: object
+      required:
+        - date
+        - mealCount
+      properties:
+        date:
+          type: string
+          format: date
+        mealCount:
+          type: integer
+          minimum: 1
+    CalendarMonthResponse:
+      type: object
+      required:
+        - month
+        - days
+      properties:
+        month:
+          type: string
+          pattern: '^\d{4}-(0[1-9]|1[0-2])$'
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarActivity"
     AdminMealsResponse:
       type: object
       required:
@@ -1587,6 +2283,12 @@ components:
         portionName: { type: string }
         quantity: { type: number, exclusiveMinimum: 0 }
         grams: { type: number, exclusiveMinimum: 0 }
+    MealFoodEntryUpdateInput:
+      allOf:
+        - $ref: "#/components/schemas/MealFoodEntryInput"
+        - type: object
+          properties:
+            id: { type: string }
     MealFoodEntry:
       type: object
       required:
@@ -1964,3 +2666,846 @@ components:
           type: integer
         offset:
           type: integer
+    AiProvider:
+      type: string
+      enum: [openai, anthropic, gemini, openrouter, openai-compatible]
+    AiFeature:
+      type: string
+      enum: [MEAL_NATURAL_LANGUAGE, AI_CONNECTION_TEST]
+    AiModelCapabilities:
+      type: object
+      properties:
+        text:
+          type: boolean
+        structuredOutput:
+          type: boolean
+        tools:
+          type: boolean
+        vision:
+          type: boolean
+        reasoning:
+          type: boolean
+    AiModel:
+      type: object
+      required: [id, label, capabilities]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        capabilities:
+          $ref: "#/components/schemas/AiModelCapabilities"
+    AiProviderDefinition:
+      type: object
+      required: [id, label, requiresBaseUrl, supportsModelDiscovery, guide, recommendedModels]
+      properties:
+        id:
+          $ref: "#/components/schemas/AiProvider"
+        label:
+          type: string
+        requiresBaseUrl:
+          type: boolean
+        supportsModelDiscovery:
+          type: boolean
+        guide:
+          type: object
+          required: [key]
+          properties:
+            key:
+              $ref: "#/components/schemas/AiProvider"
+            docsUrl:
+              type: string
+              format: uri
+            apiKeyUrl:
+              type: string
+              format: uri
+        recommendedModels:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiModel"
+    AiModelPricing:
+      type: object
+      properties:
+        input:
+          type: number
+          minimum: 0
+        output:
+          type: number
+          minimum: 0
+        currency:
+          type: string
+        unit:
+          type: string
+    AiModelDescriptor:
+      type: object
+      required: [id, displayName, provider, source]
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        provider:
+          $ref: "#/components/schemas/AiProvider"
+        description:
+          type: string
+        contextWindow:
+          type: integer
+          minimum: 1
+        capabilities:
+          $ref: "#/components/schemas/AiModelCapabilities"
+        inputModalities:
+          type: array
+          items:
+            type: string
+        outputModalities:
+          type: array
+          items:
+            type: string
+        pricing:
+          $ref: "#/components/schemas/AiModelPricing"
+        createdAt:
+          type: string
+          format: date-time
+        publisher:
+          type: string
+        source:
+          type: string
+          enum: [provider, manual]
+    AiModelsResponse:
+      type: object
+      required: [provider, models, stale, cachedAt]
+      properties:
+        provider:
+          $ref: "#/components/schemas/AiProvider"
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiModelDescriptor"
+        stale:
+          type: boolean
+        cachedAt:
+          type: string
+          format: date-time
+          nullable: true
+    AiSettings:
+      type: object
+      required: [provider, model, baseUrl, hasApiKey]
+      properties:
+        provider:
+          $ref: "#/components/schemas/AiProvider"
+        model:
+          type: string
+          nullable: true
+        baseUrl:
+          type: string
+          format: uri
+          nullable: true
+        hasApiKey:
+          type: boolean
+    AiSettingsResponse:
+      type: object
+      required: [settings, providers]
+      properties:
+        settings:
+          allOf:
+            - $ref: "#/components/schemas/AiSettings"
+          nullable: true
+        providers:
+          type: array
+          items:
+            $ref: "#/components/schemas/AiProviderDefinition"
+    UpdateAiSettingsRequest:
+      type: object
+      required: [provider]
+      properties:
+        provider:
+          $ref: "#/components/schemas/AiProvider"
+        model:
+          type: string
+          minLength: 1
+          maxLength: 160
+        apiKey:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        baseUrl:
+          type: string
+          format: uri
+          nullable: true
+    AiConnectionTestResponse:
+      type: object
+      required: [success, provider, model]
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        provider:
+          $ref: "#/components/schemas/AiProvider"
+        model:
+          type: string
+    MealInterpretationRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        locale:
+          type: string
+          enum: [en, it]
+          default: it
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 80
+          default: UTC
+    MealDraftNutrition:
+      type: object
+      required: [calories, proteinGrams, carbohydratesGrams, fatGrams]
+      properties:
+        calories:
+          type: number
+          minimum: 0
+          nullable: true
+        proteinGrams:
+          type: number
+          minimum: 0
+          nullable: true
+        carbohydratesGrams:
+          type: number
+          minimum: 0
+          nullable: true
+        fatGrams:
+          type: number
+          minimum: 0
+          nullable: true
+    MealDraftFood:
+      type: object
+      required:
+        [
+          sourceText,
+          normalizedName,
+          food,
+          candidates,
+          portionName,
+          quantity,
+          grams,
+          nutrition,
+          confidence,
+          resolutionStatus,
+          reviewNote,
+        ]
+      properties:
+        sourceText:
+          type: string
+        normalizedName:
+          type: string
+        food:
+          allOf:
+            - $ref: "#/components/schemas/Food"
+          nullable: true
+        candidates:
+          type: array
+          maxItems: 5
+          items:
+            $ref: "#/components/schemas/Food"
+        portionName:
+          type: string
+        quantity:
+          type: number
+          exclusiveMinimum: 0
+        grams:
+          type: number
+          exclusiveMinimum: 0
+          nullable: true
+        nutrition:
+          allOf:
+            - $ref: "#/components/schemas/MealDraftNutrition"
+          nullable: true
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        resolutionStatus:
+          type: string
+          enum: [RESOLVED, AMBIGUOUS, UNRESOLVED, ESTIMATED]
+        reviewNote:
+          type: string
+          nullable: true
+    MealDraft:
+      type: object
+      required: [mealType, mealName, foods, notes, totals, nutritionIncomplete]
+      properties:
+        mealType:
+          allOf:
+            - $ref: "#/components/schemas/MealCategory"
+          nullable: true
+        mealName:
+          type: string
+          nullable: true
+        foods:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealDraftFood"
+        notes:
+          type: string
+          nullable: true
+        totals:
+          $ref: "#/components/schemas/MealDraftNutrition"
+        nutritionIncomplete:
+          type: boolean
+    MealDraftResponse:
+      type: object
+      required: [draft]
+      properties:
+        draft:
+          $ref: "#/components/schemas/MealDraft"
+    AdminAiUsage:
+      type: object
+      required:
+        [
+          id,
+          userId,
+          user,
+          feature,
+          provider,
+          model,
+          inputTokens,
+          outputTokens,
+          totalTokens,
+          latencyMs,
+          status,
+          errorCode,
+          providerRequestId,
+          createdAt,
+        ]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        user:
+          allOf:
+            - $ref: "#/components/schemas/AdminAuditPrincipal"
+          nullable: true
+        feature:
+          $ref: "#/components/schemas/AiFeature"
+        provider:
+          $ref: "#/components/schemas/AiProvider"
+        model:
+          type: string
+        inputTokens:
+          type: integer
+          minimum: 0
+          nullable: true
+        outputTokens:
+          type: integer
+          minimum: 0
+          nullable: true
+        totalTokens:
+          type: integer
+          minimum: 0
+          nullable: true
+        latencyMs:
+          type: integer
+          minimum: 0
+        status:
+          type: string
+          enum: [succeeded, failed, cancelled]
+        errorCode:
+          type: string
+          nullable: true
+        providerRequestId:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    AdminAiUsageResponse:
+      type: object
+      required: [usage, summary, total, limit, offset]
+      properties:
+        usage:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAiUsage"
+        summary:
+          $ref: "#/components/schemas/AdminAiUsageSummary"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+    AdminAiUsageSummary:
+      type: object
+      required:
+        - requestCount
+        - succeededCount
+        - failedCount
+        - cancelledCount
+        - averageLatencyMs
+        - inputTokens
+        - outputTokens
+        - totalTokens
+        - byProvider
+        - byModel
+        - byFeature
+      properties:
+        requestCount: { type: integer, minimum: 0 }
+        succeededCount: { type: integer, minimum: 0 }
+        failedCount: { type: integer, minimum: 0 }
+        cancelledCount: { type: integer, minimum: 0 }
+        averageLatencyMs: { type: integer, minimum: 0 }
+        inputTokens: { type: integer, minimum: 0, nullable: true }
+        outputTokens: { type: integer, minimum: 0, nullable: true }
+        totalTokens: { type: integer, minimum: 0, nullable: true }
+        byProvider:
+          type: array
+          items: { $ref: "#/components/schemas/AdminAiUsageBreakdown" }
+        byModel:
+          type: array
+          items: { $ref: "#/components/schemas/AdminAiUsageBreakdown" }
+        byFeature:
+          type: array
+          items: { $ref: "#/components/schemas/AdminAiUsageBreakdown" }
+    AdminAiUsageBreakdown:
+      type: object
+      required: [key, requests]
+      properties:
+        key: { type: string, minLength: 1 }
+        requests: { type: integer, minimum: 0 }
+    SavedMealItemInput:
+      type: object
+      required: [foodId, portionName, quantity, grams]
+      properties:
+        foodId: { type: string }
+        portionName: { type: string }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        grams: { type: number, exclusiveMinimum: 0 }
+    SavedMealItem:
+      type: object
+      required: [id, foodId, foodName, needsAttention, portionName, quantity, grams]
+      properties:
+        id: { type: string }
+        foodId: { type: string, nullable: true }
+        foodName: { type: string, nullable: true }
+        needsAttention: { type: boolean }
+        portionName: { type: string }
+        quantity: { type: number, minimum: 0 }
+        grams: { type: number, minimum: 0 }
+    SavedMealRoutineInput:
+      type: object
+      required: [weekdays, localTime, isReminderEnabled]
+      properties:
+        mealType: { $ref: "#/components/schemas/MealCategory", nullable: true }
+        weekdays:
+          type: array
+          maxItems: 7
+          items: { type: integer, minimum: 0, maximum: 6 }
+        localTime: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$' }
+        isReminderEnabled: { type: boolean }
+    SavedMealRoutine:
+      type: object
+      required: [mealType, weekdays, localTime, isReminderEnabled]
+      properties:
+        mealType: { $ref: "#/components/schemas/MealCategory", nullable: true }
+        weekdays:
+          type: array
+          maxItems: 7
+          items: { type: integer, minimum: 0, maximum: 6 }
+        localTime: { type: string }
+        isReminderEnabled: { type: boolean }
+    SavedMeal:
+      type: object
+      required:
+        [id, name, defaultCategory, items, routine, usageCount, lastUsedAt, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        name: { type: string, minLength: 1, maxLength: 160 }
+        defaultCategory: { $ref: "#/components/schemas/MealCategory", nullable: true }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SavedMealItem" }
+        routine: { $ref: "#/components/schemas/SavedMealRoutine", nullable: true }
+        usageCount: { type: integer, minimum: 0 }
+        lastUsedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    SavedMealResponse:
+      type: object
+      required: [savedMeal]
+      properties:
+        savedMeal: { $ref: "#/components/schemas/SavedMeal" }
+    SavedMealsResponse:
+      type: object
+      required: [savedMeals]
+      properties:
+        savedMeals:
+          type: array
+          items: { $ref: "#/components/schemas/SavedMeal" }
+    SavedMealMutationResponse:
+      type: object
+      required: [success]
+      properties:
+        success: { type: boolean, enum: [true] }
+    CreateSavedMealRequest:
+      type: object
+      required: [name, items]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        defaultCategory: { $ref: "#/components/schemas/MealCategory", nullable: true }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { $ref: "#/components/schemas/SavedMealItemInput" }
+        routine: { $ref: "#/components/schemas/SavedMealRoutineInput" }
+    UpdateSavedMealRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 1, maxLength: 160 }
+        defaultCategory: { $ref: "#/components/schemas/MealCategory", nullable: true }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { $ref: "#/components/schemas/SavedMealItemInput" }
+    UseSavedMealRequest:
+      type: object
+      required: [mealId]
+      properties:
+        mealId: { type: string }
+    InsightsRange:
+      type: string
+      enum: [7d, 30d, 3m, 1y]
+    InsightsMetric:
+      type: string
+      enum: [calories, protein, carbs, fat]
+    InsightPeriod:
+      type: object
+      required: [range, start, end, days, granularity]
+      properties:
+        range: { $ref: "#/components/schemas/InsightsRange" }
+        start: { type: string, format: date }
+        end: { type: string, format: date }
+        days: { type: integer, minimum: 1 }
+        granularity: { type: string, enum: [day, week, month] }
+    InsightComparison:
+      type: object
+      required: [current, previous, delta, deltaPercent]
+      properties:
+        current: { type: number, nullable: true }
+        previous: { type: number, nullable: true }
+        delta: { type: number, nullable: true }
+        deltaPercent: { type: number, nullable: true }
+    InsightMetricSummary:
+      allOf:
+        - $ref: "#/components/schemas/InsightComparison"
+        - type: object
+          required: [currentTotal, previousTotal]
+          properties:
+            currentTotal: { type: number, nullable: true }
+            previousTotal: { type: number, nullable: true }
+    PersonalInsightBucket:
+      type: object
+      required:
+        [
+          key,
+          start,
+          calories,
+          proteinGrams,
+          carbohydratesGrams,
+          fatGrams,
+          meals,
+          loggedDays,
+          logged,
+        ]
+      properties:
+        key: { type: string }
+        start: { type: string, format: date }
+        calories: { type: number, nullable: true }
+        proteinGrams: { type: number, nullable: true }
+        carbohydratesGrams: { type: number, nullable: true }
+        fatGrams: { type: number, nullable: true }
+        meals: { type: integer, minimum: 0 }
+        loggedDays: { type: integer, minimum: 0 }
+        logged: { type: boolean }
+    InsightMealType:
+      type: object
+      required: [category, meals, calories, share, calorieShare]
+      properties:
+        category: { $ref: "#/components/schemas/MealCategory" }
+        meals: { type: integer, minimum: 0 }
+        calories: { type: number, minimum: 0 }
+        share: { type: number, minimum: 0, maximum: 1 }
+        calorieShare: { type: number, minimum: 0, maximum: 1 }
+    InsightFood:
+      type: object
+      required: [foodId, name, entries, calories, proteinGrams, carbohydratesGrams, fatGrams, share]
+      properties:
+        foodId: { type: string }
+        name: { type: string }
+        entries: { type: integer, minimum: 0 }
+        calories: { type: number, nullable: true }
+        proteinGrams: { type: number, nullable: true }
+        carbohydratesGrams: { type: number, nullable: true }
+        fatGrams: { type: number, nullable: true }
+        share: { type: number, minimum: 0, maximum: 1, nullable: true }
+    PersonalHighlight:
+      type: object
+      required: [kind, value, amount]
+      properties:
+        kind: { type: string, enum: [most_logged_food, most_logged_category, calorie_consistency] }
+        value: { type: string }
+        amount: { type: number, minimum: 0, nullable: true }
+    PersonalInsightsSummary:
+      type: object
+      required:
+        [
+          calories,
+          proteinGrams,
+          carbohydratesGrams,
+          fatGrams,
+          meals,
+          loggedDays,
+          periodDays,
+          incompleteMeals,
+        ]
+      properties:
+        calories: { $ref: "#/components/schemas/InsightMetricSummary" }
+        proteinGrams: { $ref: "#/components/schemas/InsightMetricSummary" }
+        carbohydratesGrams: { $ref: "#/components/schemas/InsightMetricSummary" }
+        fatGrams: { $ref: "#/components/schemas/InsightMetricSummary" }
+        meals: { $ref: "#/components/schemas/InsightComparison" }
+        loggedDays: { $ref: "#/components/schemas/InsightComparison" }
+        periodDays: { type: integer, minimum: 1 }
+        incompleteMeals: { type: integer, minimum: 0 }
+    PersonalInsightsResponse:
+      type: object
+      required: [period, targetCalories, summary, buckets, mealTypes, topFoods, highlights]
+      properties:
+        period: { $ref: "#/components/schemas/InsightPeriod" }
+        targetCalories: { type: number, minimum: 0, nullable: true }
+        summary: { $ref: "#/components/schemas/PersonalInsightsSummary" }
+        buckets:
+          type: array
+          items: { $ref: "#/components/schemas/PersonalInsightBucket" }
+        mealTypes:
+          type: array
+          items: { $ref: "#/components/schemas/InsightMealType" }
+        topFoods:
+          type: array
+          items: { $ref: "#/components/schemas/InsightFood" }
+        highlights:
+          type: array
+          items: { $ref: "#/components/schemas/PersonalHighlight" }
+    PersonalNutritionDetailBucket:
+      type: object
+      required: [key, start, value, loggedDays, logged]
+      properties:
+        key: { type: string }
+        start: { type: string, format: date }
+        value: { type: number, minimum: 0, nullable: true }
+        loggedDays: { type: integer, minimum: 0 }
+        logged: { type: boolean }
+    PersonalNutritionDetail:
+      type: object
+      required:
+        [metric, period, average, total, previousAverage, delta, deltaPercent, buckets, topFoods]
+      properties:
+        metric: { $ref: "#/components/schemas/InsightsMetric" }
+        period: { $ref: "#/components/schemas/InsightPeriod" }
+        average: { type: number, minimum: 0, nullable: true }
+        total: { type: number, minimum: 0, nullable: true }
+        previousAverage: { type: number, minimum: 0, nullable: true }
+        delta: { type: number, nullable: true }
+        deltaPercent: { type: number, nullable: true }
+        buckets:
+          type: array
+          items: { $ref: "#/components/schemas/PersonalNutritionDetailBucket" }
+        topFoods:
+          type: array
+          items: { $ref: "#/components/schemas/InsightFood" }
+    AdminAnalyticsPeriod:
+      type: object
+      required: [range, start, end, days, granularity, timezone]
+      properties:
+        range: { type: string, enum: [7d, 30d, 90d, custom] }
+        start: { type: string, format: date }
+        end: { type: string, format: date }
+        days: { type: integer, minimum: 1 }
+        granularity: { type: string, enum: [day, week, month] }
+        timezone: { type: string, enum: [UTC] }
+    AdminAnalyticsMetric:
+      type: object
+      required: [current, previous, delta, deltaPercent]
+      properties:
+        current: { type: number, minimum: 0 }
+        previous: { type: number, minimum: 0 }
+        delta: { type: number }
+        deltaPercent: { type: number, nullable: true }
+    AdminOverviewBucket:
+      type: object
+      required: [key, start, newUsers, meals, foodEntries, aiRequests]
+      properties:
+        key: { type: string }
+        start: { type: string, format: date }
+        newUsers: { type: integer, minimum: 0 }
+        meals: { type: integer, minimum: 0 }
+        foodEntries: { type: integer, minimum: 0 }
+        aiRequests: { type: integer, minimum: 0 }
+    AdminOverviewResponse:
+      type: object
+      required: [period, totalUsers, kpis, activity]
+      properties:
+        period: { $ref: "#/components/schemas/AdminAnalyticsPeriod" }
+        totalUsers: { type: integer, minimum: 0 }
+        kpis:
+          type: object
+          required: [newUsers, activeUsers, meals, foodEntries, foodSubmissions, aiRequests]
+          properties:
+            newUsers: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            activeUsers: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            meals: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            foodEntries: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            foodSubmissions: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            aiRequests: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+        activity:
+          type: array
+          items: { $ref: "#/components/schemas/AdminOverviewBucket" }
+    AdminNutritionBucket:
+      type: object
+      required: [key, start, calories, proteinGrams, carbohydratesGrams, fatGrams, meals]
+      properties:
+        key: { type: string }
+        start: { type: string, format: date }
+        calories: { type: number, minimum: 0 }
+        proteinGrams: { type: number, minimum: 0 }
+        carbohydratesGrams: { type: number, minimum: 0 }
+        fatGrams: { type: number, minimum: 0 }
+        meals: { type: integer, minimum: 0 }
+    AdminNutritionResponse:
+      type: object
+      required: [period, totals, activity, mealTypes, topFoods]
+      properties:
+        period: { $ref: "#/components/schemas/AdminAnalyticsPeriod" }
+        totals:
+          type: object
+          required: [meals, calories, proteinGrams, carbohydratesGrams, fatGrams, incompleteMeals]
+          properties:
+            meals: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            calories: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            proteinGrams: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            carbohydratesGrams: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            fatGrams: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            incompleteMeals: { type: integer, minimum: 0 }
+        activity:
+          type: array
+          items: { $ref: "#/components/schemas/AdminNutritionBucket" }
+        mealTypes:
+          type: array
+          items: { $ref: "#/components/schemas/InsightMealType" }
+        topFoods:
+          type: array
+          items: { $ref: "#/components/schemas/InsightFood" }
+    AdminCatalogGrowthBucket:
+      type: object
+      required: [key, start, foodsCreated, submissions, approved, rejected, merged]
+      properties:
+        key: { type: string }
+        start: { type: string, format: date }
+        foodsCreated: { type: integer, minimum: 0 }
+        submissions: { type: integer, minimum: 0 }
+        approved: { type: integer, minimum: 0 }
+        rejected: { type: integer, minimum: 0 }
+        merged: { type: integer, minimum: 0 }
+    AdminCatalogResponse:
+      type: object
+      required: [period, catalog, moderation, growth, popularFoods]
+      properties:
+        period: { $ref: "#/components/schemas/AdminAnalyticsPeriod" }
+        catalog:
+          type: object
+          required: [total, approved, pending, rejected, merged]
+          properties:
+            total: { type: integer, minimum: 0 }
+            approved: { type: integer, minimum: 0 }
+            pending: { type: integer, minimum: 0 }
+            rejected: { type: integer, minimum: 0 }
+            merged: { type: integer, minimum: 0 }
+        moderation:
+          type: object
+          required:
+            [submissions, approved, rejected, merged, pending, approvalRate, averageReviewHours]
+          properties:
+            submissions: { type: integer, minimum: 0 }
+            approved: { type: integer, minimum: 0 }
+            rejected: { type: integer, minimum: 0 }
+            merged: { type: integer, minimum: 0 }
+            pending: { type: integer, minimum: 0 }
+            approvalRate: { type: number, minimum: 0, maximum: 1, nullable: true }
+            averageReviewHours: { type: number, minimum: 0, nullable: true }
+        growth:
+          type: array
+          items: { $ref: "#/components/schemas/AdminCatalogGrowthBucket" }
+        popularFoods:
+          type: array
+          items: { $ref: "#/components/schemas/InsightFood" }
+    AdminAiAnalyticsBucket:
+      type: object
+      required: [key, start, requests, succeeded, failed, averageLatencyMs, totalTokens]
+      properties:
+        key: { type: string }
+        start: { type: string, format: date }
+        requests: { type: integer, minimum: 0 }
+        succeeded: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+        averageLatencyMs: { type: integer, minimum: 0, nullable: true }
+        totalTokens: { type: integer, minimum: 0, nullable: true }
+    AdminAiAnalyticsResponse:
+      type: object
+      required: [period, summary, activity, byProvider, byModel, byFeature]
+      properties:
+        period: { $ref: "#/components/schemas/AdminAnalyticsPeriod" }
+        summary:
+          type: object
+          required:
+            [requests, succeeded, failed, averageLatencyMs, inputTokens, outputTokens, totalTokens]
+          properties:
+            requests: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            succeeded: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            failed: { $ref: "#/components/schemas/AdminAnalyticsMetric" }
+            averageLatencyMs: { type: integer, minimum: 0, nullable: true }
+            inputTokens: { type: integer, minimum: 0, nullable: true }
+            outputTokens: { type: integer, minimum: 0, nullable: true }
+            totalTokens: { type: integer, minimum: 0, nullable: true }
+        activity:
+          type: array
+          items: { $ref: "#/components/schemas/AdminAiAnalyticsBucket" }
+        byProvider:
+          type: array
+          items:
+            {
+              type: object,
+              required: [key, requests],
+              properties: { key: { type: string }, requests: { type: integer, minimum: 0 } },
+            }
+        byModel:
+          type: array
+          items:
+            {
+              type: object,
+              required: [key, requests],
+              properties: { key: { type: string }, requests: { type: integer, minimum: 0 } },
+            }
+        byFeature:
+          type: array
+          items:
+            {
+              type: object,
+              required: [key, requests],
+              properties: { key: { type: string }, requests: { type: integer, minimum: 0 } },
+            }

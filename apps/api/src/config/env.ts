@@ -16,10 +16,14 @@ const envSchema = z.object({
       "BETTER_AUTH_SECRET must be at least 32 characters (generate one with: openssl rand -base64 32)",
     ),
   BETTER_AUTH_URL: z.url("BETTER_AUTH_URL must be a valid URL, e.g. http://localhost:3000"),
-  API_PORT: z.coerce.number().int().min(1).max(65535).default(3000),
+  // Railway injects PORT at runtime. API_PORT remains the local/dev override.
+  PORT: z.coerce.number().int().min(1).max(65535).optional(),
+  API_PORT: z.coerce.number().int().min(1).max(65535).optional(),
   LOG_LEVEL: logLevelSchema.default("info"),
   /** Comma-separated browser origins allowed to call the API with credentials. */
   CORS_ALLOWED_ORIGINS: z.string().default(""),
+  /** Base64 or hex encoded 32-byte key used for AES-256-GCM BYOK encryption. */
+  AI_ENCRYPTION_KEY: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   APPLE_SERVICES_ID: z.string().optional(),
@@ -38,6 +42,7 @@ export interface AppConfig {
   apiPort: number;
   logLevel: LogLevel;
   corsOrigins: string[];
+  aiEncryptionKey?: string;
   google?: GoogleOAuthConfig;
   apple?: AppleOAuthConfig;
 }
@@ -122,9 +127,10 @@ export function loadConfig(source?: NodeJS.ProcessEnv): AppConfig {
     databaseUrl: env.DATABASE_URL,
     authSecret: env.BETTER_AUTH_SECRET,
     authBaseUrl: env.BETTER_AUTH_URL,
-    apiPort: env.API_PORT,
+    apiPort: env.API_PORT ?? env.PORT ?? 3000,
     logLevel: env.LOG_LEVEL,
     corsOrigins,
+    aiEncryptionKey: env.AI_ENCRYPTION_KEY,
     ...buildOAuthConfig(env),
   };
 }

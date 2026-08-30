@@ -202,6 +202,11 @@ MVP statistics include:
 - days above/below/in target;
 - meal-category breakdown.
 
+The current implementation exposes these statistics through the authenticated
+mobile Insights route and a separate Admin Analytics workspace. The data
+definitions, period semantics, and intentionally unavailable dimensions are
+tracked in [docs/analytics.md](docs/analytics.md).
+
 ### 5.7 Known meals
 
 Support “known meals” / recurring meals.
@@ -387,6 +392,18 @@ Supported providers should be easy to extend and may include:
 Provider-specific logic MUST live in the AI layer/package only.
 
 Do NOT scatter provider-specific code across the app or routes.
+
+Model discovery is provider-aware but not an allowlist. The AI layer should
+query each configured provider's model endpoint, normalize usable text models,
+and keep a small registry of recommended models only for ranking and
+onboarding. The API must cache discovery results with explicit refresh and
+serve a stale cached list when a transient provider failure occurs.
+
+The mobile setup flow must allow a provider key to be saved before a model is
+selected, offer localized setup guidance for every supported provider, and
+always provide a manual model-ID fallback for new, private, or unlisted
+models. Provider discovery failures must not make a manually documented model
+ID unusable.
 
 ### 9.1 AI-generated meal contract
 

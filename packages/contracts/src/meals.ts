@@ -1,6 +1,10 @@
 import { z } from "zod";
 
-import { mealFoodEntryInputSchema, mealFoodEntrySchema } from "./foods";
+import {
+  mealFoodEntryInputSchema,
+  mealFoodEntrySchema,
+  mealFoodEntryUpdateInputSchema,
+} from "./foods";
 
 export const mealCategorySchema = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 export type MealCategory = z.infer<typeof mealCategorySchema>;
@@ -59,7 +63,7 @@ export const updateMealSchema = z
     proteinGrams: mealGramsSchema.optional(),
     carbohydratesGrams: mealGramsSchema.optional(),
     fatGrams: mealGramsSchema.optional(),
-    entries: z.array(mealFoodEntryInputSchema).min(1).max(100).optional(),
+    entries: z.array(mealFoodEntryUpdateInputSchema).min(1).max(100).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, "At least one meal field is required");
 
@@ -105,6 +109,40 @@ export const dailyMealsResponseSchema = z.object({
 });
 
 export type DailyMealsResponse = z.infer<typeof dailyMealsResponseSchema>;
+
+export const diaryQuerySchema = z.object({
+  /** Exclusive upper bound. The mobile client sends tomorrow to include today. */
+  before: mealDateSchema,
+  limit: z.coerce.number().int().min(1).max(14).default(7),
+  foodId: z.string().trim().min(1).max(128).optional(),
+});
+export type DiaryQuery = z.infer<typeof diaryQuerySchema>;
+
+export const diaryDaySchema = dailyMealsResponseSchema;
+export type DiaryDay = z.infer<typeof diaryDaySchema>;
+
+export const diaryResponseSchema = z.object({
+  days: z.array(diaryDaySchema),
+  nextBefore: mealDateSchema.nullable(),
+});
+export type DiaryResponse = z.infer<typeof diaryResponseSchema>;
+
+export const calendarMonthSchema = z
+  .string()
+  .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Month must use YYYY-MM format");
+
+export const calendarActivitySchema = z.object({
+  date: mealDateSchema,
+  mealCount: z.number().int().positive(),
+});
+
+export const calendarMonthResponseSchema = z.object({
+  month: calendarMonthSchema,
+  days: z.array(calendarActivitySchema),
+});
+
+export type CalendarActivity = z.infer<typeof calendarActivitySchema>;
+export type CalendarMonthResponse = z.infer<typeof calendarMonthResponseSchema>;
 
 export const adminMealsQuerySchema = z.object({
   date: mealDateSchema.optional(),

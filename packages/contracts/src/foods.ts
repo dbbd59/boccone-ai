@@ -145,6 +145,12 @@ export const mealFoodEntryInputSchema = z.object({
 });
 export type MealFoodEntryInput = z.infer<typeof mealFoodEntryInputSchema>;
 
+export const mealFoodEntryUpdateInputSchema = mealFoodEntryInputSchema.extend({
+  /** Existing entry ids allow the API to preserve unchanged snapshots. */
+  id: z.string().trim().min(1).max(128).optional(),
+});
+export type MealFoodEntryUpdateInput = z.infer<typeof mealFoodEntryUpdateInputSchema>;
+
 export const mealFoodEntrySchema = z.object({
   id: z.string(),
   foodId: z.string(),

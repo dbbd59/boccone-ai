@@ -5,6 +5,7 @@ import { auth, db } from "./auth";
 import { createApp } from "./app";
 import { loadConfig } from "./config/env";
 import { createLogger } from "./logger";
+import { createAiService } from "./services/ai";
 
 const config = loadConfig();
 const logger = createLogger({ level: config.logLevel, base: { service: "boccone-api" } });
@@ -15,6 +16,7 @@ const app = createApp({
   version: packageJson.version,
   corsOrigins: config.corsOrigins,
   logLevel: config.logLevel,
+  ai: createAiService({ db, encryptionKey: config.aiEncryptionKey, logger }),
 });
 
 const server = Bun.serve({

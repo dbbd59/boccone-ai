@@ -103,6 +103,13 @@ describe("food catalog", () => {
     const search = foodSearchResponseSchema.parse(await searchResponse.json());
     expect(search.foods[0]).toMatchObject({ id: foodId, name: "Mela" });
 
+    const contextualSearch = foodSearchResponseSchema.parse(
+      await (
+        await requestWithCookie("/api/me/foods/search?query=mela%20frutto&locale=it", ownerJar)
+      ).json(),
+    );
+    expect(contextualSearch.foods.some((food) => food.id === foodId)).toBe(true);
+
     const mealResponse = await requestWithCookie("/api/me/meals", ownerJar, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -117,6 +124,51 @@ describe("food catalog", () => {
     const meal = mealResponseSchema.parse(await mealResponse.json()).meal;
     expect(meal).toMatchObject({ calories: 95, entries: [{ foodId, foodName: "Mela" }] });
     expect(meal.entries[0]?.energyKcal).toBe(94.6);
+
+    await harness.db
+      .update(foods)
+      .set({ energyKcalPer100g: 1_000, proteinGPer100g: 100 })
+      .where(eq(foods.id, foodId));
+    const stableDay = dailyMealsResponseSchema.parse(
+      await (await requestWithCookie("/api/me/meals?date=2026-08-29", ownerJar)).json(),
+    );
+    expect(stableDay.totals.calories).toBe(95);
+    expect(stableDay.meals[0]?.entries[0]?.energyKcal).toBe(94.6);
+
+    const unchangedUpdate = await requestWithCookie(`/api/me/meals/${meal.id}`, ownerJar, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Fruit snack remembered",
+        entries: [
+          {
+            id: meal.entries[0]?.id,
+            foodId,
+            portionName: "1 medium",
+            quantity: 1,
+            grams: 182,
+          },
+        ],
+      }),
+    });
+    expect(unchangedUpdate.status).toBe(200);
+    const unchangedMeal = mealResponseSchema.parse(await unchangedUpdate.json()).meal;
+    expect(unchangedMeal.calories).toBe(95);
+    expect(unchangedMeal.entries[0]?.energyKcal).toBe(94.6);
+
+    const intentionalChange = await requestWithCookie(`/api/me/meals/${meal.id}`, ownerJar, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        entries: [
+          { ...unchangedMeal.entries[0], foodId, portionName: "200 g", quantity: 1, grams: 200 },
+        ],
+      }),
+    });
+    expect(intentionalChange.status).toBe(200);
+    const changedMeal = mealResponseSchema.parse(await intentionalChange.json()).meal;
+    expect(changedMeal.calories).toBe(2_000);
+    expect(changedMeal.entries[0]?.energyKcal).toBe(2_000);
 
     const submissionResponse = await requestWithCookie("/api/me/food-submissions", ownerJar, {
       method: "POST",

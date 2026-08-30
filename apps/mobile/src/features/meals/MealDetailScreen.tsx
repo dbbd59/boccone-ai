@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Alert as NativeAlert, ScrollView, StyleSheet } from "react-native";
 import { useState } from "react";
 
@@ -7,22 +8,26 @@ import { spacing } from "@boccone/design-tokens";
 import {
   Alert,
   Button,
-  GlassButton,
-  Inline,
+  GlassIconButton,
   Screen,
   Stack,
   Surface,
   Text,
+  useThemeColors,
 } from "@boccone/ui-mobile";
 
+import { MealEntryRow } from "../../components/MealEntryRow";
+import { NutritionSummary } from "../../components/NutritionSummary";
 import { useI18n } from "../../i18n/context";
 import { formatReadableDate } from "../../lib/dates";
-import { fetchMeal, removeMeal } from "../../lib/meals";
+import { formatGrams, formatKcal, formatMealTime } from "../../lib/format";
+import { fetchMeal, MealNotFoundError, removeMeal } from "../../lib/meals";
 
 export function MealDetailScreen() {
   const { copy, locale } = useI18n();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const colors = useThemeColors();
   const params = useLocalSearchParams<{ mealId?: string }>();
   const mealId = typeof params.mealId === "string" ? params.mealId : "";
   const [deleting, setDeleting] = useState(false);
@@ -53,7 +58,8 @@ export function MealDetailScreen() {
           setDeleteError(false);
           void removeMeal(mealId)
             .then(async () => {
-              await queryClient.invalidateQueries({ queryKey: ["getDailyMeals"] });
+              await invalidateMealQueries(queryClient);
+              await queryClient.invalidateQueries({ queryKey: [{ _id: "getCalendarMonth" }] });
               queryClient.removeQueries({ queryKey: ["mobile-meal", mealId] });
               router.back();
             })
@@ -78,11 +84,30 @@ export function MealDetailScreen() {
     return (
       <Screen>
         <Stack gap="md">
-          <GlassButton onPress={() => router.back()}>{copy.navigation.back}</GlassButton>
-          <Alert tone="danger" message={copy.meal.loadError} />
-          <Button variant="ghost" onPress={() => void mealQuery.refetch()}>
-            {copy.meal.retry}
-          </Button>
+          <GlassIconButton
+            accessibilityLabel={copy.navigation.back}
+            icon={
+              <MaterialCommunityIcons
+                color={colors.foreground.default}
+                name="chevron-left"
+                size={22}
+              />
+            }
+            onPress={() => router.back()}
+          />
+          {mealQuery.error instanceof MealNotFoundError ? (
+            <Stack gap="xs">
+              <Text variant="headingMd">{copy.meal.notFoundTitle}</Text>
+              <Text tone="secondary">{copy.meal.notFoundBody}</Text>
+            </Stack>
+          ) : (
+            <>
+              <Alert tone="danger" message={copy.meal.loadError} />
+              <Button variant="ghost" onPress={() => void mealQuery.refetch()}>
+                {copy.meal.retry}
+              </Button>
+            </>
+          )}
         </Stack>
       </Screen>
     );
@@ -93,7 +118,17 @@ export function MealDetailScreen() {
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Stack gap="xl">
-          <GlassButton onPress={() => router.back()}>{copy.navigation.back}</GlassButton>
+          <GlassIconButton
+            accessibilityLabel={copy.navigation.back}
+            icon={
+              <MaterialCommunityIcons
+                color={colors.foreground.default}
+                name="chevron-left"
+                size={22}
+              />
+            }
+            onPress={() => router.back()}
+          />
           <Stack gap="sm">
             <Text variant="caption" tone="brand">
               {copy.meal.detailEyebrow}
@@ -103,56 +138,32 @@ export function MealDetailScreen() {
               {copy.meal.detailDate(
                 copy.meal.categories[meal.category],
                 formatReadableDate(meal.date, locale),
+                formatMealTime(meal.createdAt, locale),
               )}
             </Text>
           </Stack>
 
-          <Surface>
-            <Stack gap="lg">
-              <Stack gap="xs">
-                <Text variant="caption" tone="secondary">
-                  {copy.meal.caloriesLabel}
-                </Text>
-                <Text variant="numeric">{copy.home.caloriesValue(meal.calories)}</Text>
-                {meal.nutritionIncomplete ? (
-                  <Text variant="bodySm" tone="secondary">
-                    {copy.food.approximate}
-                  </Text>
-                ) : null}
-              </Stack>
-              {deleteError ? <Alert tone="danger" message={copy.meal.deleteError} /> : null}
-              <Stack gap="sm">
-                <Text variant="label">{copy.meal.nutritionTitle}</Text>
-                <Inline gap="md" align="start">
-                  <NutritionValue label={copy.meal.proteinLabel} value={meal.proteinGrams} />
-                  <NutritionValue
-                    label={copy.meal.carbohydratesLabel}
-                    value={meal.carbohydratesGrams}
-                  />
-                  <NutritionValue label={copy.meal.fatLabel} value={meal.fatGrams} />
-                </Inline>
-              </Stack>
-            </Stack>
-          </Surface>
+          <NutritionSummary
+            calories={meal.calories}
+            carbohydrates={meal.carbohydratesGrams}
+            fat={meal.fatGrams}
+            incomplete={meal.nutritionIncomplete}
+            protein={meal.proteinGrams}
+            showTarget={false}
+          />
+          {deleteError ? <Alert tone="danger" message={copy.meal.deleteError} /> : null}
 
           {meal.entries?.length ? (
             <Surface elevation="none">
               <Stack gap="sm">
                 <Text variant="label">{copy.food.selectedFoods}</Text>
                 {meal.entries.map((entry) => (
-                  <Inline key={entry.id} gap="md" align="start" style={styles.entryRow}>
-                    <Stack gap="xs" style={styles.entryCopy}>
-                      <Text variant="label">{entry.foodName}</Text>
-                      <Text variant="bodySm" tone="secondary">
-                        {entry.portionName} · {entry.grams} g
-                      </Text>
-                    </Stack>
-                    <Text variant="label">
-                      {entry.energyKcal === null
-                        ? "— kcal"
-                        : `${Math.round(entry.energyKcal)} kcal`}
-                    </Text>
-                  </Inline>
+                  <MealEntryRow
+                    key={entry.id}
+                    calories={formatKcal(entry.energyKcal, locale)}
+                    detail={`${entry.portionName} · ${formatGrams(entry.grams, locale)}`}
+                    name={entry.foodName}
+                  />
                 ))}
               </Stack>
             </Surface>
@@ -187,30 +198,16 @@ export function MealDetailScreen() {
   );
 }
 
-function NutritionValue({ label, value }: { label: string; value: number | null | undefined }) {
-  const { copy } = useI18n();
-  return (
-    <Stack gap="xs" style={styles.nutritionValue}>
-      <Text variant="caption" tone="secondary">
-        {label}
-      </Text>
-      <Text variant="headingSm">{copy.home.gramsValue(value)}</Text>
-    </Stack>
-  );
-}
-
 const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingBottom: spacing[12],
   },
-  nutritionValue: {
-    flex: 1,
-  },
-  entryRow: {
-    justifyContent: "space-between",
-  },
-  entryCopy: {
-    flex: 1,
-  },
 });
+
+function invalidateMealQueries(queryClient: ReturnType<typeof useQueryClient>) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: [{ _id: "getDailyMeals" }] }),
+    queryClient.invalidateQueries({ queryKey: [{ _id: "getMealDiary" }] }),
+  ]);
+}

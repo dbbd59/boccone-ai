@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet } from "react-native";
 import { spacing } from "@boccone/design-tokens";
 import { ComingSoon, Screen, Stack, Surface, Text } from "@boccone/ui-mobile";
 
-import { BrandMark } from "../../components/BrandMark";
+import { MascotAvatar } from "../../components/MascotAvatar";
 import { useI18n } from "../../i18n/context";
 
 export function AboutScreen() {
@@ -16,7 +16,7 @@ export function AboutScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Stack gap="xl">
           <Stack gap="sm" align="center">
-            <BrandMark size={72} />
+            <MascotAvatar accessibilityLabel={copy.home.mascotTitle} size={88} />
             <Text variant="title">{copy.settings.aboutTitle}</Text>
             <Text variant="bodyLg" tone="secondary" style={styles.centeredText}>
               {copy.settings.aboutBody}

@@ -8,6 +8,20 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   not_found: 404,
   conflict: 409,
   internal_error: 500,
+  ai_not_configured: 503,
+  ai_invalid_credentials: 502,
+  ai_rate_limited: 429,
+  ai_provider_unavailable: 503,
+  ai_model_not_found: 502,
+  ai_model_not_accessible: 502,
+  ai_model_not_selected: 400,
+  ai_model_discovery_unavailable: 503,
+  ai_model_unsupported: 400,
+  ai_timeout: 504,
+  ai_cancelled: 499,
+  ai_invalid_response: 502,
+  ai_secret_unavailable: 503,
+  ai_unknown_error: 500,
 };
 
 /** Domain error carrying a machine-readable contract code + HTTP status. */

@@ -138,5 +138,8 @@ export const mealFoodEntries = pgTable(
     sodiumMgSnapshot: real("sodium_mg_snapshot"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [index("meal_food_entries_meal_idx").on(table.mealId)],
+  (table) => [
+    index("meal_food_entries_meal_idx").on(table.mealId),
+    index("meal_food_entries_food_idx").on(table.foodId),
+  ],
 );

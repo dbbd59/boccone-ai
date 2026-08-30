@@ -15,39 +15,62 @@ import {
   createAdminUserMeal,
   createFoodSubmission,
   createMeal,
+  createSavedMeal,
+  deleteAiApiKey,
+  deleteSavedMealRoutine,
+  getAdminAnalyticsAi,
+  getAdminAnalyticsFoods,
+  getAdminAnalyticsNutrition,
+  getAdminAnalyticsOverview,
   getAdminFood,
   getAdminFoodSubmission,
   getAdminMeal,
   getAdminUser,
   getAdminUserDailyTargets,
   getAdminUserMeal,
+  getAiModels,
+  getAiSettings,
+  getCalendarMonth,
   getCurrentUser,
   getDailyMeals,
   getDailyTargets,
   getHealth,
   getMeal,
+  getMealDiary,
+  getPersonalInsights,
+  getPersonalNutritionDetail,
+  getSavedMeal,
+  interpretMealWithAi,
+  listAdminAiUsage,
   listAdminAuditLogs,
   listAdminFoods,
   listAdminFoodSubmissions,
   listAdminMeals,
   listAdminUserMeals,
   listAdminUsers,
+  listSavedMeals,
   mergeFoodSubmission,
   type Options,
+  putSavedMealRoutine,
   rejectFoodSubmission,
   removeAdminUser,
   removeAdminUserDailyTargets,
   removeAdminUserMeal,
   removeMeal,
+  removeSavedMeal,
   searchFoods,
   setAdminUserRole,
+  testAiConnection,
   unbanAdminUser,
   updateAdminFood,
   updateAdminUser,
   updateAdminUserDailyTargets,
   updateAdminUserMeal,
+  updateAiSettings,
   updateDailyTargets,
   updateMeal,
+  updateSavedMeal,
+  useSavedMeal,
 } from "../sdk.gen";
 import type {
   ApproveFoodSubmissionData,
@@ -68,6 +91,27 @@ import type {
   CreateMealData,
   CreateMealError,
   CreateMealResponse,
+  CreateSavedMealData,
+  CreateSavedMealError,
+  CreateSavedMealResponse,
+  DeleteAiApiKeyData,
+  DeleteAiApiKeyError,
+  DeleteAiApiKeyResponse,
+  DeleteSavedMealRoutineData,
+  DeleteSavedMealRoutineError,
+  DeleteSavedMealRoutineResponse,
+  GetAdminAnalyticsAiData,
+  GetAdminAnalyticsAiError,
+  GetAdminAnalyticsAiResponse,
+  GetAdminAnalyticsFoodsData,
+  GetAdminAnalyticsFoodsError,
+  GetAdminAnalyticsFoodsResponse,
+  GetAdminAnalyticsNutritionData,
+  GetAdminAnalyticsNutritionError,
+  GetAdminAnalyticsNutritionResponse,
+  GetAdminAnalyticsOverviewData,
+  GetAdminAnalyticsOverviewError,
+  GetAdminAnalyticsOverviewResponse,
   GetAdminFoodData,
   GetAdminFoodError,
   GetAdminFoodResponse,
@@ -86,6 +130,15 @@ import type {
   GetAdminUserMealError,
   GetAdminUserMealResponse,
   GetAdminUserResponse,
+  GetAiModelsData,
+  GetAiModelsError,
+  GetAiModelsResponse,
+  GetAiSettingsData,
+  GetAiSettingsError,
+  GetAiSettingsResponse,
+  GetCalendarMonthData,
+  GetCalendarMonthError,
+  GetCalendarMonthResponse,
   GetCurrentUserData,
   GetCurrentUserError,
   GetCurrentUserResponse,
@@ -99,8 +152,26 @@ import type {
   GetHealthError,
   GetHealthResponse,
   GetMealData,
+  GetMealDiaryData,
+  GetMealDiaryError,
+  GetMealDiaryResponse,
   GetMealError,
   GetMealResponse,
+  GetPersonalInsightsData,
+  GetPersonalInsightsError,
+  GetPersonalInsightsResponse,
+  GetPersonalNutritionDetailData,
+  GetPersonalNutritionDetailError,
+  GetPersonalNutritionDetailResponse,
+  GetSavedMealData,
+  GetSavedMealError,
+  GetSavedMealResponse,
+  InterpretMealWithAiData,
+  InterpretMealWithAiError,
+  InterpretMealWithAiResponse,
+  ListAdminAiUsageData,
+  ListAdminAiUsageError,
+  ListAdminAiUsageResponse,
   ListAdminAuditLogsData,
   ListAdminAuditLogsError,
   ListAdminAuditLogsResponse,
@@ -119,9 +190,15 @@ import type {
   ListAdminUsersData,
   ListAdminUsersError,
   ListAdminUsersResponse,
+  ListSavedMealsData,
+  ListSavedMealsError,
+  ListSavedMealsResponse,
   MergeFoodSubmissionData,
   MergeFoodSubmissionError,
   MergeFoodSubmissionResponse,
+  PutSavedMealRoutineData,
+  PutSavedMealRoutineError,
+  PutSavedMealRoutineResponse,
   RejectFoodSubmissionData,
   RejectFoodSubmissionError,
   RejectFoodSubmissionResponse,
@@ -137,12 +214,18 @@ import type {
   RemoveMealData,
   RemoveMealError,
   RemoveMealResponse,
+  RemoveSavedMealData,
+  RemoveSavedMealError,
+  RemoveSavedMealResponse,
   SearchFoodsData,
   SearchFoodsError,
   SearchFoodsResponse,
   SetAdminUserRoleData,
   SetAdminUserRoleError,
   SetAdminUserRoleResponse,
+  TestAiConnectionData,
+  TestAiConnectionError,
+  TestAiConnectionResponse,
   UnbanAdminUserData,
   UnbanAdminUserError,
   UnbanAdminUserResponse,
@@ -158,12 +241,21 @@ import type {
   UpdateAdminUserMealError,
   UpdateAdminUserMealResponse,
   UpdateAdminUserResponse,
+  UpdateAiSettingsData,
+  UpdateAiSettingsError,
+  UpdateAiSettingsResponse,
   UpdateDailyTargetsData,
   UpdateDailyTargetsError,
   UpdateDailyTargetsResponse,
   UpdateMealData,
   UpdateMealError,
   UpdateMealResponse,
+  UpdateSavedMealData,
+  UpdateSavedMealError,
+  UpdateSavedMealResponse,
+  UseSavedMealData,
+  UseSavedMealError,
+  UseSavedMealResponse,
 } from "../types.gen";
 
 export type QueryKey<TOptions extends Options> = [
@@ -254,6 +346,160 @@ export const getCurrentUserOptions = (options?: Options<GetCurrentUserData>) =>
     },
     queryKey: getCurrentUserQueryKey(options),
   });
+
+export const getAiSettingsQueryKey = (options?: Options<GetAiSettingsData>) =>
+  createQueryKey("getAiSettings", options);
+
+/**
+ * Get the current user's AI provider settings
+ */
+export const getAiSettingsOptions = (options?: Options<GetAiSettingsData>) =>
+  queryOptions<
+    GetAiSettingsResponse,
+    GetAiSettingsError,
+    GetAiSettingsResponse,
+    ReturnType<typeof getAiSettingsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAiSettings({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAiSettingsQueryKey(options),
+  });
+
+/**
+ * Configure the current user's AI provider
+ */
+export const updateAiSettingsMutation = (
+  options?: Partial<Options<UpdateAiSettingsData>>,
+): UseMutationOptions<
+  UpdateAiSettingsResponse,
+  UpdateAiSettingsError,
+  Options<UpdateAiSettingsData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateAiSettingsResponse,
+    UpdateAiSettingsError,
+    Options<UpdateAiSettingsData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateAiSettings({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Delete the current user's stored AI API key
+ */
+export const deleteAiApiKeyMutation = (
+  options?: Partial<Options<DeleteAiApiKeyData>>,
+): UseMutationOptions<DeleteAiApiKeyResponse, DeleteAiApiKeyError, Options<DeleteAiApiKeyData>> => {
+  const mutationOptions: UseMutationOptions<
+    DeleteAiApiKeyResponse,
+    DeleteAiApiKeyError,
+    Options<DeleteAiApiKeyData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await deleteAiApiKey({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getAiModelsQueryKey = (options?: Options<GetAiModelsData>) =>
+  createQueryKey("getAiModels", options);
+
+/**
+ * Discover models from the configured AI provider
+ */
+export const getAiModelsOptions = (options?: Options<GetAiModelsData>) =>
+  queryOptions<
+    GetAiModelsResponse,
+    GetAiModelsError,
+    GetAiModelsResponse,
+    ReturnType<typeof getAiModelsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAiModels({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAiModelsQueryKey(options),
+  });
+
+/**
+ * Test the configured AI provider
+ */
+export const testAiConnectionMutation = (
+  options?: Partial<Options<TestAiConnectionData>>,
+): UseMutationOptions<
+  TestAiConnectionResponse,
+  TestAiConnectionError,
+  Options<TestAiConnectionData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    TestAiConnectionResponse,
+    TestAiConnectionError,
+    Options<TestAiConnectionData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await testAiConnection({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Interpret natural-language meal text into a reviewable draft
+ */
+export const interpretMealWithAiMutation = (
+  options?: Partial<Options<InterpretMealWithAiData>>,
+): UseMutationOptions<
+  InterpretMealWithAiResponse,
+  InterpretMealWithAiError,
+  Options<InterpretMealWithAiData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    InterpretMealWithAiResponse,
+    InterpretMealWithAiError,
+    Options<InterpretMealWithAiData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await interpretMealWithAi({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
 
 export const getDailyTargetsQueryKey = (options?: Options<GetDailyTargetsData>) =>
   createQueryKey("getDailyTargets", options);
@@ -354,6 +600,135 @@ export const createMealMutation = (
   };
   return mutationOptions;
 };
+
+export const getMealDiaryQueryKey = (options: Options<GetMealDiaryData>) =>
+  createQueryKey("getMealDiary", options);
+
+/**
+ * Get the authenticated user's paginated meal diary
+ */
+export const getMealDiaryOptions = (options: Options<GetMealDiaryData>) =>
+  queryOptions<
+    GetMealDiaryResponse,
+    GetMealDiaryError,
+    GetMealDiaryResponse,
+    ReturnType<typeof getMealDiaryQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getMealDiary({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getMealDiaryQueryKey(options),
+  });
+
+const createInfiniteParams = <
+  K extends Pick<QueryKey<Options>[0], "body" | "headers" | "path" | "query">,
+>(
+  queryKey: QueryKey<Options>,
+  page: K,
+) => {
+  const params = { ...queryKey[0] };
+  if (page.body) {
+    params.body = {
+      ...(queryKey[0].body as any),
+      ...(page.body as any),
+    };
+  }
+  if (page.headers) {
+    params.headers = {
+      ...queryKey[0].headers,
+      ...page.headers,
+    };
+  }
+  if (page.path) {
+    params.path = {
+      ...(queryKey[0].path as any),
+      ...(page.path as any),
+    };
+  }
+  if (page.query) {
+    params.query = {
+      ...(queryKey[0].query as any),
+      ...(page.query as any),
+    };
+  }
+  return params as unknown as typeof page;
+};
+
+export const getMealDiaryInfiniteQueryKey = (
+  options: Options<GetMealDiaryData>,
+): QueryKey<Options<GetMealDiaryData>> => createQueryKey("getMealDiary", options, true);
+
+/**
+ * Get the authenticated user's paginated meal diary
+ */
+export const getMealDiaryInfiniteOptions = (options: Options<GetMealDiaryData>) => {
+  const opts = infiniteQueryOptions<
+    GetMealDiaryResponse,
+    GetMealDiaryError,
+    InfiniteData<GetMealDiaryResponse>,
+    QueryKey<Options<GetMealDiaryData>>,
+    string | Pick<QueryKey<Options<GetMealDiaryData>>[0], "body" | "headers" | "path" | "query">
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<GetMealDiaryData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  before: pageParam,
+                },
+              };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await getMealDiary({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        });
+        return data;
+      },
+      queryKey: getMealDiaryInfiniteQueryKey(options),
+    },
+  );
+  return opts as Omit<typeof opts, "initialData">;
+};
+
+export const getCalendarMonthQueryKey = (options: Options<GetCalendarMonthData>) =>
+  createQueryKey("getCalendarMonth", options);
+
+/**
+ * Get lightweight meal activity for a calendar month
+ */
+export const getCalendarMonthOptions = (options: Options<GetCalendarMonthData>) =>
+  queryOptions<
+    GetCalendarMonthResponse,
+    GetCalendarMonthError,
+    GetCalendarMonthResponse,
+    ReturnType<typeof getCalendarMonthQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getCalendarMonth({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getCalendarMonthQueryKey(options),
+  });
 
 /**
  * Remove one authenticated user's meal
@@ -473,6 +848,58 @@ export const createFoodSubmissionMutation = (
   return mutationOptions;
 };
 
+export const listSavedMealsQueryKey = (options?: Options<ListSavedMealsData>) =>
+  createQueryKey("listSavedMeals", options);
+
+/**
+ * List the authenticated user's saved meal templates with routines
+ */
+export const listSavedMealsOptions = (options?: Options<ListSavedMealsData>) =>
+  queryOptions<
+    ListSavedMealsResponse,
+    ListSavedMealsError,
+    ListSavedMealsResponse,
+    ReturnType<typeof listSavedMealsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listSavedMeals({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listSavedMealsQueryKey(options),
+  });
+
+/**
+ * Create a saved meal template, optionally with routine metadata
+ */
+export const createSavedMealMutation = (
+  options?: Partial<Options<CreateSavedMealData>>,
+): UseMutationOptions<
+  CreateSavedMealResponse,
+  CreateSavedMealError,
+  Options<CreateSavedMealData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateSavedMealResponse,
+    CreateSavedMealError,
+    Options<CreateSavedMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createSavedMeal({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
 export const listAdminMealsQueryKey = (options?: Options<ListAdminMealsData>) =>
   createQueryKey("listAdminMeals", options);
 
@@ -497,40 +924,6 @@ export const listAdminMealsOptions = (options?: Options<ListAdminMealsData>) =>
     },
     queryKey: listAdminMealsQueryKey(options),
   });
-
-const createInfiniteParams = <
-  K extends Pick<QueryKey<Options>[0], "body" | "headers" | "path" | "query">,
->(
-  queryKey: QueryKey<Options>,
-  page: K,
-) => {
-  const params = { ...queryKey[0] };
-  if (page.body) {
-    params.body = {
-      ...(queryKey[0].body as any),
-      ...(page.body as any),
-    };
-  }
-  if (page.headers) {
-    params.headers = {
-      ...queryKey[0].headers,
-      ...page.headers,
-    };
-  }
-  if (page.path) {
-    params.path = {
-      ...(queryKey[0].path as any),
-      ...(page.path as any),
-    };
-  }
-  if (page.query) {
-    params.query = {
-      ...(queryKey[0].query as any),
-      ...(page.query as any),
-    };
-  }
-  return params as unknown as typeof page;
-};
 
 export const listAdminMealsInfiniteQueryKey = (
   options?: Options<ListAdminMealsData>,
@@ -897,6 +1290,162 @@ export const mergeFoodSubmissionMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await mergeFoodSubmission({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Remove a saved meal template (historical meals are untouched)
+ */
+export const removeSavedMealMutation = (
+  options?: Partial<Options<RemoveSavedMealData>>,
+): UseMutationOptions<
+  RemoveSavedMealResponse,
+  RemoveSavedMealError,
+  Options<RemoveSavedMealData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    RemoveSavedMealResponse,
+    RemoveSavedMealError,
+    Options<RemoveSavedMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await removeSavedMeal({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getSavedMealQueryKey = (options: Options<GetSavedMealData>) =>
+  createQueryKey("getSavedMeal", options);
+
+/**
+ * Get one authenticated user's saved meal template
+ */
+export const getSavedMealOptions = (options: Options<GetSavedMealData>) =>
+  queryOptions<
+    GetSavedMealResponse,
+    GetSavedMealError,
+    GetSavedMealResponse,
+    ReturnType<typeof getSavedMealQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getSavedMeal({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getSavedMealQueryKey(options),
+  });
+
+/**
+ * Update one authenticated user's saved meal template
+ */
+export const updateSavedMealMutation = (
+  options?: Partial<Options<UpdateSavedMealData>>,
+): UseMutationOptions<
+  UpdateSavedMealResponse,
+  UpdateSavedMealError,
+  Options<UpdateSavedMealData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UpdateSavedMealResponse,
+    UpdateSavedMealError,
+    Options<UpdateSavedMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await updateSavedMeal({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Remove the routine metadata (the saved meal itself is preserved)
+ */
+export const deleteSavedMealRoutineMutation = (
+  options?: Partial<Options<DeleteSavedMealRoutineData>>,
+): UseMutationOptions<
+  DeleteSavedMealRoutineResponse,
+  DeleteSavedMealRoutineError,
+  Options<DeleteSavedMealRoutineData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    DeleteSavedMealRoutineResponse,
+    DeleteSavedMealRoutineError,
+    Options<DeleteSavedMealRoutineData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await deleteSavedMealRoutine({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Create or replace the routine metadata for a saved meal
+ */
+export const putSavedMealRoutineMutation = (
+  options?: Partial<Options<PutSavedMealRoutineData>>,
+): UseMutationOptions<
+  PutSavedMealRoutineResponse,
+  PutSavedMealRoutineError,
+  Options<PutSavedMealRoutineData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    PutSavedMealRoutineResponse,
+    PutSavedMealRoutineError,
+    Options<PutSavedMealRoutineData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await putSavedMealRoutine({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Record usage after a meal created from this template is persisted
+ */
+export const useSavedMealMutation = (
+  options?: Partial<Options<UseSavedMealData>>,
+): UseMutationOptions<UseSavedMealResponse, UseSavedMealError, Options<UseSavedMealData>> => {
+  const mutationOptions: UseMutationOptions<
+    UseSavedMealResponse,
+    UseSavedMealError,
+    Options<UseSavedMealData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await useSavedMeal({
         ...options,
         ...fnOptions,
         throwOnError: true,
@@ -1482,3 +2031,232 @@ export const listAdminAuditLogsInfiniteOptions = (options?: Options<ListAdminAud
   );
   return opts as Omit<typeof opts, "initialData">;
 };
+
+export const listAdminAiUsageQueryKey = (options?: Options<ListAdminAiUsageData>) =>
+  createQueryKey("listAdminAiUsage", options);
+
+/**
+ * List privacy-safe AI usage records
+ */
+export const listAdminAiUsageOptions = (options?: Options<ListAdminAiUsageData>) =>
+  queryOptions<
+    ListAdminAiUsageResponse,
+    ListAdminAiUsageError,
+    ListAdminAiUsageResponse,
+    ReturnType<typeof listAdminAiUsageQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listAdminAiUsage({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listAdminAiUsageQueryKey(options),
+  });
+
+export const listAdminAiUsageInfiniteQueryKey = (
+  options?: Options<ListAdminAiUsageData>,
+): QueryKey<Options<ListAdminAiUsageData>> => createQueryKey("listAdminAiUsage", options, true);
+
+/**
+ * List privacy-safe AI usage records
+ */
+export const listAdminAiUsageInfiniteOptions = (options?: Options<ListAdminAiUsageData>) => {
+  const opts = infiniteQueryOptions<
+    ListAdminAiUsageResponse,
+    ListAdminAiUsageError,
+    InfiniteData<ListAdminAiUsageResponse>,
+    QueryKey<Options<ListAdminAiUsageData>>,
+    number | Pick<QueryKey<Options<ListAdminAiUsageData>>[0], "body" | "headers" | "path" | "query">
+  >(
+    // @ts-ignore
+    {
+      queryFn: async ({ pageParam, queryKey, signal }) => {
+        // @ts-ignore
+        const page: Pick<
+          QueryKey<Options<ListAdminAiUsageData>>[0],
+          "body" | "headers" | "path" | "query"
+        > =
+          typeof pageParam === "object"
+            ? pageParam
+            : {
+                query: {
+                  offset: pageParam,
+                },
+              };
+        const params = createInfiniteParams(queryKey, page);
+        const { data } = await listAdminAiUsage({
+          ...options,
+          ...params,
+          signal,
+          throwOnError: true,
+        });
+        return data;
+      },
+      queryKey: listAdminAiUsageInfiniteQueryKey(options),
+    },
+  );
+  return opts as Omit<typeof opts, "initialData">;
+};
+
+export const getPersonalInsightsQueryKey = (options?: Options<GetPersonalInsightsData>) =>
+  createQueryKey("getPersonalInsights", options);
+
+/**
+ * Get aggregated nutrition insights for the authenticated user
+ */
+export const getPersonalInsightsOptions = (options?: Options<GetPersonalInsightsData>) =>
+  queryOptions<
+    GetPersonalInsightsResponse,
+    GetPersonalInsightsError,
+    GetPersonalInsightsResponse,
+    ReturnType<typeof getPersonalInsightsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getPersonalInsights({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getPersonalInsightsQueryKey(options),
+  });
+
+export const getPersonalNutritionDetailQueryKey = (
+  options?: Options<GetPersonalNutritionDetailData>,
+) => createQueryKey("getPersonalNutritionDetail", options);
+
+/**
+ * Get one nutrient trend and its food contributors
+ */
+export const getPersonalNutritionDetailOptions = (
+  options?: Options<GetPersonalNutritionDetailData>,
+) =>
+  queryOptions<
+    GetPersonalNutritionDetailResponse,
+    GetPersonalNutritionDetailError,
+    GetPersonalNutritionDetailResponse,
+    ReturnType<typeof getPersonalNutritionDetailQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getPersonalNutritionDetail({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getPersonalNutritionDetailQueryKey(options),
+  });
+
+export const getAdminAnalyticsOverviewQueryKey = (
+  options?: Options<GetAdminAnalyticsOverviewData>,
+) => createQueryKey("getAdminAnalyticsOverview", options);
+
+/**
+ * Get product activity analytics
+ */
+export const getAdminAnalyticsOverviewOptions = (
+  options?: Options<GetAdminAnalyticsOverviewData>,
+) =>
+  queryOptions<
+    GetAdminAnalyticsOverviewResponse,
+    GetAdminAnalyticsOverviewError,
+    GetAdminAnalyticsOverviewResponse,
+    ReturnType<typeof getAdminAnalyticsOverviewQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAdminAnalyticsOverview({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAdminAnalyticsOverviewQueryKey(options),
+  });
+
+export const getAdminAnalyticsNutritionQueryKey = (
+  options?: Options<GetAdminAnalyticsNutritionData>,
+) => createQueryKey("getAdminAnalyticsNutrition", options);
+
+/**
+ * Get product-wide nutrition analytics
+ */
+export const getAdminAnalyticsNutritionOptions = (
+  options?: Options<GetAdminAnalyticsNutritionData>,
+) =>
+  queryOptions<
+    GetAdminAnalyticsNutritionResponse,
+    GetAdminAnalyticsNutritionError,
+    GetAdminAnalyticsNutritionResponse,
+    ReturnType<typeof getAdminAnalyticsNutritionQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAdminAnalyticsNutrition({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAdminAnalyticsNutritionQueryKey(options),
+  });
+
+export const getAdminAnalyticsFoodsQueryKey = (options?: Options<GetAdminAnalyticsFoodsData>) =>
+  createQueryKey("getAdminAnalyticsFoods", options);
+
+/**
+ * Get food catalog and moderation analytics
+ */
+export const getAdminAnalyticsFoodsOptions = (options?: Options<GetAdminAnalyticsFoodsData>) =>
+  queryOptions<
+    GetAdminAnalyticsFoodsResponse,
+    GetAdminAnalyticsFoodsError,
+    GetAdminAnalyticsFoodsResponse,
+    ReturnType<typeof getAdminAnalyticsFoodsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAdminAnalyticsFoods({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAdminAnalyticsFoodsQueryKey(options),
+  });
+
+export const getAdminAnalyticsAiQueryKey = (options?: Options<GetAdminAnalyticsAiData>) =>
+  createQueryKey("getAdminAnalyticsAi", options);
+
+/**
+ * Get privacy-safe AI analytics
+ */
+export const getAdminAnalyticsAiOptions = (options?: Options<GetAdminAnalyticsAiData>) =>
+  queryOptions<
+    GetAdminAnalyticsAiResponse,
+    GetAdminAnalyticsAiError,
+    GetAdminAnalyticsAiResponse,
+    ReturnType<typeof getAdminAnalyticsAiQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getAdminAnalyticsAi({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getAdminAnalyticsAiQueryKey(options),
+  });

@@ -12,6 +12,20 @@ export const zErrorResponse = z.object({
       "conflict",
       "validation_error",
       "internal_error",
+      "ai_not_configured",
+      "ai_invalid_credentials",
+      "ai_rate_limited",
+      "ai_provider_unavailable",
+      "ai_model_not_found",
+      "ai_model_not_accessible",
+      "ai_model_not_selected",
+      "ai_model_discovery_unavailable",
+      "ai_model_unsupported",
+      "ai_timeout",
+      "ai_cancelled",
+      "ai_invalid_response",
+      "ai_secret_unavailable",
+      "ai_unknown_error",
     ]),
     message: z.string(),
     requestId: z.string().optional(),
@@ -72,6 +86,16 @@ export const zMealTotals = z.object({
   proteinGrams: z.int().gte(0),
   carbohydratesGrams: z.int().gte(0),
   fatGrams: z.int().gte(0),
+});
+
+export const zCalendarActivity = z.object({
+  date: z.iso.date(),
+  mealCount: z.int().gte(1),
+});
+
+export const zCalendarMonthResponse = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  days: z.array(zCalendarActivity),
 });
 
 export const zAdminMealOwner = z.object({
@@ -178,6 +202,12 @@ export const zFoodMealRequest = z.object({
 
 export const zCreateMealRequest = z.union([zManualMealRequest, zFoodMealRequest]);
 
+export const zMealFoodEntryUpdateInput = zMealFoodEntryInput.and(
+  z.object({
+    id: z.string().optional(),
+  }),
+);
+
 export const zUpdateMealRequest = z.object({
   name: z.string().min(1).max(160).optional(),
   category: zMealCategory.optional(),
@@ -187,7 +217,7 @@ export const zUpdateMealRequest = z.object({
   carbohydratesGrams: z.int().gte(0).lte(10000).optional(),
   fatGrams: z.int().gte(0).lte(10000).optional(),
   notes: z.string().max(2000).nullish(),
-  entries: z.array(zMealFoodEntryInput).min(1).max(100).optional(),
+  entries: z.array(zMealFoodEntryUpdateInput).min(1).max(100).optional(),
 });
 
 export const zMealFoodEntry = z.object({
@@ -233,6 +263,11 @@ export const zDailyMealsResponse = z.object({
   meals: z.array(zMeal),
   totals: zMealTotals,
   nutritionIncomplete: z.boolean(),
+});
+
+export const zDiaryResponse = z.object({
+  days: z.array(zDailyMealsResponse),
+  nextBefore: z.iso.date().nullable(),
 });
 
 export const zAdminMealsResponse = z.object({
@@ -457,6 +492,501 @@ export const zAdminAuditLogsResponse = z.object({
   offset: z.int(),
 });
 
+export const zAiProvider = z.enum([
+  "openai",
+  "anthropic",
+  "gemini",
+  "openrouter",
+  "openai-compatible",
+]);
+
+export const zAiFeature = z.enum(["MEAL_NATURAL_LANGUAGE", "AI_CONNECTION_TEST"]);
+
+export const zAiModelCapabilities = z.object({
+  text: z.boolean().optional(),
+  structuredOutput: z.boolean().optional(),
+  tools: z.boolean().optional(),
+  vision: z.boolean().optional(),
+  reasoning: z.boolean().optional(),
+});
+
+export const zAiModel = z.object({
+  id: z.string(),
+  label: z.string(),
+  capabilities: zAiModelCapabilities,
+});
+
+export const zAiProviderDefinition = z.object({
+  id: zAiProvider,
+  label: z.string(),
+  requiresBaseUrl: z.boolean(),
+  supportsModelDiscovery: z.boolean(),
+  guide: z.object({
+    key: zAiProvider,
+    docsUrl: z.url().optional(),
+    apiKeyUrl: z.url().optional(),
+  }),
+  recommendedModels: z.array(zAiModel),
+});
+
+export const zAiModelPricing = z.object({
+  input: z.number().gte(0).optional(),
+  output: z.number().gte(0).optional(),
+  currency: z.string().optional(),
+  unit: z.string().optional(),
+});
+
+export const zAiModelDescriptor = z.object({
+  id: z.string(),
+  displayName: z.string(),
+  provider: zAiProvider,
+  description: z.string().optional(),
+  contextWindow: z.int().gte(1).optional(),
+  capabilities: zAiModelCapabilities.optional(),
+  inputModalities: z.array(z.string()).optional(),
+  outputModalities: z.array(z.string()).optional(),
+  pricing: zAiModelPricing.optional(),
+  createdAt: z.iso.datetime().optional(),
+  publisher: z.string().optional(),
+  source: z.enum(["provider", "manual"]),
+});
+
+export const zAiModelsResponse = z.object({
+  provider: zAiProvider,
+  models: z.array(zAiModelDescriptor),
+  stale: z.boolean(),
+  cachedAt: z.iso.datetime().nullable(),
+});
+
+export const zAiSettings = z.object({
+  provider: zAiProvider,
+  model: z.string().nullable(),
+  baseUrl: z.url().nullable(),
+  hasApiKey: z.boolean(),
+});
+
+export const zAiSettingsResponse = z.object({
+  settings: zAiSettings.nullable(),
+  providers: z.array(zAiProviderDefinition),
+});
+
+export const zUpdateAiSettingsRequest = z.object({
+  provider: zAiProvider,
+  model: z.string().min(1).max(160).optional(),
+  apiKey: z.string().min(1).max(10000).optional(),
+  baseUrl: z.url().nullish(),
+});
+
+export const zAiConnectionTestResponse = z.object({
+  success: z.literal(true),
+  provider: zAiProvider,
+  model: z.string(),
+});
+
+export const zMealInterpretationRequest = z.object({
+  text: z.string().min(1).max(4000),
+  locale: z.enum(["en", "it"]).optional().default("it"),
+  timezone: z.string().min(1).max(80).optional().default("UTC"),
+});
+
+export const zMealDraftNutrition = z.object({
+  calories: z.number().gte(0).nullable(),
+  proteinGrams: z.number().gte(0).nullable(),
+  carbohydratesGrams: z.number().gte(0).nullable(),
+  fatGrams: z.number().gte(0).nullable(),
+});
+
+export const zMealDraftFood = z.object({
+  sourceText: z.string(),
+  normalizedName: z.string(),
+  food: zFood.nullable(),
+  candidates: z.array(zFood).max(5),
+  portionName: z.string(),
+  quantity: z.number(),
+  grams: z.number().nullable(),
+  nutrition: zMealDraftNutrition.nullable(),
+  confidence: z.number().gte(0).lte(1),
+  resolutionStatus: z.enum(["RESOLVED", "AMBIGUOUS", "UNRESOLVED", "ESTIMATED"]),
+  reviewNote: z.string().nullable(),
+});
+
+export const zMealDraft = z.object({
+  mealType: zMealCategory.nullable(),
+  mealName: z.string().nullable(),
+  foods: z.array(zMealDraftFood),
+  notes: z.string().nullable(),
+  totals: zMealDraftNutrition,
+  nutritionIncomplete: z.boolean(),
+});
+
+export const zMealDraftResponse = z.object({
+  draft: zMealDraft,
+});
+
+export const zAdminAiUsage = z.object({
+  id: z.string(),
+  userId: z.string(),
+  user: zAdminAuditPrincipal.nullable(),
+  feature: zAiFeature,
+  provider: zAiProvider,
+  model: z.string(),
+  inputTokens: z.int().gte(0).nullable(),
+  outputTokens: z.int().gte(0).nullable(),
+  totalTokens: z.int().gte(0).nullable(),
+  latencyMs: z.int().gte(0),
+  status: z.enum(["succeeded", "failed", "cancelled"]),
+  errorCode: z.string().nullable(),
+  providerRequestId: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+});
+
+export const zAdminAiUsageBreakdown = z.object({
+  key: z.string().min(1),
+  requests: z.int().gte(0),
+});
+
+export const zAdminAiUsageSummary = z.object({
+  requestCount: z.int().gte(0),
+  succeededCount: z.int().gte(0),
+  failedCount: z.int().gte(0),
+  cancelledCount: z.int().gte(0),
+  averageLatencyMs: z.int().gte(0),
+  inputTokens: z.int().gte(0).nullable(),
+  outputTokens: z.int().gte(0).nullable(),
+  totalTokens: z.int().gte(0).nullable(),
+  byProvider: z.array(zAdminAiUsageBreakdown),
+  byModel: z.array(zAdminAiUsageBreakdown),
+  byFeature: z.array(zAdminAiUsageBreakdown),
+});
+
+export const zAdminAiUsageResponse = z.object({
+  usage: z.array(zAdminAiUsage),
+  summary: zAdminAiUsageSummary,
+  total: z.int(),
+  limit: z.int(),
+  offset: z.int(),
+});
+
+export const zSavedMealItemInput = z.object({
+  foodId: z.string(),
+  portionName: z.string(),
+  quantity: z.number(),
+  grams: z.number(),
+});
+
+export const zSavedMealItem = z.object({
+  id: z.string(),
+  foodId: z.string().nullable(),
+  foodName: z.string().nullable(),
+  needsAttention: z.boolean(),
+  portionName: z.string(),
+  quantity: z.number().gte(0),
+  grams: z.number().gte(0),
+});
+
+export const zSavedMealRoutineInput = z.object({
+  mealType: zMealCategory.optional(),
+  weekdays: z.array(z.int().gte(0).lte(6)).max(7),
+  localTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  isReminderEnabled: z.boolean(),
+});
+
+export const zSavedMealRoutine = z.object({
+  mealType: zMealCategory,
+  weekdays: z.array(z.int().gte(0).lte(6)).max(7),
+  localTime: z.string(),
+  isReminderEnabled: z.boolean(),
+});
+
+export const zSavedMeal = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(160),
+  defaultCategory: zMealCategory,
+  items: z.array(zSavedMealItem),
+  routine: zSavedMealRoutine,
+  usageCount: z.int().gte(0),
+  lastUsedAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+
+export const zSavedMealResponse = z.object({
+  savedMeal: zSavedMeal,
+});
+
+export const zSavedMealsResponse = z.object({
+  savedMeals: z.array(zSavedMeal),
+});
+
+export const zSavedMealMutationResponse = z.object({
+  success: z.literal(true),
+});
+
+export const zCreateSavedMealRequest = z.object({
+  name: z.string().min(1).max(160),
+  defaultCategory: zMealCategory.optional(),
+  items: z.array(zSavedMealItemInput).min(1).max(100),
+  routine: zSavedMealRoutineInput.optional(),
+});
+
+export const zUpdateSavedMealRequest = z.object({
+  name: z.string().min(1).max(160).optional(),
+  defaultCategory: zMealCategory.optional(),
+  items: z.array(zSavedMealItemInput).min(1).max(100).optional(),
+});
+
+export const zUseSavedMealRequest = z.object({
+  mealId: z.string(),
+});
+
+export const zInsightsRange = z.enum(["7d", "30d", "3m", "1y"]);
+
+export const zInsightsMetric = z.enum(["calories", "protein", "carbs", "fat"]);
+
+export const zInsightPeriod = z.object({
+  range: zInsightsRange,
+  start: z.iso.date(),
+  end: z.iso.date(),
+  days: z.int().gte(1),
+  granularity: z.enum(["day", "week", "month"]),
+});
+
+export const zInsightComparison = z.object({
+  current: z.number().nullable(),
+  previous: z.number().nullable(),
+  delta: z.number().nullable(),
+  deltaPercent: z.number().nullable(),
+});
+
+export const zInsightMetricSummary = zInsightComparison.and(
+  z.object({
+    currentTotal: z.number().nullable(),
+    previousTotal: z.number().nullable(),
+  }),
+);
+
+export const zPersonalInsightBucket = z.object({
+  key: z.string(),
+  start: z.iso.date(),
+  calories: z.number().nullable(),
+  proteinGrams: z.number().nullable(),
+  carbohydratesGrams: z.number().nullable(),
+  fatGrams: z.number().nullable(),
+  meals: z.int().gte(0),
+  loggedDays: z.int().gte(0),
+  logged: z.boolean(),
+});
+
+export const zInsightMealType = z.object({
+  category: zMealCategory,
+  meals: z.int().gte(0),
+  calories: z.number().gte(0),
+  share: z.number().gte(0).lte(1),
+  calorieShare: z.number().gte(0).lte(1),
+});
+
+export const zInsightFood = z.object({
+  foodId: z.string(),
+  name: z.string(),
+  entries: z.int().gte(0),
+  calories: z.number().nullable(),
+  proteinGrams: z.number().nullable(),
+  carbohydratesGrams: z.number().nullable(),
+  fatGrams: z.number().nullable(),
+  share: z.number().gte(0).lte(1).nullable(),
+});
+
+export const zPersonalHighlight = z.object({
+  kind: z.enum(["most_logged_food", "most_logged_category", "calorie_consistency"]),
+  value: z.string(),
+  amount: z.number().gte(0).nullable(),
+});
+
+export const zPersonalInsightsSummary = z.object({
+  calories: zInsightMetricSummary,
+  proteinGrams: zInsightMetricSummary,
+  carbohydratesGrams: zInsightMetricSummary,
+  fatGrams: zInsightMetricSummary,
+  meals: zInsightComparison,
+  loggedDays: zInsightComparison,
+  periodDays: z.int().gte(1),
+  incompleteMeals: z.int().gte(0),
+});
+
+export const zPersonalInsightsResponse = z.object({
+  period: zInsightPeriod,
+  targetCalories: z.number().gte(0).nullable(),
+  summary: zPersonalInsightsSummary,
+  buckets: z.array(zPersonalInsightBucket),
+  mealTypes: z.array(zInsightMealType),
+  topFoods: z.array(zInsightFood),
+  highlights: z.array(zPersonalHighlight),
+});
+
+export const zPersonalNutritionDetailBucket = z.object({
+  key: z.string(),
+  start: z.iso.date(),
+  value: z.number().gte(0).nullable(),
+  loggedDays: z.int().gte(0),
+  logged: z.boolean(),
+});
+
+export const zPersonalNutritionDetail = z.object({
+  metric: zInsightsMetric,
+  period: zInsightPeriod,
+  average: z.number().gte(0).nullable(),
+  total: z.number().gte(0).nullable(),
+  previousAverage: z.number().gte(0).nullable(),
+  delta: z.number().nullable(),
+  deltaPercent: z.number().nullable(),
+  buckets: z.array(zPersonalNutritionDetailBucket),
+  topFoods: z.array(zInsightFood),
+});
+
+export const zAdminAnalyticsPeriod = z.object({
+  range: z.enum(["7d", "30d", "90d", "custom"]),
+  start: z.iso.date(),
+  end: z.iso.date(),
+  days: z.int().gte(1),
+  granularity: z.enum(["day", "week", "month"]),
+  timezone: z.enum(["UTC"]),
+});
+
+export const zAdminAnalyticsMetric = z.object({
+  current: z.number().gte(0),
+  previous: z.number().gte(0),
+  delta: z.number(),
+  deltaPercent: z.number().nullable(),
+});
+
+export const zAdminOverviewBucket = z.object({
+  key: z.string(),
+  start: z.iso.date(),
+  newUsers: z.int().gte(0),
+  meals: z.int().gte(0),
+  foodEntries: z.int().gte(0),
+  aiRequests: z.int().gte(0),
+});
+
+export const zAdminOverviewResponse = z.object({
+  period: zAdminAnalyticsPeriod,
+  totalUsers: z.int().gte(0),
+  kpis: z.object({
+    newUsers: zAdminAnalyticsMetric,
+    activeUsers: zAdminAnalyticsMetric,
+    meals: zAdminAnalyticsMetric,
+    foodEntries: zAdminAnalyticsMetric,
+    foodSubmissions: zAdminAnalyticsMetric,
+    aiRequests: zAdminAnalyticsMetric,
+  }),
+  activity: z.array(zAdminOverviewBucket),
+});
+
+export const zAdminNutritionBucket = z.object({
+  key: z.string(),
+  start: z.iso.date(),
+  calories: z.number().gte(0),
+  proteinGrams: z.number().gte(0),
+  carbohydratesGrams: z.number().gte(0),
+  fatGrams: z.number().gte(0),
+  meals: z.int().gte(0),
+});
+
+export const zAdminNutritionResponse = z.object({
+  period: zAdminAnalyticsPeriod,
+  totals: z.object({
+    meals: zAdminAnalyticsMetric,
+    calories: zAdminAnalyticsMetric,
+    proteinGrams: zAdminAnalyticsMetric,
+    carbohydratesGrams: zAdminAnalyticsMetric,
+    fatGrams: zAdminAnalyticsMetric,
+    incompleteMeals: z.int().gte(0),
+  }),
+  activity: z.array(zAdminNutritionBucket),
+  mealTypes: z.array(zInsightMealType),
+  topFoods: z.array(zInsightFood),
+});
+
+export const zAdminCatalogGrowthBucket = z.object({
+  key: z.string(),
+  start: z.iso.date(),
+  foodsCreated: z.int().gte(0),
+  submissions: z.int().gte(0),
+  approved: z.int().gte(0),
+  rejected: z.int().gte(0),
+  merged: z.int().gte(0),
+});
+
+export const zAdminCatalogResponse = z.object({
+  period: zAdminAnalyticsPeriod,
+  catalog: z.object({
+    total: z.int().gte(0),
+    approved: z.int().gte(0),
+    pending: z.int().gte(0),
+    rejected: z.int().gte(0),
+    merged: z.int().gte(0),
+  }),
+  moderation: z.object({
+    submissions: z.int().gte(0),
+    approved: z.int().gte(0),
+    rejected: z.int().gte(0),
+    merged: z.int().gte(0),
+    pending: z.int().gte(0),
+    approvalRate: z.number().gte(0).lte(1).nullable(),
+    averageReviewHours: z.number().gte(0).nullable(),
+  }),
+  growth: z.array(zAdminCatalogGrowthBucket),
+  popularFoods: z.array(zInsightFood),
+});
+
+export const zAdminAiAnalyticsBucket = z.object({
+  key: z.string(),
+  start: z.iso.date(),
+  requests: z.int().gte(0),
+  succeeded: z.int().gte(0),
+  failed: z.int().gte(0),
+  averageLatencyMs: z.int().gte(0).nullable(),
+  totalTokens: z.int().gte(0).nullable(),
+});
+
+export const zAdminAiAnalyticsResponse = z.object({
+  period: zAdminAnalyticsPeriod,
+  summary: z.object({
+    requests: zAdminAnalyticsMetric,
+    succeeded: zAdminAnalyticsMetric,
+    failed: zAdminAnalyticsMetric,
+    averageLatencyMs: z.int().gte(0).nullable(),
+    inputTokens: z.int().gte(0).nullable(),
+    outputTokens: z.int().gte(0).nullable(),
+    totalTokens: z.int().gte(0).nullable(),
+  }),
+  activity: z.array(zAdminAiAnalyticsBucket),
+  byProvider: z.array(
+    z.object({
+      key: z.string(),
+      requests: z.int().gte(0),
+    }),
+  ),
+  byModel: z.array(
+    z.object({
+      key: z.string(),
+      requests: z.int().gte(0),
+    }),
+  ),
+  byFeature: z.array(
+    z.object({
+      key: z.string(),
+      requests: z.int().gte(0),
+    }),
+  ),
+});
+
+export const zAdminAnalyticsRange = z.enum(["7d", "30d", "90d", "custom"]).default("30d");
+
+export const zAdminAnalyticsFrom = z.iso.date();
+
+export const zAdminAnalyticsTo = z.iso.date();
+
 /**
  * API is healthy
  */
@@ -466,6 +996,44 @@ export const zGetHealthResponse = zHealthResponse;
  * Current user
  */
 export const zGetCurrentUserResponse = zMeResponse;
+
+/**
+ * AI settings without secret values
+ */
+export const zGetAiSettingsResponse = zAiSettingsResponse;
+
+export const zUpdateAiSettingsBody = zUpdateAiSettingsRequest;
+
+/**
+ * Updated AI settings without secret values
+ */
+export const zUpdateAiSettingsResponse = zAiSettingsResponse;
+
+/**
+ * Updated AI settings without secret values
+ */
+export const zDeleteAiApiKeyResponse = zAiSettingsResponse;
+
+export const zGetAiModelsQuery = z.object({
+  refresh: z.boolean().optional().default(false),
+});
+
+/**
+ * Normalized provider models without secret values
+ */
+export const zGetAiModelsResponse = zAiModelsResponse;
+
+/**
+ * Provider connection succeeded
+ */
+export const zTestAiConnectionResponse = zAiConnectionTestResponse;
+
+export const zInterpretMealWithAiBody = zMealInterpretationRequest;
+
+/**
+ * Reviewable meal draft; no meal is created
+ */
+export const zInterpretMealWithAiResponse = zMealDraftResponse;
 
 /**
  * Daily nutrition targets
@@ -494,6 +1062,26 @@ export const zCreateMealBody = zCreateMealRequest;
  * Created meal
  */
 export const zCreateMealResponse = zMealResponse;
+
+export const zGetMealDiaryQuery = z.object({
+  before: z.iso.date(),
+  limit: z.int().gte(1).lte(14).optional().default(7),
+  foodId: z.string().min(1).max(128).optional(),
+});
+
+/**
+ * Populated meal days, newest first
+ */
+export const zGetMealDiaryResponse = zDiaryResponse;
+
+export const zGetCalendarMonthQuery = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+});
+
+/**
+ * Dates with logged meals in the requested month
+ */
+export const zGetCalendarMonthResponse = zCalendarMonthResponse;
 
 export const zRemoveMealPath = z.object({
   id: z.string(),
@@ -541,6 +1129,18 @@ export const zCreateFoodSubmissionBody = zCreateFoodSubmissionRequest;
  * Private food and pending submission
  */
 export const zCreateFoodSubmissionResponse = zFoodSubmissionResponse;
+
+/**
+ * Saved meal templates ranked for quick reuse
+ */
+export const zListSavedMealsResponse = zSavedMealsResponse;
+
+export const zCreateSavedMealBody = zCreateSavedMealRequest;
+
+/**
+ * Created saved meal
+ */
+export const zCreateSavedMealResponse = zSavedMealResponse;
 
 export const zListAdminMealsQuery = z.object({
   search: z.string().min(1).max(255).optional(),
@@ -647,6 +1247,66 @@ export const zMergeFoodSubmissionPath = z.object({
  * Merged submission
  */
 export const zMergeFoodSubmissionResponse = zAdminFoodSubmissionResponse;
+
+export const zRemoveSavedMealPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Saved meal removed
+ */
+export const zRemoveSavedMealResponse = zSavedMealMutationResponse;
+
+export const zGetSavedMealPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Saved meal template with current catalog nutrition
+ */
+export const zGetSavedMealResponse = zSavedMealResponse;
+
+export const zUpdateSavedMealBody = zUpdateSavedMealRequest;
+
+export const zUpdateSavedMealPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Updated saved meal
+ */
+export const zUpdateSavedMealResponse = zSavedMealResponse;
+
+export const zDeleteSavedMealRoutinePath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Saved meal without routine
+ */
+export const zDeleteSavedMealRoutineResponse = zSavedMealResponse;
+
+export const zPutSavedMealRoutineBody = zSavedMealRoutineInput;
+
+export const zPutSavedMealRoutinePath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Saved meal with upserted routine
+ */
+export const zPutSavedMealRoutineResponse = zSavedMealResponse;
+
+export const zUseSavedMealBody = zUseSavedMealRequest;
+
+export const zUseSavedMealPath = z.object({
+  id: z.string(),
+});
+
+/**
+ * Updated usage metadata
+ */
+export const zUseSavedMealResponse = zSavedMealResponse;
 
 export const zListAdminUsersQuery = z.object({
   search: z.string().min(1).max(255).optional(),
@@ -822,3 +1482,81 @@ export const zListAdminAuditLogsQuery = z.object({
  * Admin audit logs
  */
 export const zListAdminAuditLogsResponse = zAdminAuditLogsResponse;
+
+export const zListAdminAiUsageQuery = z.object({
+  feature: zAiFeature.optional(),
+  provider: zAiProvider.optional(),
+  status: z.enum(["succeeded", "failed", "cancelled"]).optional(),
+  limit: z.int().gte(1).lte(100).optional().default(50),
+  offset: z.int().gte(0).optional().default(0),
+});
+
+/**
+ * AI usage records
+ */
+export const zListAdminAiUsageResponse = zAdminAiUsageResponse;
+
+export const zGetPersonalInsightsQuery = z.object({
+  range: zInsightsRange.optional(),
+  today: z.iso.date().optional(),
+});
+
+/**
+ * Aggregated personal insights
+ */
+export const zGetPersonalInsightsResponse = zPersonalInsightsResponse;
+
+export const zGetPersonalNutritionDetailQuery = z.object({
+  range: zInsightsRange.optional(),
+  today: z.iso.date().optional(),
+  metric: zInsightsMetric.optional(),
+});
+
+/**
+ * Aggregated nutrient detail
+ */
+export const zGetPersonalNutritionDetailResponse = zPersonalNutritionDetail;
+
+export const zGetAdminAnalyticsOverviewQuery = z.object({
+  range: z.enum(["7d", "30d", "90d", "custom"]).optional().default("30d"),
+  from: z.iso.date().optional(),
+  to: z.iso.date().optional(),
+});
+
+/**
+ * Product activity analytics
+ */
+export const zGetAdminAnalyticsOverviewResponse = zAdminOverviewResponse;
+
+export const zGetAdminAnalyticsNutritionQuery = z.object({
+  range: z.enum(["7d", "30d", "90d", "custom"]).optional().default("30d"),
+  from: z.iso.date().optional(),
+  to: z.iso.date().optional(),
+});
+
+/**
+ * Product-wide nutrition analytics
+ */
+export const zGetAdminAnalyticsNutritionResponse = zAdminNutritionResponse;
+
+export const zGetAdminAnalyticsFoodsQuery = z.object({
+  range: z.enum(["7d", "30d", "90d", "custom"]).optional().default("30d"),
+  from: z.iso.date().optional(),
+  to: z.iso.date().optional(),
+});
+
+/**
+ * Food catalog analytics
+ */
+export const zGetAdminAnalyticsFoodsResponse = zAdminCatalogResponse;
+
+export const zGetAdminAnalyticsAiQuery = z.object({
+  range: z.enum(["7d", "30d", "90d", "custom"]).optional().default("30d"),
+  from: z.iso.date().optional(),
+  to: z.iso.date().optional(),
+});
+
+/**
+ * AI analytics without prompts or secrets
+ */
+export const zGetAdminAnalyticsAiResponse = zAdminAiAnalyticsResponse;

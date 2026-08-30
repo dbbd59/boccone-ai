@@ -1,9 +1,16 @@
 import postgres from "postgres";
 
 import { createAuth } from "@boccone/auth";
+import {
+  createMockAiHarness,
+  type AiHarness,
+  type AiModelDescriptor,
+  type DiscoverModelsInput,
+} from "@boccone/ai";
 import { closeDb, createDb, migrateDatabase, type Database } from "@boccone/db";
 
 import { createApp } from "../src/app";
+import { createAiService, persistAiInvocation } from "../src/services/ai";
 
 const LOCAL_POSTGRES_URL =
   process.env["DATABASE_URL"] ?? "postgres://boccone:boccone@localhost:5433/boccone";
@@ -19,7 +26,13 @@ export interface TestHarness {
  * Create a throwaway Postgres database for this test run, apply migrations,
  * and build a fully wired app (auth + routes) against it.
  */
-export async function createTestHarness(): Promise<TestHarness> {
+export async function createTestHarness(
+  options: {
+    harness?: AiHarness;
+    modelDiscovery?: (input: DiscoverModelsInput) => Promise<AiModelDescriptor[]>;
+    encryptionKey?: string | null;
+  } = {},
+): Promise<TestHarness> {
   const adminSql = postgres(LOCAL_POSTGRES_URL, { max: 1, onnotice: () => undefined });
   try {
     await adminSql`SELECT 1`;
@@ -51,12 +64,34 @@ export async function createTestHarness(): Promise<TestHarness> {
     },
   });
 
+  const ai = createAiService({
+    db,
+    encryptionKey:
+      options.encryptionKey === null
+        ? undefined
+        : (options.encryptionKey ?? "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="),
+    modelDiscovery: options.modelDiscovery,
+    harness:
+      options.harness ??
+      createMockAiHarness({
+        structuredResponse: {
+          mealType: "lunch",
+          foods: [
+            { sourceText: "80 g di pasta", normalizedName: "pasta", grams: 80, confidence: 0.9 },
+          ],
+        },
+        textResponse: "OK",
+        onInvocation: (record) => persistAiInvocation(db, record),
+      }),
+  });
+
   const app = createApp({
     auth,
     db,
     version: "test",
     corsOrigins: ["http://localhost:3001"],
     logLevel: "error",
+    ai,
   });
 
   const cleanup = async (): Promise<void> => {

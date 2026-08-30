@@ -13,6 +13,8 @@ export default function AuthenticatedLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="meals" />
       <Stack.Screen name="add-meal" />
+      <Stack.Screen name="insights" />
+      <Stack.Screen name="insights/[metric]" />
     </Stack>
   );
 }

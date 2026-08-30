@@ -15,7 +15,7 @@
 Boccone AI is being built for people who want a calmer, more transparent way to understand what they eat. The product direction combines self-defined nutrition targets, manual and AI-assisted meal logging, a diary, simple statistics, and an assistant grounded in a user’s own history.
 
 > [!IMPORTANT]
-> Boccone AI is in early development. The current repository delivers the monorepo, API, authentication foundation, database migrations, shared contracts, an OpenAPI-generated client, UI primitives, mobile/admin auth surfaces, authenticated daily nutrition targets, manual meal logging with Today aggregation, a five-area mobile navigation shell, and date-based Calendar browsing. Longitudinal Diary history, statistics, known meals, and AI orchestration are planned product slices, not finished features.
+> Boccone AI is in early development. The current repository delivers the monorepo, API, authentication foundation, database migrations, shared contracts, an OpenAPI-generated client, UI primitives, mobile/admin auth surfaces, authenticated daily nutrition targets, manual meal logging with Today aggregation, a five-area mobile navigation shell, date-based Calendar browsing, paginated Diary history, canonical meal detail/edit/delete flows, a real-data personal Insights slice, a real-data Admin Analytics workspace, and the first provider-agnostic AI meal-draft vertical. Known meals remain a planned product slice.
 
 ## Product direction
 
@@ -25,7 +25,7 @@ The full product scope is documented in [PRD.md](PRD.md). Planned capabilities i
 - meal entry by manual input, text, camera, or gallery;
 - one or more images per meal, normalized AI output, uncertainty ranges, and an edit-before-save step;
 - diary and calendar browsing with editable meal history;
-- weekly and monthly calorie/macronutrient trends;
+- weekly and monthly calorie/macronutrient trends through the personal Insights view;
 - reusable known meals, without treating them as model training;
 - an assistant that answers questions using the user’s food history.
 
@@ -58,11 +58,12 @@ The implemented foundation is intentionally small and explicit:
 - **API** — Elysia on Bun with request IDs, structured redacted logging, CORS, shared error responses, health checks, and modular dependency injection for tests.
 - **Authentication** — Better Auth with email/password, optional Google and Apple OAuth, password-reset hooks, session-cookie identity, a simple <code>user</code>/<code>admin</code> role model, and rate limiting.
 - **Authorization** — protected <code>/api/me</code> and <code>/api/admin/*</code> routes resolve identity from the server-side session; client-supplied user IDs are ignored.
-- **Database** — PostgreSQL via Drizzle ORM and <code>postgres-js</code>, with versioned migrations for Better Auth’s user, session, account, verification, admin-audit, daily-target, and confirmed-meal tables. Meal photos and provider payloads are not persisted.
+- **Database** — PostgreSQL via Drizzle ORM and <code>postgres-js</code>, with versioned migrations for Better Auth’s user, session, account, verification, admin-audit, daily-target, confirmed-meal, encrypted AI-provider-config, and privacy-safe AI-usage tables. Meal photos, prompts, responses, and provider payloads are not persisted.
 - **Food catalog** — local normalized foods, Italian aliases, gram-weight portions, provenance, private user submissions, admin moderation, and immutable meal nutrition snapshots. Download/import workflow is documented in <a href="docs/food-catalog.md">docs/food-catalog.md</a>.
-- **Contracts** — Zod schemas define public health, user, admin-user, daily-target, meal, and error response shapes. Raw database rows do not form the public API.
+- **AI harness** — <code>packages/ai</code> centralizes TanStack AI adapters for OpenAI, Anthropic, Gemini, OpenRouter, and OpenAI-compatible endpoints, structured output, narrow catalog tools, model capabilities, safe errors, timeouts, cancellation, and mock seams. API keys are BYOK and AES-256-GCM encrypted at rest.
+- **Contracts** — Zod schemas define public health, user, admin-user, daily-target, meal, AI draft/settings/usage, and error response shapes. Raw database rows do not form the public API.
 - **API client** — the checked-in OpenAPI description generates fetch, Zod, and TanStack Query artifacts in <code>packages/api-client</code>; clients share one typed HTTP boundary.
-- **Clients** — an Expo Router mobile app with persisted English/Italian localization, native Home/Meals/Calendar/Diary/Settings navigation, system/light/dark appearance, a Today summary, a dedicated Meals area, date-based Calendar browsing, a canonical meal detail route, manual add/edit/delete meal flow, and nested Settings for profile, appearance, targets, language, and account controls. Diary is present as an honest Coming Soon destination until the history API exists. The Vite/React admin surface provides sign-in, server-side admin access checks, user search, user detail/edit, role changes, ban/unban, removal, audit-log inspection, daily-target CRUD, and meal CRUD. The admin surface is English-only for now.
+- **Clients** — an Expo Router mobile app with persisted English/Italian localization, native Home/Meals/Calendar/Diary/Settings navigation, system/light/dark appearance, a Today summary, a dedicated Meals area, a real-data Insights route with range selection, nutrient detail, accessible trends, and honest no-data states, date-based Calendar browsing that hands off to Diary, paginated Diary history, a canonical meal detail route, manual add/edit/delete meal flow, “Dillo a Boccone” natural-language drafting with review before save, and nested Settings for profile, appearance, targets, language, account controls, and BYOK AI settings. The Vite/React admin surface provides sign-in, server-side admin access checks, user search, user detail/edit, role changes, ban/unban, removal, audit-log inspection, daily-target CRUD, meal CRUD, privacy-safe AI usage inspection, and a date-filtered Analytics workspace for product activity, nutrition, catalog moderation, and AI operations. The admin surface is English-only for now.
 - **UI foundation** — a layered design system (<a href="docs/design-system.md">docs/design-system.md</a>): <code>design-tokens</code> (semantic light/dark themes, spacing, typography, motion, WCAG-tested contrast, and material roles) plus mirrored React Native and web primitives (<code>Text</code>, <code>Button</code>, <code>Input</code>, <code>Field</code>, <code>Screen</code>, <code>Surface</code>, <code>GlassSurface</code>, <code>Stack</code>, <code>Alert</code>, …). Native iOS 26 Liquid Glass is guarded at runtime with tokenized fallbacks for older iOS, Android, and web; a dev-only showcase remains available at <code>/dev/design-system</code> on mobile.
 
 ## Architecture
@@ -99,15 +100,15 @@ Shared contracts sit in <code>packages/contracts</code>; the generated client is
 
 The authenticated mobile shell has five stable destinations, each with one job:
 
-| Area     | Responsibility                                                                                           |
-| -------- | -------------------------------------------------------------------------------------------------------- |
-| Home     | What matters today: a concise nutrition/activity summary and the primary Add meal action.                |
-| Meals    | The current day’s logged food, grouped by meal category, with one canonical meal detail route.           |
-| Calendar | Date-oriented browsing backed by the existing daily-meals API.                                           |
-| Diary    | Longitudinal history; the route is established with a Coming Soon state until a history endpoint exists. |
-| Settings | Account and app configuration, with nested profile, appearance, and target screens.                      |
+| Area     | Responsibility                                                                                              |
+| -------- | ----------------------------------------------------------------------------------------------------------- |
+| Home     | What matters today: a concise nutrition/activity summary and the primary Add meal action.                   |
+| Meals    | The current day’s logged food, grouped by meal category, with one canonical meal detail route.              |
+| Calendar | Lightweight date-oriented activity browsing that hands off selected dates to Diary.                         |
+| Diary    | Chronological, date-grouped meal history with daily totals, incremental loading, and canonical meal detail. |
+| Settings | Account and app configuration, with nested profile, appearance, and target screens.                         |
 
-Meal details live at <code>/meals/{mealId}</code>, so Home, Meals, Calendar, and the future Diary can share one resource representation. Manual creation and editing use <code>/meals/new</code> and <code>/meals/{mealId}/edit</code>; the legacy <code>/add-meal</code> path redirects for existing deep links.
+Meal details live at <code>/meals/{mealId}</code>, so Home, Meals, Calendar, and Diary share one resource representation. Manual creation and editing use <code>/meals/new</code> and <code>/meals/{mealId}/edit</code>; the legacy <code>/add-meal</code> path redirects for existing deep links.
 
 ## Tech stack
 
@@ -116,6 +117,7 @@ Meal details live at <code>/meals/{mealId}</code>, so Home, Meals, Calendar, and
 | Runtime and package manager | Bun <code>&gt;=1.4.0</code>                              |
 | Workspace orchestration     | Bun workspaces and Turborepo                             |
 | API                         | TypeScript, Elysia, <code>@elysiajs/cors</code>          |
+| AI                          | TanStack AI adapters, Zod structured output, BYOK        |
 | Authentication              | Better Auth, Drizzle adapter, Expo plugin, admin plugin  |
 | Database                    | PostgreSQL 17, Drizzle ORM/Kit, <code>postgres-js</code> |
 | Validation                  | Zod                                                      |
@@ -189,6 +191,7 @@ Copy [.env.example](.env.example) to <code>.env</code>. The API loads the neares
 | <code>API_PORT</code>                                                                                                                               | No       | API port from <code>1</code> to <code>65535</code>; defaults to <code>3000</code>.                              |
 | <code>LOG_LEVEL</code>                                                                                                                              | No       | <code>debug</code>, <code>info</code>, <code>warn</code>, or <code>error</code>; defaults to <code>info</code>. |
 | <code>CORS_ALLOWED_ORIGINS</code>                                                                                                                   | No       | Comma-separated browser origins. Native <code>boccone://</code> deep links are configured in code.              |
+| <code>AI_ENCRYPTION_KEY</code>                                                                                                                      | No*      | 32-byte base64 or 64-character hex AES-256-GCM key for encrypted user provider keys.                            |
 | <code>GOOGLE_CLIENT_ID</code> / <code>GOOGLE_CLIENT_SECRET</code>                                                                                   | No       | Enable Google OAuth when both are set.                                                                          |
 | <code>APPLE_SERVICES_ID</code>, <code>APPLE_BUNDLE_ID</code>, <code>APPLE_TEAM_ID</code>, <code>APPLE_KEY_ID</code>, <code>APPLE_PRIVATE_KEY</code> | No       | Enable Apple OAuth only when all five values are set.                                                           |
 
@@ -200,6 +203,11 @@ Partially configured OAuth providers are rejected at startup. For local callback
 ```
 
 <code>APPLE_PRIVATE_KEY</code> accepts a single-line value with <code>\n</code> escapes. The API restores PEM newlines before minting Apple client-secret JWTs.
+
+<code>AI_ENCRYPTION_KEY</code> is optional until a user saves a BYOK key; set it
+in every environment that enables AI settings. Generate it with
+<code>openssl rand -base64 32</code>. See [docs/ai.md](docs/ai.md) for the
+provider, draft, privacy, and testing boundaries.
 
 ### Client environment
 
@@ -216,35 +224,42 @@ Do not put server secrets in either client environment.
 
 The API currently exposes these application routes:
 
-| Method              | Path                                              | Auth          | Description                                                                                        |
-| ------------------- | ------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
-| <code>GET</code>    | <code>/api/health</code>                          | Public        | Returns service status, version, request ID, and timestamp.                                        |
-| <code>ALL</code>    | <code>/api/auth/*</code>                          | Better Auth   | Email/password, password reset, and configured social-auth handlers.                               |
-| <code>GET</code>    | <code>/api/me</code>                              | Session       | Returns the authenticated user’s public contract.                                                  |
-| <code>GET</code>    | <code>/api/me/targets</code>                      | Session       | Returns the authenticated user’s optional daily calorie and macro targets.                         |
-| <code>PUT</code>    | <code>/api/me/targets</code>                      | Session       | Replaces the authenticated user’s daily targets; each value may be cleared with <code>null</code>. |
-| <code>GET</code>    | <code>/api/me/meals?date=YYYY-MM-DD</code>        | Session       | Returns manually logged meals and nutrition totals for one calendar day.                           |
-| <code>POST</code>   | <code>/api/me/meals</code>                        | Session       | Creates a manually logged meal.                                                                    |
-| <code>GET</code>    | <code>/api/me/meals/{id}</code>                   | Session       | Returns one meal owned by the authenticated user.                                                  |
-| <code>PATCH</code>  | <code>/api/me/meals/{id}</code>                   | Session       | Updates one meal owned by the authenticated user.                                                  |
-| <code>DELETE</code> | <code>/api/me/meals/{id}</code>                   | Session       | Removes one meal owned by the authenticated user.                                                  |
-| <code>GET</code>    | <code>/api/admin/users</code>                     | Admin session | Lists users with optional email <code>search</code>, <code>limit</code>, and <code>offset</code>.  |
-| <code>GET</code>    | <code>/api/admin/users/{id}</code>                | Admin session | Returns one operational user record.                                                               |
-| <code>GET</code>    | <code>/api/admin/users/{id}/targets</code>        | Admin session | Inspects one user’s daily targets.                                                                 |
-| <code>PUT</code>    | <code>/api/admin/users/{id}/targets</code>        | Admin session | Replaces one user’s daily targets; null clears individual values.                                  |
-| <code>DELETE</code> | <code>/api/admin/users/{id}/targets</code>        | Admin session | Removes one user’s daily-target record.                                                            |
-| <code>GET</code>    | <code>/api/admin/users/{id}/meals</code>          | Admin session | Lists up to 50 manually logged meals for one user.                                                 |
-| <code>POST</code>   | <code>/api/admin/users/{id}/meals</code>          | Admin session | Creates a meal for one user and records an audit action.                                           |
-| <code>GET</code>    | <code>/api/admin/users/{id}/meals/{mealId}</code> | Admin session | Returns one meal for one user.                                                                     |
-| <code>PATCH</code>  | <code>/api/admin/users/{id}/meals/{mealId}</code> | Admin session | Updates one meal and records an audit action.                                                      |
-| <code>DELETE</code> | <code>/api/admin/users/{id}/meals/{mealId}</code> | Admin session | Removes one meal and records an audit action.                                                      |
-| <code>POST</code>   | <code>/api/admin/users</code>                     | Admin session | Creates a user through Better Auth’s admin API.                                                    |
-| <code>PATCH</code>  | <code>/api/admin/users/{id}</code>                | Admin session | Updates a user’s name and/or email.                                                                |
-| <code>POST</code>   | <code>/api/admin/users/{id}/role</code>           | Admin session | Changes a user between the explicit <code>user</code> and <code>admin</code> roles.                |
-| <code>POST</code>   | <code>/api/admin/users/{id}/ban</code>            | Admin session | Bans a user with an optional reason and duration.                                                  |
-| <code>POST</code>   | <code>/api/admin/users/{id}/unban</code>          | Admin session | Removes the user ban.                                                                              |
-| <code>DELETE</code> | <code>/api/admin/users/{id}</code>                | Admin session | Removes the account and linked auth data.                                                          |
-| <code>GET</code>    | <code>/api/admin/audit-logs</code>                | Admin session | Lists paginated admin account/application-data actions with actor and target details.              |
+| Method              | Path                                                 | Auth          | Description                                                                                        |
+| ------------------- | ---------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
+| <code>GET</code>    | <code>/api/health</code>                             | Public        | Returns service status, version, request ID, and timestamp.                                        |
+| <code>ALL</code>    | <code>/api/auth/*</code>                             | Better Auth   | Email/password, password reset, and configured social-auth handlers.                               |
+| <code>GET</code>    | <code>/api/me</code>                                 | Session       | Returns the authenticated user’s public contract.                                                  |
+| <code>GET</code>    | <code>/api/me/ai/settings</code>                     | Session       | Returns provider/model settings without the stored key.                                            |
+| <code>PUT</code>    | <code>/api/me/ai/settings</code>                     | Session       | Stores a provider/model and encrypts a BYOK key when supplied.                                     |
+| <code>DELETE</code> | <code>/api/me/ai/settings/api-key</code>             | Session       | Removes the stored provider key.                                                                   |
+| <code>POST</code>   | <code>/api/me/ai/test-connection</code>              | Session       | Verifies the configured provider with a bounded request.                                           |
+| <code>POST</code>   | <code>/api/me/ai/interpret-meal</code>               | Session       | Returns a catalog-backed MealDraft; it never creates a meal.                                       |
+| <code>GET</code>    | <code>/api/me/targets</code>                         | Session       | Returns the authenticated user’s optional daily calorie and macro targets.                         |
+| <code>PUT</code>    | <code>/api/me/targets</code>                         | Session       | Replaces the authenticated user’s daily targets; each value may be cleared with <code>null</code>. |
+| <code>GET</code>    | <code>/api/me/meals?date=YYYY-MM-DD</code>           | Session       | Returns manually logged meals and nutrition totals for one calendar day.                           |
+| <code>GET</code>    | <code>/api/me/diary?before=YYYY-MM-DD&limit=7</code> | Session       | Returns paginated, date-grouped meal history before an exclusive local-date cursor.                |
+| <code>POST</code>   | <code>/api/me/meals</code>                           | Session       | Creates a manually logged meal.                                                                    |
+| <code>GET</code>    | <code>/api/me/meals/{id}</code>                      | Session       | Returns one meal owned by the authenticated user.                                                  |
+| <code>PATCH</code>  | <code>/api/me/meals/{id}</code>                      | Session       | Updates one meal owned by the authenticated user.                                                  |
+| <code>DELETE</code> | <code>/api/me/meals/{id}</code>                      | Session       | Removes one meal owned by the authenticated user.                                                  |
+| <code>GET</code>    | <code>/api/admin/users</code>                        | Admin session | Lists users with optional email <code>search</code>, <code>limit</code>, and <code>offset</code>.  |
+| <code>GET</code>    | <code>/api/admin/users/{id}</code>                   | Admin session | Returns one operational user record.                                                               |
+| <code>GET</code>    | <code>/api/admin/users/{id}/targets</code>           | Admin session | Inspects one user’s daily targets.                                                                 |
+| <code>PUT</code>    | <code>/api/admin/users/{id}/targets</code>           | Admin session | Replaces one user’s daily targets; null clears individual values.                                  |
+| <code>DELETE</code> | <code>/api/admin/users/{id}/targets</code>           | Admin session | Removes one user’s daily-target record.                                                            |
+| <code>GET</code>    | <code>/api/admin/users/{id}/meals</code>             | Admin session | Lists up to 50 manually logged meals for one user.                                                 |
+| <code>POST</code>   | <code>/api/admin/users/{id}/meals</code>             | Admin session | Creates a meal for one user and records an audit action.                                           |
+| <code>GET</code>    | <code>/api/admin/users/{id}/meals/{mealId}</code>    | Admin session | Returns one meal for one user.                                                                     |
+| <code>PATCH</code>  | <code>/api/admin/users/{id}/meals/{mealId}</code>    | Admin session | Updates one meal and records an audit action.                                                      |
+| <code>DELETE</code> | <code>/api/admin/users/{id}/meals/{mealId}</code>    | Admin session | Removes one meal and records an audit action.                                                      |
+| <code>POST</code>   | <code>/api/admin/users</code>                        | Admin session | Creates a user through Better Auth’s admin API.                                                    |
+| <code>PATCH</code>  | <code>/api/admin/users/{id}</code>                   | Admin session | Updates a user’s name and/or email.                                                                |
+| <code>POST</code>   | <code>/api/admin/users/{id}/role</code>              | Admin session | Changes a user between the explicit <code>user</code> and <code>admin</code> roles.                |
+| <code>POST</code>   | <code>/api/admin/users/{id}/ban</code>               | Admin session | Bans a user with an optional reason and duration.                                                  |
+| <code>POST</code>   | <code>/api/admin/users/{id}/unban</code>             | Admin session | Removes the user ban.                                                                              |
+| <code>DELETE</code> | <code>/api/admin/users/{id}</code>                   | Admin session | Removes the account and linked auth data.                                                          |
+| <code>GET</code>    | <code>/api/admin/audit-logs</code>                   | Admin session | Lists paginated admin account/application-data actions with actor and target details.              |
+| <code>GET</code>    | <code>/api/admin/ai/usage</code>                     | Admin session | Lists provider/model/token/latency/status metadata without prompts or responses.                   |
 
 The machine-readable API description is [packages/api-client/openapi.yaml](packages/api-client/openapi.yaml). It drives the generated fetch, Zod, and TanStack Query client artifacts.
 
@@ -291,7 +306,7 @@ docker-compose.yml      Development-only PostgreSQL service
                        CI workflow
 ```
 
-<code>packages/ai</code> is part of the intended architecture but is not present yet. Provider-specific AI code belongs there when that vertical slice is implemented.
+<code>packages/ai</code> owns provider-specific adapters and the provider-neutral harness. Feature/domain code stays in the API service layer; clients consume generated contracts only.
 
 ## Commands
 

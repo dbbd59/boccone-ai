@@ -5,3 +5,6 @@ export * from "./user";
 export * from "./targets";
 export * from "./meals";
 export * from "./foods";
+export * from "./saved-meals";
+export * from "./ai";
+export * from "./insights";

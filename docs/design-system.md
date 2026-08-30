@@ -81,10 +81,51 @@ transparency always selects the solid fallback.
 
 The mobile app uses Expo Router SDK 55 native tabs for five stable destinations:
 Home, Meals, Calendar, Diary, and Settings. Meals and Calendar use the current
-authenticated API surface; Diary is an established Coming Soon destination
-until the longitudinal history endpoint exists. The native tab bar owns
-safe-area behavior and, on iOS 26, receives the system Liquid Glass treatment.
+authenticated API surface; Diary presents paginated, date-grouped history with
+daily nutrition summaries and one canonical meal-detail route. Calendar owns
+date selection and hands off to Diary instead of duplicating meal rendering.
+The native tab bar owns safe-area behavior and, on iOS 26, receives the system
+Liquid Glass treatment.
 The web export keeps a basic compatible fallback.
+
+## Diary pattern
+
+Diary uses a content-first hierarchy: human date heading, compact day context,
+meal-type grouping, then scannable meal rows. The intended reading order is
+date → meal type/time → meal name → foods → calories. Whitespace, typography,
+alignment, and restrained dividers carry the structure; meal rows do not need
+glass cards.
+
+Today may carry the strongest daily summary: calories, protein, carbohydrates,
+fat, and an optional target/progress cue. Historical summaries become quieter.
+Only meal types present in the data are shown; an omitted meal is valid and is
+never represented as a failure or an empty placeholder section.
+
+Diary rows open the canonical Meal Detail route shared by Home, Meals, Diary,
+and Calendar. Calendar selects dates and hands them to Diary, while Home keeps
+only a concise Today preview. Diary history uses date-cursor pagination and a
+virtualized day list as it grows. Daily totals are derived from stored meal
+entry snapshots, so catalog changes cannot silently rewrite history.
+
+## Analytics and data visualization
+
+Analytics is editorial and data-first. Lead with the selected period, the most
+important summary, and one primary trend. Use restrained axes and grid lines,
+direct labels, an explicit legend, and a textual/table fallback for every chart.
+Never rely on color alone: keep labels, values, shape, or position available to
+explain a series. Tapping or clicking a period may reveal its exact values, but
+the chart must remain useful without interaction.
+
+Personal ranges are 7 days, 30 days, 3 months, and 1 year. Personal averages
+use logged days; missing days are gaps, not zeroes. Admin ranges are 7, 30, 90,
+or custom days in UTC, with a preceding equal-length comparison. These
+definitions belong in the API contract and the analytics documentation, not in
+visual guesswork.
+
+Use standard themed surfaces for chart content. Liquid Glass is appropriate for
+floating range controls or transient actions, never for a chart, table, or dense
+data block. Empty, loading, and error states must be honest and distinct. Do
+not invent metrics for a missing data source.
 
 Mobile and Admin use different navigation paradigms. Mobile is consumer-first:
 native bottom tabs, one-handed reach, platform gestures, and minimal native

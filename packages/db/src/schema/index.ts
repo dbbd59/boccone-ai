@@ -12,3 +12,5 @@ export * from "./admin";
 export * from "./targets";
 export * from "./meals";
 export * from "./foods";
+export * from "./saved-meals";
+export * from "./ai";

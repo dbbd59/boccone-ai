@@ -4,8 +4,9 @@ import type { ReactNode } from "react";
 import { spacing } from "@boccone/design-tokens";
 import { Screen, Stack, Text } from "@boccone/ui-mobile";
 
-import { BrandMark } from "./BrandMark";
 import { LanguageSelector } from "./LanguageSelector";
+import { useI18n } from "../i18n/context";
+import { MascotAvatar } from "./MascotAvatar";
 
 export function AuthFrame({
   title,
@@ -16,6 +17,8 @@ export function AuthFrame({
   subtitle: string;
   children: ReactNode;
 }) {
+  const { copy } = useI18n();
+
   return (
     <Screen>
       <KeyboardAvoidingView
@@ -28,12 +31,12 @@ export function AuthFrame({
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.topRow}>
-            <BrandMark size={52} />
+            <MascotAvatar accessibilityLabel={copy.appName} size={56} />
             <LanguageSelector />
           </View>
           <Stack gap="sm">
             <Text variant="caption" tone="brand">
-              BOCCONE AI
+              {copy.appName}
             </Text>
             <Text variant="title">{title}</Text>
             <Text variant="bodyLg" tone="secondary">

@@ -36,11 +36,11 @@ describe("redactValue", () => {
   });
 
   test("serializes Error values safely", () => {
-    const result = redactValue({ error: new Error("boom") }) as {
+    const result = redactValue({ error: new Error("provider rejected sk-proj-secret") }) as {
       error: { name: string; message: string };
     };
     expect(result.error.name).toBe("Error");
-    expect(result.error.message).toBe("boom");
+    expect(result.error.message).not.toContain("sk-proj-secret");
   });
 });
 

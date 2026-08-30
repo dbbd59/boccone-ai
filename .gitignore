@@ -9,6 +9,7 @@ build/
 .output/
 .expo/
 web-build/
+apps/mobile/android/
 *.tsbuildinfo
 
 # env files — never commit real secrets

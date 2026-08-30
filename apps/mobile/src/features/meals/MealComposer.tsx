@@ -1,40 +1,56 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type {
   Food,
   FoodType,
   FoodPortion,
+  MealDraft,
+  MealDraftFood,
   MealFoodEntry,
-  MealFoodEntryInput,
+  MealFoodEntryUpdateInput,
   MealCategory,
 } from "@boccone/api-client";
-import { calculateNutrition, type NutritionValues } from "@boccone/utils";
-import { spacing } from "@boccone/design-tokens";
+import { calculateNutrition, roundNutrition, type NutritionValues } from "@boccone/utils";
+import { borderWidths, spacing } from "@boccone/design-tokens";
 import {
   Alert,
   Button,
   Field,
   FloatingGlassBar,
   GlassButton,
+  GlassIconButton,
   Inline,
   Input,
   Screen,
   Stack,
   Surface,
   Text,
+  useThemeColors,
 } from "@boccone/ui-mobile";
 
+import { FoodSearchResult } from "../../components/FoodSearchResult";
+import { MealEntryRow } from "../../components/MealEntryRow";
+import { MascotAvatar } from "../../components/MascotAvatar";
+import { NutritionSummary } from "../../components/NutritionSummary";
+import { QuantityControl } from "../../components/QuantityControl";
 import { useI18n } from "../../i18n/context";
+import type { TranslationCopy } from "../../i18n/translations";
 import { formatLocalDate } from "../../lib/dates";
+import { lightImpactFeedback } from "../../lib/haptics";
 import { searchFoodCatalog, submitFood } from "../../lib/foods";
+import { AiRequestError, interpretMeal } from "../../lib/ai";
 import { createMeal, fetchMeal, updateMeal } from "../../lib/meals";
 
 const CATEGORIES: MealCategory[] = ["breakfast", "lunch", "dinner", "snack"];
 
 interface DraftEntry {
+  key: string;
+  id?: string;
   food: Food;
   portionName: string;
   quantity: number;
@@ -54,11 +70,24 @@ interface ProposalDraft {
   fat: string;
 }
 
-export function MealComposer({ mealId }: { mealId?: string } = {}) {
+export function MealComposer({
+  mealId,
+  initialDate,
+}: { mealId?: string; initialDate?: string } = {}) {
   const { copy, locale } = useI18n();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const colors = useThemeColors();
+  const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<MealCategory>(() => categoryForCurrentTime());
+  const [mealDate, setMealDate] = useState(() => initialDate ?? formatLocalDate());
+  const [mealName, setMealName] = useState("");
+  const [notes, setNotes] = useState("");
+  const [mode, setMode] = useState<"dillo" | "manual">(mealId ? "manual" : "dillo");
+  const [naturalText, setNaturalText] = useState("");
+  const [aiDraft, setAiDraft] = useState<MealDraft | null>(null);
+  const [aiReviewIndex, setAiReviewIndex] = useState<number | null>(null);
+  const aiAbortRef = useRef<AbortController | null>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [entries, setEntries] = useState<DraftEntry[]>([]);
@@ -68,7 +97,7 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
   const [quantity, setQuantity] = useState("1");
   const [customGrams, setCustomGrams] = useState("100");
   const [showProposal, setShowProposal] = useState(false);
-  const [proposal, setProposal] = useState<ProposalDraft>(emptyProposal());
+  const [proposal, setProposal] = useState<ProposalDraft>(() => emptyProposal());
   const [error, setError] = useState<string | null>(null);
 
   const mealQuery = useQuery({
@@ -83,6 +112,9 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
     // original food IDs again, preserving the existing catalog contract.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCategory(mealQuery.data.category);
+    setMealDate(mealQuery.data.date);
+    setMealName(mealQuery.data.name);
+    setNotes(mealQuery.data.notes ?? "");
     setEntries((mealQuery.data.entries ?? []).map(toDraftEntry));
   }, [mealQuery.data]);
 
@@ -90,6 +122,8 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
     const timer = setTimeout(() => setDebouncedQuery(query), 180);
     return () => clearTimeout(timer);
   }, [query]);
+
+  useEffect(() => () => aiAbortRef.current?.abort(), []);
 
   const foodQuery = useQuery({
     queryKey: ["food-catalog", debouncedQuery, locale],
@@ -109,6 +143,11 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
       foodQuery.data?.foods.length === 0,
   });
 
+  function clearSearch() {
+    setQuery("");
+    setShowProposal(false);
+  }
+
   const selectedPreview = useMemo(() => {
     if (!selectedFood) return null;
     const grams = selectedPortion
@@ -125,14 +164,17 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
       ),
     [entries],
   );
+  const requiresAiReview = aiDraft?.foods.some(needsAiReview) ?? false;
 
   const saveMutation = useMutation({
     mutationFn: () => {
       const input = {
-        name: mealQuery.data?.name ?? copy.meal.categories[category],
+        name: mealName.trim() || copy.meal.categories[category],
         category,
-        date: mealQuery.data?.date ?? formatLocalDate(),
-        entries: entries.map<MealFoodEntryInput>((entry) => ({
+        date: mealDate,
+        notes: notes.trim() || null,
+        entries: entries.map<MealFoodEntryUpdateInput>((entry) => ({
+          ...(entry.id ? { id: entry.id } : {}),
           foodId: entry.food.id,
           portionName: entry.portionName,
           quantity: entry.quantity,
@@ -142,7 +184,11 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
       return mealId ? updateMeal(mealId, input) : createMeal(input);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["getDailyMeals"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [{ _id: "getDailyMeals" }] }),
+        queryClient.invalidateQueries({ queryKey: [{ _id: "getMealDiary" }] }),
+      ]);
+      await queryClient.invalidateQueries({ queryKey: [{ _id: "getCalendarMonth" }] });
       if (mealId) {
         await queryClient.invalidateQueries({ queryKey: ["mobile-meal", mealId] });
         router.back();
@@ -152,6 +198,69 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
     },
     onError: () => setError(copy.food.error),
   });
+
+  const aiMutation = useMutation({
+    mutationFn: async () => {
+      const controller = new AbortController();
+      aiAbortRef.current = controller;
+      try {
+        return await interpretMeal(
+          {
+            text: naturalText.trim(),
+            locale,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+          },
+          controller.signal,
+        );
+      } finally {
+        if (aiAbortRef.current === controller) aiAbortRef.current = null;
+      }
+    },
+    onMutate: () => setError(null),
+    onSuccess: ({ draft }) => {
+      setAiDraft(draft);
+      setAiReviewIndex(null);
+      if (draft.mealType) setCategory(draft.mealType);
+      if (draft.mealName) setMealName(draft.mealName);
+      setNotes(draft.notes ?? "");
+      setEntries(
+        draft.foods.flatMap((food, index) => {
+          const entry = toAiDraftEntry(food, index);
+          return entry ? [entry] : [];
+        }),
+      );
+      setMode("manual");
+      setError(null);
+    },
+    onError: (cause) => {
+      if (cause instanceof AiRequestError && cause.code === "ai_cancelled") {
+        setError(null);
+        return;
+      }
+      setError(aiErrorMessage(cause, copy));
+    },
+  });
+
+  function cancelAiInterpretation() {
+    aiAbortRef.current?.abort();
+  }
+
+  function removeAiDraftFood(index: number) {
+    setAiDraft((current) => {
+      if (!current) return current;
+      const foods = current.foods.filter((_food, itemIndex) => itemIndex !== index);
+      const totals = summarizeDraftNutrition(foods);
+      return {
+        ...current,
+        foods,
+        totals: totals.values,
+        nutritionIncomplete: totals.incomplete,
+      };
+    });
+    setAiReviewIndex(null);
+    setError(null);
+    lightImpactFeedback();
+  }
 
   const proposalMutation = useMutation({
     mutationFn: () => {
@@ -189,7 +298,8 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
         },
       });
     },
-    onSuccess: (food) => {
+    onSuccess: async (food) => {
+      await queryClient.invalidateQueries({ queryKey: ["food-catalog"] });
       setShowProposal(false);
       setProposal(emptyProposal());
       selectFood(food);
@@ -206,6 +316,31 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
     setCustomGrams(String(defaultPortion?.gramWeight ?? 100));
   }
 
+  function appendDefaultFood(food: Food) {
+    const defaultPortion = food.portions.find((portion) => portion.isDefault) ?? food.portions[0];
+    const grams = defaultPortion?.gramWeight ?? 100;
+    setEntries((current) => [
+      ...current,
+      {
+        key: draftEntryKey(food.id),
+        food,
+        portionName: defaultPortion?.name ?? `${formatNumber(grams)} g`,
+        quantity: 1,
+        grams,
+      },
+    ]);
+    setError(null);
+    lightImpactFeedback();
+  }
+
+  function adjustQuantity(amount: number) {
+    setQuantity((current) => formatNumber(Math.max(0.1, positiveNumber(current, 1) + amount)));
+  }
+
+  function adjustGrams(amount: number) {
+    setCustomGrams((current) => formatNumber(Math.max(1, positiveNumber(current, 100) + amount)));
+  }
+
   function editEntry(index: number) {
     const entry = entries[index];
     if (!entry) return;
@@ -220,6 +355,13 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
   function addSelectedFood() {
     if (!selectedFood || !selectedPreview || selectedPreview.grams <= 0) return;
     const nextEntry = {
+      key:
+        editingIndex !== null && entries[editingIndex]
+          ? entries[editingIndex].key
+          : draftEntryKey(selectedFood.id),
+      ...(editingIndex !== null && entries[editingIndex]?.id
+        ? { id: entries[editingIndex]?.id }
+        : {}),
       food: selectedFood,
       portionName: selectedPortion?.name ?? `${selectedPreview.grams} g`,
       quantity: selectedPortion ? positiveNumber(quantity, 1) : 1,
@@ -230,10 +372,26 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
         ? [...current, nextEntry]
         : current.map((entry, index) => (index === editingIndex ? nextEntry : entry)),
     );
+    if (aiReviewIndex !== null) {
+      setAiDraft((current) =>
+        current
+          ? replaceAiDraftFood(
+              current,
+              aiReviewIndex,
+              selectedFood,
+              nextEntry.portionName,
+              nextEntry.quantity,
+              nextEntry.grams,
+            )
+          : current,
+      );
+      setAiReviewIndex(null);
+    }
     setEditingIndex(null);
     setSelectedFood(null);
     setSelectedPortion(null);
     setQuery("");
+    lightImpactFeedback();
   }
 
   if (mealId && mealQuery.isPending) {
@@ -269,16 +427,54 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
           showsVerticalScrollIndicator={false}
         >
           <Stack gap="xl">
-            <GlassButton onPress={() => router.back()}>{copy.navigation.back}</GlassButton>
             <Stack gap="sm">
-              <Text variant="caption" tone="brand">
-                BOCCONE AI
-              </Text>
-              <Text variant="display">{mealId ? copy.meal.editTitle : copy.food.title}</Text>
+              <Inline align="center" gap="sm">
+                <GlassIconButton
+                  accessibilityLabel={copy.navigation.back}
+                  icon={
+                    <MaterialCommunityIcons
+                      color={colors.foreground.default}
+                      name="chevron-left"
+                      size={22}
+                    />
+                  }
+                  onPress={() => router.back()}
+                />
+                <MascotAvatar accessibilityLabel={copy.home.mascotTitle} size={40} />
+                <Text variant="headingMd">
+                  {mealId
+                    ? copy.meal.editTitle
+                    : mode === "dillo"
+                      ? copy.food.dilloTitle
+                      : copy.food.title}
+                </Text>
+              </Inline>
               <Text variant="bodyLg" tone="secondary">
-                {copy.food.searchHint}
+                {mode === "dillo" && !mealId ? copy.food.dilloHint : copy.food.searchHint}
               </Text>
             </Stack>
+
+            {!mealId ? (
+              <FloatingGlassBar mergeSpacing={spacing[1]} style={styles.modeBar}>
+                <GlassButton
+                  prominence={mode === "dillo" ? "prominent" : "regular"}
+                  size="sm"
+                  onPress={() => setMode("dillo")}
+                >
+                  {copy.food.dilloTitle}
+                </GlassButton>
+                <GlassButton
+                  prominence={mode === "manual" ? "prominent" : "regular"}
+                  size="sm"
+                  onPress={() => {
+                    setAiReviewIndex(null);
+                    setMode("manual");
+                  }}
+                >
+                  {copy.food.dilloSwitchManual}
+                </GlassButton>
+              </FloatingGlassBar>
+            ) : null}
 
             <FloatingGlassBar mergeSpacing={spacing[2]} style={styles.categoryBar}>
               {CATEGORIES.map((item) => (
@@ -295,52 +491,210 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
               ))}
             </FloatingGlassBar>
 
+            <Surface>
+              <Stack gap="md">
+                <Field label={copy.meal.nameLabel}>
+                  <Input
+                    value={mealName}
+                    onChangeText={setMealName}
+                    placeholder={copy.meal.namePlaceholder}
+                  />
+                </Field>
+                <Field label={copy.meal.dateLabel} description={copy.meal.dateDescription}>
+                  <Input
+                    value={mealDate}
+                    onChangeText={setMealDate}
+                    placeholder={copy.meal.datePlaceholder}
+                    autoCapitalize="none"
+                  />
+                </Field>
+                <Field label={copy.meal.notesLabel} description={copy.meal.notesDescription}>
+                  <Input
+                    multiline
+                    numberOfLines={3}
+                    value={notes}
+                    onChangeText={setNotes}
+                    style={styles.notesInput}
+                  />
+                </Field>
+              </Stack>
+            </Surface>
+
             {entries.length > 0 ? (
               <Surface>
                 <Stack gap="md">
-                  <Text variant="headingMd">{copy.food.selectedFoods}</Text>
+                  <Inline align="center" justify="between">
+                    <Text variant="headingMd">{copy.food.selectedFoods}</Text>
+                    <Text variant="caption" tone="secondary">
+                      {entries.length}
+                    </Text>
+                  </Inline>
                   {entries.map((entry, index) => (
-                    <View key={`${entry.food.id}-${index}`} style={styles.entryRow}>
-                      <View style={styles.entryCopy}>
-                        <Text variant="label">{entry.food.name}</Text>
-                        <Text variant="bodySm" tone="secondary">
-                          {entry.portionName} · {formatNumber(entry.grams)} g
-                        </Text>
-                      </View>
-                      <View style={styles.entryAction}>
-                        <Text variant="label">
-                          {formatKcal(
-                            calculateNutrition(toNutrition(entry.food), entry.grams).energyKcal,
-                          )}
-                        </Text>
-                        <Button size="sm" variant="ghost" onPress={() => editEntry(index)}>
-                          {copy.food.editEntry}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onPress={() =>
-                            setEntries((current) =>
-                              current.filter((_, itemIndex) => itemIndex !== index),
-                            )
-                          }
-                        >
-                          {copy.food.remove}
-                        </Button>
-                      </View>
-                    </View>
+                    <MealEntryRow
+                      key={entry.key}
+                      calories={formatKcal(
+                        calculateNutrition(toNutrition(entry.food), entry.grams).energyKcal,
+                      )}
+                      detail={`${entry.portionName} · ${formatNumber(entry.grams)} g`}
+                      name={entry.food.name}
+                      onEdit={() => editEntry(index)}
+                      onRemove={() => {
+                        setEntries((current) =>
+                          current.filter((_, itemIndex) => itemIndex !== index),
+                        );
+                        lightImpactFeedback();
+                      }}
+                    />
                   ))}
                 </Stack>
               </Surface>
             ) : null}
 
-            {!selectedFood ? (
+            {aiDraft ? (
+              <AiDraftReview
+                draft={aiDraft}
+                onUseCandidate={(food, index) => {
+                  setAiReviewIndex(index);
+                  selectFood(food);
+                  setMode("manual");
+                }}
+                onAddCustomFood={(item, index) => {
+                  setAiReviewIndex(index);
+                  setMode("manual");
+                  const estimatedNutrition = item.nutrition;
+                  const estimatedPer100g =
+                    isCompleteDraftNutrition(estimatedNutrition) &&
+                    item.grams !== null &&
+                    item.grams > 0
+                      ? {
+                          calories: (estimatedNutrition.calories * 100) / item.grams,
+                          protein: (estimatedNutrition.proteinGrams * 100) / item.grams,
+                          carbohydrates: (estimatedNutrition.carbohydratesGrams * 100) / item.grams,
+                          fat: (estimatedNutrition.fatGrams * 100) / item.grams,
+                        }
+                      : null;
+                  setProposal((current) => ({
+                    ...current,
+                    name: item.normalizedName || item.sourceText,
+                    portionName: item.portionName,
+                    portionGrams:
+                      item.grams !== null ? formatNumber(item.grams) : current.portionGrams,
+                    calories:
+                      estimatedPer100g === null
+                        ? current.calories
+                        : formatNumber(estimatedPer100g.calories),
+                    protein:
+                      estimatedPer100g === null
+                        ? current.protein
+                        : formatNumber(estimatedPer100g.protein),
+                    carbohydrates:
+                      estimatedPer100g === null
+                        ? current.carbohydrates
+                        : formatNumber(estimatedPer100g.carbohydrates),
+                    fat:
+                      estimatedPer100g === null ? current.fat : formatNumber(estimatedPer100g.fat),
+                  }));
+                  setShowProposal(true);
+                }}
+                onSearchCatalog={(index) => {
+                  const item = aiDraft.foods[index];
+                  setAiReviewIndex(index);
+                  setMode("manual");
+                  setSelectedFood(null);
+                  setSelectedPortion(null);
+                  setEditingIndex(null);
+                  setShowProposal(false);
+                  setQuery(item?.normalizedName ?? "");
+                  setError(null);
+                }}
+                onRemoveItem={removeAiDraftFood}
+              />
+            ) : null}
+
+            {mode === "dillo" && !mealId ? (
               <Surface>
                 <Stack gap="md">
-                  <Field label={copy.food.searchPlaceholder}>
-                    <Input autoFocus value={query} onChangeText={setQuery} returnKeyType="search" />
+                  <Field label={copy.food.dilloTitle}>
+                    <Input
+                      autoFocus
+                      multiline
+                      numberOfLines={4}
+                      placeholder={copy.food.dilloPlaceholder}
+                      value={naturalText}
+                      onChangeText={setNaturalText}
+                      style={styles.naturalInput}
+                    />
                   </Field>
+                  <Button
+                    fullWidth
+                    disabled={!naturalText.trim()}
+                    loading={aiMutation.isPending}
+                    onPress={() => aiMutation.mutate()}
+                  >
+                    {aiMutation.isError ? copy.food.dilloRetry : copy.food.dilloSubmit}
+                  </Button>
+                  {aiMutation.isPending ? (
+                    <>
+                      <Text role="status" tone="secondary">
+                        {copy.food.dilloProcessing}
+                      </Text>
+                      <Button variant="ghost" onPress={cancelAiInterpretation}>
+                        {copy.food.dilloCancel}
+                      </Button>
+                    </>
+                  ) : null}
+                </Stack>
+              </Surface>
+            ) : !selectedFood ? (
+              <Surface>
+                <Stack gap="md">
+                  <Field label={copy.food.searchLabel}>
+                    <Inline gap="sm" align="center" style={styles.searchRow}>
+                      <Input
+                        autoFocus
+                        placeholder={copy.food.searchPlaceholder}
+                        value={query}
+                        onChangeText={setQuery}
+                        returnKeyType="search"
+                        style={styles.searchInput}
+                      />
+                      {query ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          accessibilityLabel={copy.food.clearSearch}
+                          onPress={clearSearch}
+                        >
+                          {copy.food.clearSearch}
+                        </Button>
+                      ) : null}
+                    </Inline>
+                  </Field>
+                  {!query.trim() ? (
+                    <Stack gap="xs">
+                      <Text variant="caption" tone="secondary">
+                        {copy.food.quickSearchesLabel}
+                      </Text>
+                      <Inline gap="sm" wrap>
+                        {copy.food.quickSearches.map((term) => (
+                          <Button
+                            key={term}
+                            size="sm"
+                            variant="secondary"
+                            onPress={() => setQuery(term)}
+                          >
+                            {term}
+                          </Button>
+                        ))}
+                      </Inline>
+                    </Stack>
+                  ) : null}
                   {foodQuery.isPending ? (
+                    <Text role="status" tone="secondary">
+                      {copy.food.loading}
+                    </Text>
+                  ) : null}
+                  {query.trim() && debouncedQuery !== query && !foodQuery.isPending ? (
                     <Text role="status" tone="secondary">
                       {copy.food.loading}
                     </Text>
@@ -350,6 +704,7 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
                     <FoodSection
                       title={copy.food.recent}
                       foods={foodQuery.data.recent}
+                      onQuickAdd={appendDefaultFood}
                       onSelect={selectFood}
                     />
                   ) : null}
@@ -357,6 +712,7 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
                     <FoodSection
                       title={copy.food.frequent}
                       foods={foodQuery.data.frequent}
+                      onQuickAdd={appendDefaultFood}
                       onSelect={selectFood}
                     />
                   ) : null}
@@ -364,13 +720,15 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
                     <FoodSection
                       title={copy.food.suggestions}
                       foods={foodQuery.data.foods}
+                      onQuickAdd={appendDefaultFood}
                       onSelect={selectFood}
                     />
                   ) : null}
                   {query.trim() && debouncedQuery === query && foodQuery.data?.foods.length ? (
                     <FoodSection
-                      title={copy.food.results}
+                      title={copy.food.resultsFor(debouncedQuery.trim())}
                       foods={foodQuery.data.foods}
+                      onQuickAdd={appendDefaultFood}
                       onSelect={selectFood}
                     />
                   ) : null}
@@ -380,7 +738,7 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
                   foodQuery.data?.foods.length === 0 ? (
                     <Stack gap="sm">
                       <Text variant="bodySm" tone="secondary">
-                        {copy.food.noResults}
+                        {copy.food.noResultsFor(debouncedQuery.trim())}
                       </Text>
                       {similarFoodQuery.isPending ? (
                         <Text variant="bodySm" tone="secondary">
@@ -391,8 +749,14 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
                         <FoodSection
                           title={copy.food.possibleMatches}
                           foods={similarFoodQuery.data.foods}
+                          onQuickAdd={appendDefaultFood}
                           onSelect={selectFood}
                         />
+                      ) : null}
+                      {similarSearchTerm && similarSearchTerm !== debouncedQuery.trim() ? (
+                        <Button variant="ghost" onPress={() => setQuery(similarSearchTerm)}>
+                          {copy.food.tryShorter(similarSearchTerm)}
+                        </Button>
                       ) : null}
                       <Button
                         variant="secondary"
@@ -409,7 +773,10 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
                     <ProposalForm
                       draft={proposal}
                       setDraft={setProposal}
-                      onCancel={() => setShowProposal(false)}
+                      onCancel={() => {
+                        setShowProposal(false);
+                        setAiReviewIndex(null);
+                      }}
                       onSubmit={() => proposalMutation.mutate()}
                       loading={proposalMutation.isPending}
                     />
@@ -423,6 +790,7 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
                     title={selectedFood.name}
                     onBack={() => {
                       setEditingIndex(null);
+                      setAiReviewIndex(null);
                       setSelectedFood(null);
                     }}
                     backLabel={copy.food.cancel}
@@ -456,21 +824,27 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
                     </GlassButton>
                   </FloatingGlassBar>
                   {selectedPortion ? (
-                    <Field label={copy.food.quantityLabel}>
-                      <Input
-                        keyboardType="decimal-pad"
-                        value={quantity}
-                        onChangeText={setQuantity}
-                      />
-                    </Field>
+                    <QuantityControl
+                      decrementLabel={copy.food.decrement}
+                      incrementLabel={copy.food.increment}
+                      label={copy.food.quantityLabel}
+                      onChangeText={setQuantity}
+                      onDecrement={() => adjustQuantity(-0.5)}
+                      onIncrement={() => adjustQuantity(0.5)}
+                      stepLabel={copy.food.portionStep}
+                      value={quantity}
+                    />
                   ) : (
-                    <Field label={copy.food.gramsLabel}>
-                      <Input
-                        keyboardType="decimal-pad"
-                        value={customGrams}
-                        onChangeText={setCustomGrams}
-                      />
-                    </Field>
+                    <QuantityControl
+                      decrementLabel={copy.food.decrement}
+                      incrementLabel={copy.food.increment}
+                      label={copy.food.gramsLabel}
+                      onChangeText={setCustomGrams}
+                      onDecrement={() => adjustGrams(-10)}
+                      onIncrement={() => adjustGrams(10)}
+                      stepLabel={copy.food.gramsStep}
+                      value={customGrams}
+                    />
                   )}
                   {selectedPreview ? (
                     <NutritionPreview
@@ -479,22 +853,6 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
                       approximate={copy.food.approximate}
                     />
                   ) : null}
-                  {selectedPortion ? (
-                    <FloatingGlassBar mergeSpacing={spacing[1]} style={styles.quantityBar}>
-                      {[0.5, 1, 2].map((value) => (
-                        <GlassButton
-                          key={value}
-                          size="sm"
-                          prominence={
-                            positiveNumber(quantity, 1) === value ? "prominent" : "regular"
-                          }
-                          onPress={() => setQuantity(String(value))}
-                        >
-                          {`${value}×`}
-                        </GlassButton>
-                      ))}
-                    </FloatingGlassBar>
-                  ) : null}
                   <Button fullWidth onPress={addSelectedFood}>
                     {editingIndex === null ? copy.food.addToMeal : copy.food.updateEntry}
                   </Button>
@@ -502,26 +860,45 @@ export function MealComposer({ mealId }: { mealId?: string } = {}) {
               </Surface>
             )}
 
-            <Surface elevation="none" style={styles.totalSurface}>
-              <InlineHeader title={copy.food.mealTotal} />
-              <Text variant="numeric">{formatKcal(total.energyKcal)}</Text>
-              <Inline gap="md" align="start">
-                <Macro label={copy.home.proteinLabel} value={total.proteinG} />
-                <Macro label={copy.home.carbohydratesLabel} value={total.carbohydratesG} />
-                <Macro label={copy.home.fatLabel} value={total.fatG} />
-              </Inline>
-            </Surface>
-            <Button
-              fullWidth
-              disabled={entries.length === 0}
-              loading={saveMutation.isPending}
-              onPress={() => saveMutation.mutate()}
-            >
-              {mealId ? copy.meal.saveChanges : copy.food.saveMeal}
-            </Button>
-            {error ? <Alert tone="danger" message={error} /> : null}
+            {entries.length > 0 ? (
+              <NutritionSummary
+                calories={total.energyKcal}
+                carbohydrates={total.carbohydratesG}
+                compact
+                fat={total.fatG}
+                incomplete={false}
+                label={copy.food.mealTotal}
+                protein={total.proteinG}
+                showTarget={false}
+              />
+            ) : null}
           </Stack>
         </ScrollView>
+        <View
+          style={[
+            styles.footer,
+            {
+              backgroundColor: colors.background.default,
+              borderTopColor: colors.border.subtle,
+              paddingBottom: Math.max(insets.bottom, spacing[2]),
+            },
+          ]}
+        >
+          {requiresAiReview ? (
+            <Text role="status" variant="bodySm" tone="secondary">
+              {copy.food.dilloSaveAfterReview}
+            </Text>
+          ) : null}
+          {error ? <Alert tone="danger" message={error} /> : null}
+          <Button
+            fullWidth
+            disabled={entries.length === 0 || requiresAiReview}
+            loading={saveMutation.isPending}
+            onPress={() => saveMutation.mutate()}
+          >
+            {mealId ? copy.meal.saveChanges : copy.food.saveMeal}
+          </Button>
+        </View>
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -531,30 +908,146 @@ function FoodSection({
   title,
   foods,
   onSelect,
+  onQuickAdd,
 }: {
   title: string;
   foods: Food[];
   onSelect: (food: Food) => void;
+  onQuickAdd?: (food: Food) => void;
 }) {
   return (
     <Stack gap="xs">
       <Text variant="label" tone="secondary">
         {title}
       </Text>
-      {foods.map((food) => {
-        const portion = food.portions.find((item) => item.isDefault) ?? food.portions[0];
-        const portionKcal = portion
-          ? calculateNutrition(toNutrition(food), portion.gramWeight).energyKcal
-          : null;
-        return (
-          <GlassButton
-            key={food.id}
-            fullWidth
-            onPress={() => onSelect(food)}
-          >{`${food.name} · ${formatKcal(food.nutritionPer100g.energyKcal)} / 100 g${portion ? ` · ${portion.name} ${formatKcal(portionKcal)}` : ""}`}</GlassButton>
-        );
-      })}
+      {foods.map((food) => (
+        <FoodSearchResult
+          key={food.id}
+          food={food}
+          onQuickAdd={onQuickAdd ? () => onQuickAdd(food) : undefined}
+          onSelect={() => onSelect(food)}
+        />
+      ))}
     </Stack>
+  );
+}
+
+function AiDraftReview({
+  draft,
+  onUseCandidate,
+  onAddCustomFood,
+  onSearchCatalog,
+  onRemoveItem,
+}: {
+  draft: MealDraft;
+  onUseCandidate: (food: Food, index: number) => void;
+  onAddCustomFood: (food: MealDraftFood, index: number) => void;
+  onSearchCatalog: (index: number) => void;
+  onRemoveItem: (index: number) => void;
+}) {
+  const { copy } = useI18n();
+  const attention = draft.foods.filter(needsAiReview);
+  if (attention.length === 0 && !draft.nutritionIncomplete) return null;
+  return (
+    <Surface>
+      <Stack gap="md">
+        <Text variant="headingMd">{copy.food.dilloReviewTitle}</Text>
+        <Text variant="bodySm" tone="secondary">
+          {copy.food.dilloReviewBody}
+        </Text>
+        {attention.length > 0 ? (
+          <Text variant="caption" tone="secondary">
+            {copy.food.dilloReviewCount(attention.length)}
+          </Text>
+        ) : null}
+        {draft.totals.calories !== null ? (
+          <NutritionSummary
+            calories={draft.totals.calories}
+            carbohydrates={draft.totals.carbohydratesGrams}
+            compact
+            fat={draft.totals.fatGrams}
+            label={copy.food.dilloEstimate}
+            protein={draft.totals.proteinGrams}
+            showTarget={false}
+          />
+        ) : null}
+        {attention.length === 0 && draft.nutritionIncomplete ? (
+          <Text variant="bodySm" tone="secondary">
+            {copy.food.dilloNoNutrition}
+          </Text>
+        ) : null}
+        {attention.map((item) => {
+          const index = draft.foods.indexOf(item);
+          return (
+            <Stack key={`${item.sourceText}-${index}`} gap="sm">
+              <Text variant="label">{item.normalizedName}</Text>
+              <Text variant="bodySm" tone="secondary">
+                {item.resolutionStatus === "AMBIGUOUS"
+                  ? copy.food.dilloAmbiguous
+                  : item.resolutionStatus === "UNRESOLVED"
+                    ? copy.food.dilloUnresolved
+                    : copy.food.dilloNoNutrition}
+              </Text>
+              {item.nutrition ? (
+                <Stack gap="xs">
+                  <Text variant="caption" tone="secondary">
+                    {copy.food.dilloEstimate}
+                    {item.grams !== null ? ` · ${formatNumber(item.grams)} g` : ""} ·{" "}
+                    {formatKcal(item.nutrition.calories)}
+                  </Text>
+                  <Inline gap="sm" align="start">
+                    <Macro label={copy.home.proteinLabel} value={item.nutrition.proteinGrams} />
+                    <Macro
+                      label={copy.home.carbohydratesLabel}
+                      value={item.nutrition.carbohydratesGrams}
+                    />
+                    <Macro label={copy.home.fatLabel} value={item.nutrition.fatGrams} />
+                  </Inline>
+                </Stack>
+              ) : null}
+              {item.candidates.map((candidate) => (
+                <Button
+                  key={candidate.id}
+                  size="sm"
+                  variant="secondary"
+                  onPress={() => onUseCandidate(candidate, index)}
+                >
+                  {copy.food.dilloUseCandidate}: {candidate.name}
+                </Button>
+              ))}
+              {!item.food ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    accessibilityLabel={`${copy.food.dilloAddCustomFood}: ${item.normalizedName}`}
+                    onPress={() => onAddCustomFood(item, index)}
+                  >
+                    {copy.food.dilloAddCustomFood}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    accessibilityLabel={`${copy.food.dilloSearchCatalog}: ${item.normalizedName}`}
+                    onPress={() => onSearchCatalog(index)}
+                  >
+                    {copy.food.dilloSearchCatalog}
+                  </Button>
+                </>
+              ) : null}
+              <Button
+                size="sm"
+                variant="ghost"
+                accessibilityLabel={`${copy.food.dilloRemoveItem}: ${item.normalizedName}`}
+                onPress={() => onRemoveItem(index)}
+              >
+                {copy.food.dilloRemoveItem}
+              </Button>
+            </Stack>
+          );
+        })}
+      </Stack>
+    </Surface>
   );
 }
 
@@ -739,11 +1232,129 @@ function toNutrition(food: Food): NutritionValues {
   };
 }
 
+function toAiDraftEntry(food: MealDraftFood, index: number): DraftEntry | null {
+  if (
+    !food.food ||
+    food.grams === null ||
+    food.nutrition === null ||
+    Object.values(food.nutrition).some((value) => value === null)
+  )
+    return null;
+  return {
+    key: `ai-${food.food.id}-${index}`,
+    food: food.food,
+    portionName: food.portionName,
+    quantity: food.quantity,
+    grams: food.grams,
+  };
+}
+
+function isCompleteDraftNutrition(nutrition: MealDraftFood["nutrition"]): nutrition is {
+  calories: number;
+  proteinGrams: number;
+  carbohydratesGrams: number;
+  fatGrams: number;
+} {
+  return nutrition !== null && Object.values(nutrition).every((value) => value !== null);
+}
+
+function needsAiReview(food: MealDraftFood): boolean {
+  return food.resolutionStatus === "AMBIGUOUS" || food.resolutionStatus === "UNRESOLVED";
+}
+
+function replaceAiDraftFood(
+  draft: MealDraft,
+  index: number,
+  food: Food,
+  portionName: string,
+  quantity: number,
+  grams: number,
+): MealDraft {
+  const nutritionValues = roundNutrition(calculateNutrition(toNutrition(food), grams));
+  const nutrition = {
+    calories: nutritionValues.energyKcal,
+    proteinGrams: nutritionValues.proteinG,
+    carbohydratesGrams: nutritionValues.carbohydratesG,
+    fatGrams: nutritionValues.fatG,
+  };
+  const complete = Object.values(nutrition).every((value) => value !== null);
+  const foods = draft.foods.map((item, itemIndex) =>
+    itemIndex === index
+      ? {
+          ...item,
+          normalizedName: food.name,
+          food,
+          candidates: [],
+          portionName,
+          quantity,
+          grams,
+          nutrition,
+          confidence: Math.max(item.confidence, complete ? 0.95 : item.confidence),
+          resolutionStatus: complete ? ("RESOLVED" as const) : ("ESTIMATED" as const),
+          reviewNote: complete ? null : item.reviewNote,
+        }
+      : item,
+  );
+  const totals = summarizeDraftNutrition(foods);
+  return {
+    ...draft,
+    foods,
+    totals: totals.values,
+    nutritionIncomplete: totals.incomplete,
+  };
+}
+
+function summarizeDraftNutrition(foods: MealDraftFood[]) {
+  const keys = ["calories", "proteinGrams", "carbohydratesGrams", "fatGrams"] as const;
+  const values = Object.fromEntries(
+    keys.map((key) => {
+      const known = foods
+        .map((food) => food.nutrition?.[key])
+        .filter((value): value is number => value !== null && value !== undefined);
+      return [
+        key,
+        known.length === foods.length
+          ? Number(known.reduce((sum, value) => sum + value, 0).toFixed(2))
+          : null,
+      ];
+    }),
+  ) as MealDraft["totals"];
+  return {
+    values,
+    incomplete: foods.some(
+      (food) => food.nutrition === null || keys.some((key) => food.nutrition?.[key] === null),
+    ),
+  };
+}
+
+function aiErrorMessage(error: unknown, copy: TranslationCopy): string {
+  if (!(error instanceof AiRequestError)) return copy.food.dilloGenericError;
+  switch (error.code) {
+    case "ai_not_configured":
+    case "ai_secret_unavailable":
+      return copy.food.dilloConfigure;
+    case "ai_invalid_credentials":
+      return copy.food.dilloInvalidCredentials;
+    case "ai_rate_limited":
+      return copy.food.dilloRateLimited;
+    case "ai_provider_unavailable":
+      return copy.food.dilloUnavailable;
+    case "ai_timeout":
+      return copy.food.dilloTimeout;
+    case "ai_invalid_response":
+      return copy.food.dilloInvalidResponse;
+    default:
+      return copy.food.dilloGenericError;
+  }
+}
+
 function toDraftEntry(entry: MealFoodEntry): DraftEntry {
   const per100 = (value: number | null) =>
     value === null || entry.grams <= 0 ? null : (value * 100) / entry.grams;
   const portionGrams = entry.quantity > 0 ? entry.grams / entry.quantity : entry.grams;
   return {
+    key: entry.id,
+    id: entry.id,
     food: {
       id: entry.foodId,
       name: entry.foodName,
@@ -849,6 +1460,11 @@ function emptyProposal(): ProposalDraft {
     fat: "",
   };
 }
+
+function draftEntryKey(foodId: string): string {
+  return `draft-${foodId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function categoryForCurrentTime(): MealCategory {
   const hour = new Date().getHours();
   return hour < 11 ? "breakfast" : hour < 16 ? "lunch" : hour < 21 ? "dinner" : "snack";
@@ -859,12 +1475,13 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, paddingBottom: spacing[6] },
   categoryBar: { flexWrap: "wrap" },
   categoryButton: { flexGrow: 1 },
+  modeBar: { flexWrap: "wrap" },
+  searchRow: { alignItems: "center" },
+  searchInput: { flex: 1, minWidth: 0 },
+  naturalInput: { minHeight: spacing[12], textAlignVertical: "top" },
+  notesInput: { minHeight: spacing[12], textAlignVertical: "top" },
   portionsBar: { flexWrap: "wrap" },
-  quantityBar: { alignSelf: "flex-start" },
   proposalTypeBar: { flexWrap: "wrap" },
-  entryRow: { flexDirection: "row", alignItems: "center", gap: spacing[3] },
-  entryCopy: { flex: 1, gap: spacing[1] },
-  entryAction: { alignItems: "flex-end", gap: spacing[1] },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -872,6 +1489,11 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   preview: { gap: spacing[2], padding: spacing[4] },
-  totalSurface: { gap: spacing[3], padding: spacing[4] },
   macro: { flex: 1 },
+  footer: {
+    gap: spacing[2],
+    borderTopWidth: borderWidths.hairline,
+    paddingHorizontal: spacing[6],
+    paddingTop: spacing[3],
+  },
 });

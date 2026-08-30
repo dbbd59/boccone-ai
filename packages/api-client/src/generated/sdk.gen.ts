@@ -23,6 +23,27 @@ import type {
   CreateMealData,
   CreateMealErrors,
   CreateMealResponses,
+  CreateSavedMealData,
+  CreateSavedMealErrors,
+  CreateSavedMealResponses,
+  DeleteAiApiKeyData,
+  DeleteAiApiKeyErrors,
+  DeleteAiApiKeyResponses,
+  DeleteSavedMealRoutineData,
+  DeleteSavedMealRoutineErrors,
+  DeleteSavedMealRoutineResponses,
+  GetAdminAnalyticsAiData,
+  GetAdminAnalyticsAiErrors,
+  GetAdminAnalyticsAiResponses,
+  GetAdminAnalyticsFoodsData,
+  GetAdminAnalyticsFoodsErrors,
+  GetAdminAnalyticsFoodsResponses,
+  GetAdminAnalyticsNutritionData,
+  GetAdminAnalyticsNutritionErrors,
+  GetAdminAnalyticsNutritionResponses,
+  GetAdminAnalyticsOverviewData,
+  GetAdminAnalyticsOverviewErrors,
+  GetAdminAnalyticsOverviewResponses,
   GetAdminFoodData,
   GetAdminFoodErrors,
   GetAdminFoodResponses,
@@ -41,6 +62,15 @@ import type {
   GetAdminUserMealErrors,
   GetAdminUserMealResponses,
   GetAdminUserResponses,
+  GetAiModelsData,
+  GetAiModelsErrors,
+  GetAiModelsResponses,
+  GetAiSettingsData,
+  GetAiSettingsErrors,
+  GetAiSettingsResponses,
+  GetCalendarMonthData,
+  GetCalendarMonthErrors,
+  GetCalendarMonthResponses,
   GetCurrentUserData,
   GetCurrentUserErrors,
   GetCurrentUserResponses,
@@ -54,8 +84,26 @@ import type {
   GetHealthErrors,
   GetHealthResponses,
   GetMealData,
+  GetMealDiaryData,
+  GetMealDiaryErrors,
+  GetMealDiaryResponses,
   GetMealErrors,
   GetMealResponses,
+  GetPersonalInsightsData,
+  GetPersonalInsightsErrors,
+  GetPersonalInsightsResponses,
+  GetPersonalNutritionDetailData,
+  GetPersonalNutritionDetailErrors,
+  GetPersonalNutritionDetailResponses,
+  GetSavedMealData,
+  GetSavedMealErrors,
+  GetSavedMealResponses,
+  InterpretMealWithAiData,
+  InterpretMealWithAiErrors,
+  InterpretMealWithAiResponses,
+  ListAdminAiUsageData,
+  ListAdminAiUsageErrors,
+  ListAdminAiUsageResponses,
   ListAdminAuditLogsData,
   ListAdminAuditLogsErrors,
   ListAdminAuditLogsResponses,
@@ -74,9 +122,15 @@ import type {
   ListAdminUsersData,
   ListAdminUsersErrors,
   ListAdminUsersResponses,
+  ListSavedMealsData,
+  ListSavedMealsErrors,
+  ListSavedMealsResponses,
   MergeFoodSubmissionData,
   MergeFoodSubmissionErrors,
   MergeFoodSubmissionResponses,
+  PutSavedMealRoutineData,
+  PutSavedMealRoutineErrors,
+  PutSavedMealRoutineResponses,
   RejectFoodSubmissionData,
   RejectFoodSubmissionErrors,
   RejectFoodSubmissionResponses,
@@ -92,12 +146,18 @@ import type {
   RemoveMealData,
   RemoveMealErrors,
   RemoveMealResponses,
+  RemoveSavedMealData,
+  RemoveSavedMealErrors,
+  RemoveSavedMealResponses,
   SearchFoodsData,
   SearchFoodsErrors,
   SearchFoodsResponses,
   SetAdminUserRoleData,
   SetAdminUserRoleErrors,
   SetAdminUserRoleResponses,
+  TestAiConnectionData,
+  TestAiConnectionErrors,
+  TestAiConnectionResponses,
   UnbanAdminUserData,
   UnbanAdminUserErrors,
   UnbanAdminUserResponses,
@@ -113,12 +173,21 @@ import type {
   UpdateAdminUserMealErrors,
   UpdateAdminUserMealResponses,
   UpdateAdminUserResponses,
+  UpdateAiSettingsData,
+  UpdateAiSettingsErrors,
+  UpdateAiSettingsResponses,
   UpdateDailyTargetsData,
   UpdateDailyTargetsErrors,
   UpdateDailyTargetsResponses,
   UpdateMealData,
   UpdateMealErrors,
   UpdateMealResponses,
+  UpdateSavedMealData,
+  UpdateSavedMealErrors,
+  UpdateSavedMealResponses,
+  UseSavedMealData,
+  UseSavedMealErrors,
+  UseSavedMealResponses,
 } from "./types.gen";
 import {
   zApproveFoodSubmissionPath,
@@ -135,6 +204,19 @@ import {
   zCreateFoodSubmissionResponse,
   zCreateMealBody,
   zCreateMealResponse,
+  zCreateSavedMealBody,
+  zCreateSavedMealResponse,
+  zDeleteAiApiKeyResponse,
+  zDeleteSavedMealRoutinePath,
+  zDeleteSavedMealRoutineResponse,
+  zGetAdminAnalyticsAiQuery,
+  zGetAdminAnalyticsAiResponse,
+  zGetAdminAnalyticsFoodsQuery,
+  zGetAdminAnalyticsFoodsResponse,
+  zGetAdminAnalyticsNutritionQuery,
+  zGetAdminAnalyticsNutritionResponse,
+  zGetAdminAnalyticsOverviewQuery,
+  zGetAdminAnalyticsOverviewResponse,
   zGetAdminFoodPath,
   zGetAdminFoodResponse,
   zGetAdminFoodSubmissionPath,
@@ -147,13 +229,30 @@ import {
   zGetAdminUserMealResponse,
   zGetAdminUserPath,
   zGetAdminUserResponse,
+  zGetAiModelsQuery,
+  zGetAiModelsResponse,
+  zGetAiSettingsResponse,
+  zGetCalendarMonthQuery,
+  zGetCalendarMonthResponse,
   zGetCurrentUserResponse,
   zGetDailyMealsQuery,
   zGetDailyMealsResponse,
   zGetDailyTargetsResponse,
   zGetHealthResponse,
+  zGetMealDiaryQuery,
+  zGetMealDiaryResponse,
   zGetMealPath,
   zGetMealResponse,
+  zGetPersonalInsightsQuery,
+  zGetPersonalInsightsResponse,
+  zGetPersonalNutritionDetailQuery,
+  zGetPersonalNutritionDetailResponse,
+  zGetSavedMealPath,
+  zGetSavedMealResponse,
+  zInterpretMealWithAiBody,
+  zInterpretMealWithAiResponse,
+  zListAdminAiUsageQuery,
+  zListAdminAiUsageResponse,
   zListAdminAuditLogsQuery,
   zListAdminAuditLogsResponse,
   zListAdminFoodsQuery,
@@ -167,9 +266,13 @@ import {
   zListAdminUserMealsResponse,
   zListAdminUsersQuery,
   zListAdminUsersResponse,
+  zListSavedMealsResponse,
   zMergeFoodSubmissionBody,
   zMergeFoodSubmissionPath,
   zMergeFoodSubmissionResponse,
+  zPutSavedMealRoutineBody,
+  zPutSavedMealRoutinePath,
+  zPutSavedMealRoutineResponse,
   zRejectFoodSubmissionBody,
   zRejectFoodSubmissionPath,
   zRejectFoodSubmissionResponse,
@@ -181,11 +284,14 @@ import {
   zRemoveAdminUserResponse,
   zRemoveMealPath,
   zRemoveMealResponse,
+  zRemoveSavedMealPath,
+  zRemoveSavedMealResponse,
   zSearchFoodsQuery,
   zSearchFoodsResponse,
   zSetAdminUserRoleBody,
   zSetAdminUserRolePath,
   zSetAdminUserRoleResponse,
+  zTestAiConnectionResponse,
   zUnbanAdminUserPath,
   zUnbanAdminUserResponse,
   zUpdateAdminFoodBody,
@@ -200,11 +306,19 @@ import {
   zUpdateAdminUserMealResponse,
   zUpdateAdminUserPath,
   zUpdateAdminUserResponse,
+  zUpdateAiSettingsBody,
+  zUpdateAiSettingsResponse,
   zUpdateDailyTargetsBody,
   zUpdateDailyTargetsResponse,
   zUpdateMealBody,
   zUpdateMealPath,
   zUpdateMealResponse,
+  zUpdateSavedMealBody,
+  zUpdateSavedMealPath,
+  zUpdateSavedMealResponse,
+  zUseSavedMealBody,
+  zUseSavedMealPath,
+  zUseSavedMealResponse,
 } from "./zod.gen";
 
 export type Options<
@@ -270,6 +384,182 @@ export const getCurrentUser = <ThrowOnError extends boolean = false>(
     ],
     url: "/api/me",
     ...options,
+  });
+
+/**
+ * Get the current user's AI provider settings
+ */
+export const getAiSettings = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAiSettingsData, ThrowOnError>,
+): RequestResult<GetAiSettingsResponses, GetAiSettingsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<GetAiSettingsResponses, GetAiSettingsErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAiSettingsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/ai/settings",
+    ...options,
+  });
+
+/**
+ * Configure the current user's AI provider
+ */
+export const updateAiSettings = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateAiSettingsData, ThrowOnError>,
+): RequestResult<UpdateAiSettingsResponses, UpdateAiSettingsErrors, ThrowOnError> =>
+  (options.client ?? client).put<UpdateAiSettingsResponses, UpdateAiSettingsErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateAiSettingsBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateAiSettingsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/ai/settings",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete the current user's stored AI API key
+ */
+export const deleteAiApiKey = <ThrowOnError extends boolean = false>(
+  options?: Options<DeleteAiApiKeyData, ThrowOnError>,
+): RequestResult<DeleteAiApiKeyResponses, DeleteAiApiKeyErrors, ThrowOnError> =>
+  (options?.client ?? client).delete<DeleteAiApiKeyResponses, DeleteAiApiKeyErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zDeleteAiApiKeyResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/ai/settings/api-key",
+    ...options,
+  });
+
+/**
+ * Discover models from the configured AI provider
+ */
+export const getAiModels = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAiModelsData, ThrowOnError>,
+): RequestResult<GetAiModelsResponses, GetAiModelsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<GetAiModelsResponses, GetAiModelsErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetAiModelsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAiModelsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/ai/models",
+    ...options,
+  });
+
+/**
+ * Test the configured AI provider
+ */
+export const testAiConnection = <ThrowOnError extends boolean = false>(
+  options?: Options<TestAiConnectionData, ThrowOnError>,
+): RequestResult<TestAiConnectionResponses, TestAiConnectionErrors, ThrowOnError> =>
+  (options?.client ?? client).post<TestAiConnectionResponses, TestAiConnectionErrors, ThrowOnError>(
+    {
+      requestValidator: async (data) =>
+        await z
+          .object({
+            body: z.never().optional(),
+            path: z.never().optional(),
+            query: z.never().optional(),
+          })
+          .parseAsync(data),
+      responseValidator: async (data) => await zTestAiConnectionResponse.parseAsync(data),
+      security: [
+        {
+          in: "cookie",
+          name: "better-auth.session_token",
+          type: "apiKey",
+        },
+      ],
+      url: "/api/me/ai/test-connection",
+      ...options,
+    },
+  );
+
+/**
+ * Interpret natural-language meal text into a reviewable draft
+ */
+export const interpretMealWithAi = <ThrowOnError extends boolean = false>(
+  options: Options<InterpretMealWithAiData, ThrowOnError>,
+): RequestResult<InterpretMealWithAiResponses, InterpretMealWithAiErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    InterpretMealWithAiResponses,
+    InterpretMealWithAiErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zInterpretMealWithAiBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zInterpretMealWithAiResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/ai/interpret-meal",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
   });
 
 /**
@@ -390,6 +680,60 @@ export const createMeal = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Get the authenticated user's paginated meal diary
+ */
+export const getMealDiary = <ThrowOnError extends boolean = false>(
+  options: Options<GetMealDiaryData, ThrowOnError>,
+): RequestResult<GetMealDiaryResponses, GetMealDiaryErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetMealDiaryResponses, GetMealDiaryErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetMealDiaryQuery,
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetMealDiaryResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/diary",
+    ...options,
+  });
+
+/**
+ * Get lightweight meal activity for a calendar month
+ */
+export const getCalendarMonth = <ThrowOnError extends boolean = false>(
+  options: Options<GetCalendarMonthData, ThrowOnError>,
+): RequestResult<GetCalendarMonthResponses, GetCalendarMonthErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetCalendarMonthResponses, GetCalendarMonthErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetCalendarMonthQuery,
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetCalendarMonthResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/calendar",
+    ...options,
   });
 
 /**
@@ -532,6 +876,64 @@ export const createFoodSubmission = <ThrowOnError extends boolean = false>(
       },
     ],
     url: "/api/me/food-submissions",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List the authenticated user's saved meal templates with routines
+ */
+export const listSavedMeals = <ThrowOnError extends boolean = false>(
+  options?: Options<ListSavedMealsData, ThrowOnError>,
+): RequestResult<ListSavedMealsResponses, ListSavedMealsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<ListSavedMealsResponses, ListSavedMealsErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zListSavedMealsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/saved-meals",
+    ...options,
+  });
+
+/**
+ * Create a saved meal template, optionally with routine metadata
+ */
+export const createSavedMeal = <ThrowOnError extends boolean = false>(
+  options: Options<CreateSavedMealData, ThrowOnError>,
+): RequestResult<CreateSavedMealResponses, CreateSavedMealErrors, ThrowOnError> =>
+  (options.client ?? client).post<CreateSavedMealResponses, CreateSavedMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateSavedMealBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateSavedMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/saved-meals",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -834,6 +1236,188 @@ export const mergeFoodSubmission = <ThrowOnError extends boolean = false>(
       },
     ],
     url: "/api/admin/food-submissions/{id}/merge",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove a saved meal template (historical meals are untouched)
+ */
+export const removeSavedMeal = <ThrowOnError extends boolean = false>(
+  options: Options<RemoveSavedMealData, ThrowOnError>,
+): RequestResult<RemoveSavedMealResponses, RemoveSavedMealErrors, ThrowOnError> =>
+  (options.client ?? client).delete<RemoveSavedMealResponses, RemoveSavedMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zRemoveSavedMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zRemoveSavedMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/saved-meals/{id}",
+    ...options,
+  });
+
+/**
+ * Get one authenticated user's saved meal template
+ */
+export const getSavedMeal = <ThrowOnError extends boolean = false>(
+  options: Options<GetSavedMealData, ThrowOnError>,
+): RequestResult<GetSavedMealResponses, GetSavedMealErrors, ThrowOnError> =>
+  (options.client ?? client).get<GetSavedMealResponses, GetSavedMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetSavedMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetSavedMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/saved-meals/{id}",
+    ...options,
+  });
+
+/**
+ * Update one authenticated user's saved meal template
+ */
+export const updateSavedMeal = <ThrowOnError extends boolean = false>(
+  options: Options<UpdateSavedMealData, ThrowOnError>,
+): RequestResult<UpdateSavedMealResponses, UpdateSavedMealErrors, ThrowOnError> =>
+  (options.client ?? client).patch<UpdateSavedMealResponses, UpdateSavedMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateSavedMealBody,
+          path: zUpdateSavedMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateSavedMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/saved-meals/{id}",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Remove the routine metadata (the saved meal itself is preserved)
+ */
+export const deleteSavedMealRoutine = <ThrowOnError extends boolean = false>(
+  options: Options<DeleteSavedMealRoutineData, ThrowOnError>,
+): RequestResult<DeleteSavedMealRoutineResponses, DeleteSavedMealRoutineErrors, ThrowOnError> =>
+  (options.client ?? client).delete<
+    DeleteSavedMealRoutineResponses,
+    DeleteSavedMealRoutineErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zDeleteSavedMealRoutinePath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zDeleteSavedMealRoutineResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/saved-meals/{id}/routine",
+    ...options,
+  });
+
+/**
+ * Create or replace the routine metadata for a saved meal
+ */
+export const putSavedMealRoutine = <ThrowOnError extends boolean = false>(
+  options: Options<PutSavedMealRoutineData, ThrowOnError>,
+): RequestResult<PutSavedMealRoutineResponses, PutSavedMealRoutineErrors, ThrowOnError> =>
+  (options.client ?? client).put<
+    PutSavedMealRoutineResponses,
+    PutSavedMealRoutineErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zPutSavedMealRoutineBody,
+          path: zPutSavedMealRoutinePath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zPutSavedMealRoutineResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/saved-meals/{id}/routine",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Record usage after a meal created from this template is persisted
+ */
+export const useSavedMeal = <ThrowOnError extends boolean = false>(
+  options: Options<UseSavedMealData, ThrowOnError>,
+): RequestResult<UseSavedMealResponses, UseSavedMealErrors, ThrowOnError> =>
+  (options.client ?? client).post<UseSavedMealResponses, UseSavedMealErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUseSavedMealBody,
+          path: zUseSavedMealPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUseSavedMealResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/saved-meals/{id}/use",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -1365,5 +1949,230 @@ export const listAdminAuditLogs = <ThrowOnError extends boolean = false>(
       },
     ],
     url: "/api/admin/audit-logs",
+    ...options,
+  });
+
+/**
+ * List privacy-safe AI usage records
+ */
+export const listAdminAiUsage = <ThrowOnError extends boolean = false>(
+  options?: Options<ListAdminAiUsageData, ThrowOnError>,
+): RequestResult<ListAdminAiUsageResponses, ListAdminAiUsageErrors, ThrowOnError> =>
+  (options?.client ?? client).get<ListAdminAiUsageResponses, ListAdminAiUsageErrors, ThrowOnError>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zListAdminAiUsageQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zListAdminAiUsageResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/ai/usage",
+    ...options,
+  });
+
+/**
+ * Get aggregated nutrition insights for the authenticated user
+ */
+export const getPersonalInsights = <ThrowOnError extends boolean = false>(
+  options?: Options<GetPersonalInsightsData, ThrowOnError>,
+): RequestResult<GetPersonalInsightsResponses, GetPersonalInsightsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    GetPersonalInsightsResponses,
+    GetPersonalInsightsErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetPersonalInsightsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetPersonalInsightsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/insights",
+    ...options,
+  });
+
+/**
+ * Get one nutrient trend and its food contributors
+ */
+export const getPersonalNutritionDetail = <ThrowOnError extends boolean = false>(
+  options?: Options<GetPersonalNutritionDetailData, ThrowOnError>,
+): RequestResult<
+  GetPersonalNutritionDetailResponses,
+  GetPersonalNutritionDetailErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).get<
+    GetPersonalNutritionDetailResponses,
+    GetPersonalNutritionDetailErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetPersonalNutritionDetailQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetPersonalNutritionDetailResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/me/insights/nutrition",
+    ...options,
+  });
+
+/**
+ * Get product activity analytics
+ */
+export const getAdminAnalyticsOverview = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAdminAnalyticsOverviewData, ThrowOnError>,
+): RequestResult<
+  GetAdminAnalyticsOverviewResponses,
+  GetAdminAnalyticsOverviewErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).get<
+    GetAdminAnalyticsOverviewResponses,
+    GetAdminAnalyticsOverviewErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetAdminAnalyticsOverviewQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminAnalyticsOverviewResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/analytics/overview",
+    ...options,
+  });
+
+/**
+ * Get product-wide nutrition analytics
+ */
+export const getAdminAnalyticsNutrition = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAdminAnalyticsNutritionData, ThrowOnError>,
+): RequestResult<
+  GetAdminAnalyticsNutritionResponses,
+  GetAdminAnalyticsNutritionErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).get<
+    GetAdminAnalyticsNutritionResponses,
+    GetAdminAnalyticsNutritionErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetAdminAnalyticsNutritionQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminAnalyticsNutritionResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/analytics/nutrition",
+    ...options,
+  });
+
+/**
+ * Get food catalog and moderation analytics
+ */
+export const getAdminAnalyticsFoods = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAdminAnalyticsFoodsData, ThrowOnError>,
+): RequestResult<GetAdminAnalyticsFoodsResponses, GetAdminAnalyticsFoodsErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    GetAdminAnalyticsFoodsResponses,
+    GetAdminAnalyticsFoodsErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetAdminAnalyticsFoodsQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminAnalyticsFoodsResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/analytics/foods",
+    ...options,
+  });
+
+/**
+ * Get privacy-safe AI analytics
+ */
+export const getAdminAnalyticsAi = <ThrowOnError extends boolean = false>(
+  options?: Options<GetAdminAnalyticsAiData, ThrowOnError>,
+): RequestResult<GetAdminAnalyticsAiResponses, GetAdminAnalyticsAiErrors, ThrowOnError> =>
+  (options?.client ?? client).get<
+    GetAdminAnalyticsAiResponses,
+    GetAdminAnalyticsAiErrors,
+    ThrowOnError
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zGetAdminAnalyticsAiQuery.optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetAdminAnalyticsAiResponse.parseAsync(data),
+    security: [
+      {
+        in: "cookie",
+        name: "better-auth.session_token",
+        type: "apiKey",
+      },
+    ],
+    url: "/api/admin/analytics/ai",
     ...options,
   });

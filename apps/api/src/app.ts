@@ -13,6 +13,10 @@ import { createMeRoutes } from "./routes/me";
 import { createMealRoutes } from "./routes/meals";
 import { createFoodRoutes } from "./routes/foods";
 import { createTargetRoutes } from "./routes/targets";
+import { createSavedMealRoutes } from "./routes/saved-meals";
+import { createAiRoutes } from "./routes/ai";
+import { createAiService, type AiService } from "./services/ai";
+import { createInsightsRoutes } from "./routes/insights";
 import type { LogLevel } from "./config/env";
 
 export interface CreateAppOptions {
@@ -21,10 +25,12 @@ export interface CreateAppOptions {
   version: string;
   corsOrigins: string[];
   logLevel: LogLevel;
+  ai?: AiService;
 }
 
 /** Build modular Elysia app. Dependencies are injected for isolated tests. */
 export function createApp(options: CreateAppOptions): AnyElysia {
+  const ai = options.ai ?? createAiService({ db: options.db });
   const logger: Logger = createLogger({
     level: options.logLevel,
     base: { service: "boccone-api" },
@@ -56,6 +62,9 @@ export function createApp(options: CreateAppOptions): AnyElysia {
       .use(createMealRoutes(options.auth, options.db))
       .use(createFoodRoutes(options.auth, options.db))
       .use(createTargetRoutes(options.auth, options.db))
-      .use(createAdminRoutes(options.auth, options.db))
+      .use(createSavedMealRoutes(options.auth, options.db))
+      .use(createAiRoutes(options.auth, ai))
+      .use(createInsightsRoutes(options.auth, options.db))
+      .use(createAdminRoutes(options.auth, options.db, ai))
   );
 }

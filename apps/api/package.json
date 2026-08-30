@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "NODE_ENV=development bun --watch src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun --sourcemap=linked",
     "start": "bun dist/index.js",
     "lint": "eslint .",
@@ -15,12 +15,14 @@
   },
   "dependencies": {
     "@boccone/auth": "workspace:*",
+    "@boccone/ai": "workspace:*",
     "@boccone/config": "workspace:*",
     "@boccone/contracts": "workspace:*",
     "@boccone/db": "workspace:*",
     "@boccone/utils": "workspace:*",
     "elysia": "^1.4.30",
-    "@elysiajs/cors": "^1.4.1"
+    "@elysiajs/cors": "^1.4.1",
+    "zod": "4.1.13"
   },
   "devDependencies": {
     "@types/bun": "^1.4.0",

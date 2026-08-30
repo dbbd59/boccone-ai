@@ -2,12 +2,14 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 
 import {
   adminAuditLogsResponseSchema,
+  diaryResponseSchema,
   adminGlobalMealResponseSchema,
   adminGlobalMealsResponseSchema,
   adminMealsResponseSchema,
   adminMutationResponseSchema,
   adminUserResponseSchema,
   adminUsersResponseSchema,
+  calendarMonthResponseSchema,
   dailyMealsResponseSchema,
   dailyTargetsResponseSchema,
   healthResponseSchema,
@@ -206,6 +208,12 @@ describe("authorization boundaries", () => {
 
     const targetsResponse = await request("/api/me/targets");
     expect(targetsResponse.status).toBe(401);
+
+    const diaryResponse = await request("/api/me/diary?before=2026-08-31");
+    expect(diaryResponse.status).toBe(401);
+
+    const calendarResponse = await request("/api/me/calendar?month=2026-08");
+    expect(calendarResponse.status).toBe(401);
 
     const adminResponse = await request("/api/admin/users");
     expect(adminResponse.status).toBe(401);
@@ -646,6 +654,67 @@ describe("manual meals", () => {
       },
     });
 
+    const olderMealResponse = await requestWithCookie("/api/me/meals", user.jar, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Morning toast",
+        category: "breakfast",
+        date: "2026-08-28",
+        calories: 300,
+        proteinGrams: 10,
+        carbohydratesGrams: 40,
+        fatGrams: 10,
+      }),
+    });
+    const olderMeal = mealResponseSchema.parse(await olderMealResponse.json()).meal;
+    const newerMealResponse = await requestWithCookie("/api/me/meals", user.jar, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: "Late dinner",
+        category: "dinner",
+        date: "2026-08-30",
+        calories: 900,
+        proteinGrams: 35,
+        carbohydratesGrams: 90,
+        fatGrams: 35,
+      }),
+    });
+    const newerMeal = mealResponseSchema.parse(await newerMealResponse.json()).meal;
+
+    const firstDiaryResponse = await requestWithCookie(
+      "/api/me/diary?before=2026-08-31&limit=1",
+      user.jar,
+    );
+    expect(firstDiaryResponse.status).toBe(200);
+    const firstDiary = diaryResponseSchema.parse(await firstDiaryResponse.json());
+    expect(firstDiary.days.map((day) => day.date)).toEqual(["2026-08-30"]);
+    expect(firstDiary.days[0]?.totals.calories).toBe(900);
+    expect(firstDiary.nextBefore).toBe("2026-08-30");
+
+    const secondDiaryResponse = await requestWithCookie(
+      `/api/me/diary?before=${firstDiary.nextBefore}&limit=10`,
+      user.jar,
+    );
+    const secondDiary = diaryResponseSchema.parse(await secondDiaryResponse.json());
+    expect(secondDiary.days.map((day) => day.date)).toEqual(["2026-08-29", "2026-08-28"]);
+    expect(secondDiary.days[0]?.totals.calories).toBe(640);
+    expect(secondDiary.nextBefore).toBeNull();
+
+    const calendarResponse = await requestWithCookie("/api/me/calendar?month=2026-08", user.jar);
+    expect(calendarResponse.status).toBe(200);
+    const calendar = calendarMonthResponseSchema.parse(await calendarResponse.json());
+    expect(calendar.month).toBe("2026-08");
+    expect(calendar.days).toEqual([
+      { date: "2026-08-28", mealCount: 1 },
+      { date: "2026-08-29", mealCount: 1 },
+      { date: "2026-08-30", mealCount: 1 },
+    ]);
+
+    const invalidCalendar = await requestWithCookie("/api/me/calendar?month=2026-13", user.jar);
+    expect(invalidCalendar.status).toBe(400);
+
     const otherUser = await signUpAndSignIn(uniqueEmail("meal-other"));
     const forbiddenRead = await requestWithCookie(`/api/me/meals/${created.id}`, otherUser.jar);
     expect(forbiddenRead.status).toBe(404);
@@ -673,6 +742,8 @@ describe("manual meals", () => {
     expect(adminMutationResponseSchema.parse(await removeResponse.json()).success).toBe(true);
     const afterRemove = await requestWithCookie(`/api/me/meals/${created.id}`, user.jar);
     expect(afterRemove.status).toBe(404);
+    await requestWithCookie(`/api/me/meals/${olderMeal.id}`, user.jar, { method: "DELETE" });
+    await requestWithCookie(`/api/me/meals/${newerMeal.id}`, user.jar, { method: "DELETE" });
   });
 
   test("admins have full meal CRUD and every mutation is audited", async () => {

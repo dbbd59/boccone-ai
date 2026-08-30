@@ -2,7 +2,9 @@ import {
   adminMealsResponseSchema,
   adminGlobalMealResponseSchema,
   adminGlobalMealsResponseSchema,
+  calendarMonthResponseSchema,
   dailyMealsResponseSchema,
+  diaryResponseSchema,
   mealMutationResponseSchema,
   mealResponseSchema,
   mealFoodEntrySchema,
@@ -11,13 +13,16 @@ import {
   type AdminGlobalMealsQuery,
   type AdminGlobalMealsResponse,
   type AdminGlobalMeal,
+  type CalendarMonthResponse,
   type CreateMeal,
   type DailyMealsResponse,
+  type DiaryResponse,
   type Meal,
   type MealMutationResponse,
   type MealTotals,
   type UpdateMeal,
   type MealFoodEntryInput,
+  type MealFoodEntryUpdateInput,
 } from "@boccone/contracts";
 import { calculateNutrition, nutritionFromFood, roundNutrition } from "@boccone/utils";
 import {
@@ -27,8 +32,10 @@ import {
   desc,
   eq,
   foods,
+  gte,
   ilike,
   inArray,
+  lt,
   mealFoodEntries,
   meals,
   ne,
@@ -46,6 +53,8 @@ const EMPTY_TOTALS = {
   fatGrams: 0,
 } as const;
 
+type MealFoodEntryInsert = typeof mealFoodEntries.$inferInsert;
+
 export async function getDailyMeals(
   db: Database,
   userId: string,
@@ -57,19 +66,101 @@ export async function getDailyMeals(
     .where(and(eq(meals.userId, userId), eq(meals.mealDate, date)))
     .orderBy(asc(meals.createdAt), asc(meals.id));
 
-  return dailyMealsResponseSchema.parse({
-    date,
-    meals: await hydrateMeals(db, rows),
-    totals: rows.reduce<MealTotals>(
-      (totals, meal) => ({
-        calories: totals.calories + meal.calories,
-        proteinGrams: totals.proteinGrams + meal.proteinGrams,
-        carbohydratesGrams: totals.carbohydratesGrams + meal.carbohydratesGrams,
-        fatGrams: totals.fatGrams + meal.fatGrams,
-      }),
-      { ...EMPTY_TOTALS },
-    ),
-    nutritionIncomplete: rows.some((meal) => meal.nutritionIncomplete),
+  return toDailyMealsResponse(date, rows, await hydrateMeals(db, rows));
+}
+
+export async function getCalendarMonth(
+  db: Database,
+  userId: string,
+  month: string,
+): Promise<CalendarMonthResponse> {
+  const yearPart = Number(month.slice(0, 4));
+  const monthPart = Number(month.slice(5, 7));
+  const nextMonth = monthPart === 12 ? 1 : monthPart + 1;
+  const nextYear = monthPart === 12 ? yearPart + 1 : yearPart;
+  const from = `${month}-01`;
+  const to = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
+
+  const rows = await db
+    .select({ date: meals.mealDate, mealCount: count() })
+    .from(meals)
+    .where(and(eq(meals.userId, userId), gte(meals.mealDate, from), lt(meals.mealDate, to)))
+    .groupBy(meals.mealDate)
+    .orderBy(asc(meals.mealDate));
+
+  return calendarMonthResponseSchema.parse({
+    month,
+    days: rows.map((row) => ({ date: row.date, mealCount: Number(row.mealCount) })),
+  });
+}
+
+/**
+ * Returns populated days strictly before `before`, newest first. Empty days
+ * are intentionally omitted so a long history stays cheap to render; the
+ * client owns the empty state for its current date.
+ */
+export async function getMealDiary(
+  db: Database,
+  userId: string,
+  before: string,
+  limit: number,
+  foodId?: string,
+): Promise<DiaryResponse> {
+  const conditions = [eq(meals.userId, userId), lt(meals.mealDate, before)];
+  if (foodId) {
+    const matchingMeals = db
+      .select({ mealId: mealFoodEntries.mealId })
+      .from(mealFoodEntries)
+      .where(eq(mealFoodEntries.foodId, foodId));
+    conditions.push(inArray(meals.id, matchingMeals));
+  }
+  const dateRows = await db
+    .select({ date: meals.mealDate })
+    .from(meals)
+    .where(and(...conditions))
+    .groupBy(meals.mealDate)
+    .orderBy(desc(meals.mealDate))
+    .limit(limit + 1);
+  const dates = dateRows.slice(0, limit).map((row) => row.date);
+  if (dates.length === 0) {
+    return diaryResponseSchema.parse({ days: [], nextBefore: null });
+  }
+
+  const mealConditions = [eq(meals.userId, userId), inArray(meals.mealDate, dates)];
+  if (foodId) {
+    const matchingMeals = db
+      .select({ mealId: mealFoodEntries.mealId })
+      .from(mealFoodEntries)
+      .where(eq(mealFoodEntries.foodId, foodId));
+    mealConditions.push(inArray(meals.id, matchingMeals));
+  }
+  const rows = await db
+    .select()
+    .from(meals)
+    .where(and(...mealConditions))
+    .orderBy(desc(meals.mealDate), asc(meals.createdAt), asc(meals.id));
+  const hydrated = await hydrateMeals(db, rows);
+  const mealsByDate = new Map<string, Meal[]>();
+  rows.forEach((row, index) => {
+    const dayMeals = mealsByDate.get(row.mealDate) ?? [];
+    const meal = hydrated[index];
+    if (meal) dayMeals.push(meal);
+    mealsByDate.set(row.mealDate, dayMeals);
+  });
+  const days = dates.flatMap((date) => {
+    const dayMeals = mealsByDate.get(date) ?? [];
+    return [
+      toDailyMealsResponse(
+        date,
+        rows.filter((row) => row.mealDate === date),
+        dayMeals,
+      ),
+    ];
+  });
+
+  return diaryResponseSchema.parse({
+    days,
+    nextBefore: dateRows.length > limit ? (dates.at(-1) ?? null) : null,
   });
 }
 
@@ -118,7 +209,7 @@ export async function updateUserMeal(
 ): Promise<Meal> {
   const current = await getUserMeal(db, userId, mealId);
   if (input.entries) {
-    const calculated = await calculateEntries(db, userId, input.entries);
+    const calculated = await calculateUpdatedEntries(db, userId, current.entries, input.entries);
     await db.transaction(async (tx) => {
       await tx.delete(mealFoodEntries).where(eq(mealFoodEntries.mealId, mealId));
       await tx
@@ -325,6 +416,7 @@ async function createFoodBackedMeal(
 }
 
 async function calculateEntries(db: Database, userId: string, inputs: MealFoodEntryInput[]) {
+  if (inputs.length === 0) return summarizeEntries([]);
   const foodIds = [...new Set(inputs.map((entry) => entry.foodId))];
   const visible = or(
     eq(foods.status, "APPROVED"),
@@ -357,6 +449,84 @@ async function calculateEntries(db: Database, userId: string, inputs: MealFoodEn
       sodiumMgSnapshot: nutrition.sodiumMg ?? null,
     };
   });
+  return summarizeEntries(entries);
+}
+
+async function calculateUpdatedEntries(
+  db: Database,
+  userId: string,
+  currentEntries: Meal["entries"],
+  inputs: MealFoodEntryUpdateInput[],
+) {
+  const currentById = new Map(currentEntries.map((entry) => [entry.id, entry]));
+  const seenIds = new Set<string>();
+  const entries: (MealFoodEntryInsert | undefined)[] = Array.from({ length: inputs.length });
+  const recalculationInputs: MealFoodEntryInput[] = [];
+  const recalculationIndexes: number[] = [];
+
+  inputs.forEach((input, index) => {
+    if (input.id) {
+      if (seenIds.has(input.id)) {
+        throw new AppError("bad_request", "A meal entry cannot be included twice");
+      }
+      seenIds.add(input.id);
+      const current = currentById.get(input.id);
+      if (!current) throw new AppError("bad_request", "Meal entry does not belong to this meal");
+      if (isUnchangedEntry(current, input)) {
+        entries[index] = toMealEntryInsert(current);
+        return;
+      }
+    }
+    recalculationIndexes.push(index);
+    recalculationInputs.push(input);
+  });
+
+  const recalculated = await calculateEntries(db, userId, recalculationInputs);
+  recalculationIndexes.forEach((inputIndex, recalculatedIndex) => {
+    const entry = recalculated.entries[recalculatedIndex];
+    if (!entry) throw new AppError("internal_error", "Meal entry was not calculated");
+    const requestedId = inputs[inputIndex]?.id;
+    entries[inputIndex] = requestedId ? { ...entry, id: requestedId } : entry;
+  });
+
+  return summarizeEntries(
+    entries.filter((entry): entry is MealFoodEntryInsert => entry !== undefined),
+  );
+}
+
+function isUnchangedEntry(
+  current: Meal["entries"][number],
+  input: MealFoodEntryUpdateInput,
+): boolean {
+  return (
+    current.foodId === input.foodId &&
+    current.portionName === input.portionName &&
+    current.quantity === input.quantity &&
+    current.grams === input.grams
+  );
+}
+
+function toMealEntryInsert(entry: Meal["entries"][number]): MealFoodEntryInsert {
+  return {
+    id: entry.id,
+    mealId: "",
+    foodId: entry.foodId,
+    foodNameSnapshot: entry.foodName,
+    portionNameSnapshot: entry.portionName,
+    quantity: entry.quantity,
+    grams: entry.grams,
+    energyKcalSnapshot: entry.energyKcal,
+    proteinGSnapshot: entry.proteinG,
+    carbohydratesGSnapshot: entry.carbohydratesG,
+    fatGSnapshot: entry.fatG,
+    fiberGSnapshot: entry.fiberG,
+    sugarGSnapshot: entry.sugarG,
+    saturatedFatGSnapshot: entry.saturatedFatG,
+    sodiumMgSnapshot: entry.sodiumMg,
+  };
+}
+
+function summarizeEntries(entries: MealFoodEntryInsert[]) {
   return {
     entries,
     nutritionIncomplete: entries.some((entry) =>
@@ -369,7 +539,7 @@ async function calculateEntries(db: Database, userId: string, inputs: MealFoodEn
         entry.sugarGSnapshot,
         entry.saturatedFatGSnapshot,
         entry.sodiumMgSnapshot,
-      ].some((value) => value === null),
+      ].some((value) => value === null || value === undefined),
     ),
     totals: {
       calories: Math.round(
@@ -387,8 +557,24 @@ async function calculateEntries(db: Database, userId: string, inputs: MealFoodEn
 }
 
 async function hydrateMeals(db: Database, rows: (typeof meals.$inferSelect)[]): Promise<Meal[]> {
-  const entries = await Promise.all(rows.map((row) => listMealEntries(db, row.id)));
-  return rows.map((row, index) => toMeal(row, entries[index] ?? []));
+  if (rows.length === 0) return [];
+  const entryRows = await db
+    .select()
+    .from(mealFoodEntries)
+    .where(
+      inArray(
+        mealFoodEntries.mealId,
+        rows.map((row) => row.id),
+      ),
+    )
+    .orderBy(asc(mealFoodEntries.createdAt), asc(mealFoodEntries.id));
+  const entriesByMeal = new Map<string, Meal["entries"]>();
+  for (const entry of entryRows) {
+    const mealEntries = entriesByMeal.get(entry.mealId) ?? [];
+    mealEntries.push(toMealEntry(entry));
+    entriesByMeal.set(entry.mealId, mealEntries);
+  }
+  return rows.map((row) => toMeal(row, entriesByMeal.get(row.id) ?? []));
 }
 
 async function listMealEntries(db: Database, mealId: string): Promise<Meal["entries"]> {
@@ -397,24 +583,47 @@ async function listMealEntries(db: Database, mealId: string): Promise<Meal["entr
     .from(mealFoodEntries)
     .where(eq(mealFoodEntries.mealId, mealId))
     .orderBy(asc(mealFoodEntries.createdAt), asc(mealFoodEntries.id));
-  return rows.map((entry) =>
-    mealFoodEntrySchema.parse({
-      id: entry.id,
-      foodId: entry.foodId,
-      foodName: entry.foodNameSnapshot,
-      portionName: entry.portionNameSnapshot,
-      quantity: entry.quantity,
-      grams: entry.grams,
-      energyKcal: entry.energyKcalSnapshot,
-      proteinG: entry.proteinGSnapshot,
-      carbohydratesG: entry.carbohydratesGSnapshot,
-      fatG: entry.fatGSnapshot,
-      fiberG: entry.fiberGSnapshot,
-      sugarG: entry.sugarGSnapshot,
-      saturatedFatG: entry.saturatedFatGSnapshot,
-      sodiumMg: entry.sodiumMgSnapshot,
-    }),
-  );
+  return rows.map((entry) => toMealEntry(entry));
+}
+
+function toMealEntry(entry: typeof mealFoodEntries.$inferSelect): Meal["entries"][number] {
+  return mealFoodEntrySchema.parse({
+    id: entry.id,
+    foodId: entry.foodId,
+    foodName: entry.foodNameSnapshot,
+    portionName: entry.portionNameSnapshot,
+    quantity: entry.quantity,
+    grams: entry.grams,
+    energyKcal: entry.energyKcalSnapshot,
+    proteinG: entry.proteinGSnapshot,
+    carbohydratesG: entry.carbohydratesGSnapshot,
+    fatG: entry.fatGSnapshot,
+    fiberG: entry.fiberGSnapshot,
+    sugarG: entry.sugarGSnapshot,
+    saturatedFatG: entry.saturatedFatGSnapshot,
+    sodiumMg: entry.sodiumMgSnapshot,
+  });
+}
+
+function toDailyMealsResponse(
+  date: string,
+  rows: (typeof meals.$inferSelect)[],
+  hydratedMeals: Meal[],
+): DailyMealsResponse {
+  return dailyMealsResponseSchema.parse({
+    date,
+    meals: hydratedMeals,
+    totals: rows.reduce<MealTotals>(
+      (totals, meal) => ({
+        calories: totals.calories + meal.calories,
+        proteinGrams: totals.proteinGrams + meal.proteinGrams,
+        carbohydratesGrams: totals.carbohydratesGrams + meal.carbohydratesGrams,
+        fatGrams: totals.fatGrams + meal.fatGrams,
+      }),
+      { ...EMPTY_TOTALS },
+    ),
+    nutritionIncomplete: rows.some((meal) => meal.nutritionIncomplete),
+  });
 }
 
 function toMeal(row: typeof meals.$inferSelect, entries: Meal["entries"]): Meal {

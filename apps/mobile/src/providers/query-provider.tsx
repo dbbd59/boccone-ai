@@ -11,7 +11,12 @@ import { queryClient } from "./query-client";
 
 // Browsers send the HttpOnly session cookie with credentials: include; native
 // clients cannot rely on browser cookie handling and use the SecureStore value.
-configureApiClient(apiUrl, Platform.OS === "web" ? undefined : () => authClient.getCookie());
+async function getSessionCookie(): Promise<string | null> {
+  const cookie: unknown = await authClient.getCookie();
+  return typeof cookie === "string" ? cookie : null;
+}
+
+configureApiClient(apiUrl, Platform.OS === "web" ? undefined : getSessionCookie);
 
 export function QueryProvider({ children }: PropsWithChildren) {
   useEffect(() => {

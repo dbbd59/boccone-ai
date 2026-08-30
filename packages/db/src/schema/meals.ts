@@ -28,6 +28,7 @@ export const meals = pgTable(
   },
   (table) => [
     index("meals_user_date_idx").on(table.userId, table.mealDate),
+    index("meals_date_idx").on(table.mealDate),
     index("meals_user_created_idx").on(table.userId, table.createdAt),
   ],
 );

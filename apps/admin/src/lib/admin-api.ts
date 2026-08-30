@@ -26,6 +26,11 @@ import {
   approveFoodSubmission,
   rejectFoodSubmission,
   mergeFoodSubmission,
+  listAdminAiUsage,
+  getAdminAnalyticsOverview,
+  getAdminAnalyticsNutrition,
+  getAdminAnalyticsFoods,
+  getAdminAnalyticsAi,
   type AdminAuditLogsResponse,
   type AdminGlobalMeal,
   type AdminGlobalMealsResponse,
@@ -45,6 +50,12 @@ import {
   type AdminFoodSubmission,
   type AdminFoodSubmissionsResponse,
   type AdminFoodUpdateRequest,
+  type AdminAiUsageResponse,
+  type AdminOverviewResponse,
+  type AdminNutritionResponse,
+  type AdminCatalogResponse,
+  type AdminAiAnalyticsResponse,
+  type AdminAnalyticsRange,
 } from "@boccone/api-client";
 
 import { apiClient } from "./api-client";
@@ -289,6 +300,48 @@ export async function fetchAdminAuditLogs(input: {
     query: input,
   });
   return unwrap(result, "Unable to load audit logs");
+}
+
+export async function fetchAdminAiUsage(input: {
+  limit: number;
+  offset: number;
+}): Promise<AdminAiUsageResponse> {
+  const result = await listAdminAiUsage({ client: apiClient, query: input });
+  return unwrap(result, "Unable to load AI usage");
+}
+
+export interface AdminAnalyticsQuery {
+  range: AdminAnalyticsRange;
+  from?: string;
+  to?: string;
+}
+
+export async function fetchAdminAnalyticsOverview(
+  input: AdminAnalyticsQuery,
+): Promise<AdminOverviewResponse> {
+  const result = await getAdminAnalyticsOverview({ client: apiClient, query: input });
+  return unwrap(result, "Unable to load analytics overview");
+}
+
+export async function fetchAdminAnalyticsNutrition(
+  input: AdminAnalyticsQuery,
+): Promise<AdminNutritionResponse> {
+  const result = await getAdminAnalyticsNutrition({ client: apiClient, query: input });
+  return unwrap(result, "Unable to load nutrition analytics");
+}
+
+export async function fetchAdminAnalyticsFoods(
+  input: AdminAnalyticsQuery,
+): Promise<AdminCatalogResponse> {
+  const result = await getAdminAnalyticsFoods({ client: apiClient, query: input });
+  return unwrap(result, "Unable to load catalog analytics");
+}
+
+export async function fetchAdminAnalyticsAi(
+  input: AdminAnalyticsQuery,
+): Promise<AdminAiAnalyticsResponse> {
+  const result = await getAdminAnalyticsAi({ client: apiClient, query: input });
+  return unwrap(result, "Unable to load AI analytics");
 }
 
 function unwrap<T>(result: { data?: T; error?: unknown }, fallback: string): T {

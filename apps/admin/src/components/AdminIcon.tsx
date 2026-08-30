@@ -8,6 +8,7 @@ export type AdminIconName =
   | "review"
   | "nutrition"
   | "audit"
+  | "ai"
   | "settings"
   | "appearance"
   | "logout"
@@ -24,6 +25,7 @@ const PATHS: Record<AdminIconName, string> = {
   review: "M5 4h14v16H5zM8 8h8M8 12h8M8 16h5",
   nutrition: "M4 19V5m0 14h16M7 15v-3m4 3V8m4 7V5",
   audit: "M4 5h16v14H4V5Zm4 4h8M8 13h5M8 16h3M7 2v3m10-3v3",
+  ai: "M9 3h6l1 3 3 1v6l-3 1-1 3H9l-1-3-3-1V7l3-1 1-3Zm3 5v4m-2-2h4",
   settings:
     "M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0-12v2m0 13v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1.5 12h2m17 0h2M4.22 19.78l1.42-1.42m12.72-12.72 1.42-1.42",
   appearance:

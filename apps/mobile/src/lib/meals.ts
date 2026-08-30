@@ -10,6 +10,13 @@ import {
 
 export { formatLocalDate } from "./dates";
 
+export class MealNotFoundError extends Error {
+  constructor() {
+    super("Meal not found");
+    this.name = "MealNotFoundError";
+  }
+}
+
 export async function createMeal(input: CreateMealRequest): Promise<Meal> {
   const result = await createMealRequest({ body: input });
   if (result.error || result.data === undefined) throw new Error("Unable to save meal");
@@ -24,6 +31,7 @@ export async function updateMeal(mealId: string, input: UpdateMealRequest): Prom
 
 export async function fetchMeal(mealId: string): Promise<Meal> {
   const result = await getMealRequest({ path: { id: mealId } });
+  if (result.response?.status === 404) throw new MealNotFoundError();
   if (result.error || result.data === undefined) throw new Error("Unable to load meal");
   return result.data.meal;
 }

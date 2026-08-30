@@ -12,7 +12,12 @@ export type AdminRoute =
   | { kind: "food-submissions" }
   | { kind: "food-submission"; submissionId: string }
   | { kind: "nutrition" }
+  | { kind: "analytics-overview" }
+  | { kind: "analytics-nutrition" }
+  | { kind: "analytics-foods" }
+  | { kind: "analytics-ai" }
   | { kind: "audit" }
+  | { kind: "ai-usage" }
   | { kind: "settings" }
   | { kind: "not-found" };
 
@@ -27,9 +32,17 @@ export function parseAdminRoute(pathname: string): AdminRoute {
     if (segments[0] === "foods") return { kind: "foods" };
     if (segments[0] === "food-submissions") return { kind: "food-submissions" };
     if (segments[0] === "nutrition") return { kind: "nutrition" };
+    if (segments[0] === "analytics") return { kind: "analytics-overview" };
     if (segments[0] === "audit-log") return { kind: "audit" };
+    if (segments[0] === "ai-usage") return { kind: "ai-usage" };
     if (segments[0] === "settings") return { kind: "settings" };
     return { kind: "not-found" };
+  }
+
+  if (segments[0] === "analytics" && segments.length === 2) {
+    if (segments[1] === "nutrition") return { kind: "analytics-nutrition" };
+    if (segments[1] === "foods") return { kind: "analytics-foods" };
+    if (segments[1] === "ai") return { kind: "analytics-ai" };
   }
 
   if (segments[0] === "meals" && segments[1] && segments.length === 2) {

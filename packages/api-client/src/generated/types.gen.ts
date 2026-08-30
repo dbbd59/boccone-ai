@@ -13,7 +13,21 @@ export type ErrorResponse = {
       | "not_found"
       | "conflict"
       | "validation_error"
-      | "internal_error";
+      | "internal_error"
+      | "ai_not_configured"
+      | "ai_invalid_credentials"
+      | "ai_rate_limited"
+      | "ai_provider_unavailable"
+      | "ai_model_not_found"
+      | "ai_model_not_accessible"
+      | "ai_model_not_selected"
+      | "ai_model_discovery_unavailable"
+      | "ai_model_unsupported"
+      | "ai_timeout"
+      | "ai_cancelled"
+      | "ai_invalid_response"
+      | "ai_secret_unavailable"
+      | "ai_unknown_error";
     message: string;
     requestId?: string;
   };
@@ -83,7 +97,7 @@ export type UpdateMealRequest = {
   carbohydratesGrams?: number;
   fatGrams?: number;
   notes?: string | null;
-  entries?: Array<MealFoodEntryInput>;
+  entries?: Array<MealFoodEntryUpdateInput>;
 };
 
 export type Meal = {
@@ -123,6 +137,21 @@ export type DailyMealsResponse = {
   meals: Array<Meal>;
   totals: MealTotals;
   nutritionIncomplete: boolean;
+};
+
+export type DiaryResponse = {
+  days: Array<DailyMealsResponse>;
+  nextBefore: string | null;
+};
+
+export type CalendarActivity = {
+  date: string;
+  mealCount: number;
+};
+
+export type CalendarMonthResponse = {
+  month: string;
+  days: Array<CalendarActivity>;
 };
 
 export type AdminMealsResponse = {
@@ -233,6 +262,10 @@ export type MealFoodEntryInput = {
   portionName: string;
   quantity: number;
   grams: number;
+};
+
+export type MealFoodEntryUpdateInput = MealFoodEntryInput & {
+  id?: string;
 };
 
 export type MealFoodEntry = {
@@ -438,6 +471,487 @@ export type AdminAuditLogsResponse = {
   offset: number;
 };
 
+export type AiProvider = "openai" | "anthropic" | "gemini" | "openrouter" | "openai-compatible";
+
+export type AiFeature = "MEAL_NATURAL_LANGUAGE" | "AI_CONNECTION_TEST";
+
+export type AiModelCapabilities = {
+  text?: boolean;
+  structuredOutput?: boolean;
+  tools?: boolean;
+  vision?: boolean;
+  reasoning?: boolean;
+};
+
+export type AiModel = {
+  id: string;
+  label: string;
+  capabilities: AiModelCapabilities;
+};
+
+export type AiProviderDefinition = {
+  id: AiProvider;
+  label: string;
+  requiresBaseUrl: boolean;
+  supportsModelDiscovery: boolean;
+  guide: {
+    key: AiProvider;
+    docsUrl?: string;
+    apiKeyUrl?: string;
+  };
+  recommendedModels: Array<AiModel>;
+};
+
+export type AiModelPricing = {
+  input?: number;
+  output?: number;
+  currency?: string;
+  unit?: string;
+};
+
+export type AiModelDescriptor = {
+  id: string;
+  displayName: string;
+  provider: AiProvider;
+  description?: string;
+  contextWindow?: number;
+  capabilities?: AiModelCapabilities;
+  inputModalities?: Array<string>;
+  outputModalities?: Array<string>;
+  pricing?: AiModelPricing;
+  createdAt?: string;
+  publisher?: string;
+  source: "provider" | "manual";
+};
+
+export type AiModelsResponse = {
+  provider: AiProvider;
+  models: Array<AiModelDescriptor>;
+  stale: boolean;
+  cachedAt: string | null;
+};
+
+export type AiSettings = {
+  provider: AiProvider;
+  model: string | null;
+  baseUrl: string | null;
+  hasApiKey: boolean;
+};
+
+export type AiSettingsResponse = {
+  settings: AiSettings | null;
+  providers: Array<AiProviderDefinition>;
+};
+
+export type UpdateAiSettingsRequest = {
+  provider: AiProvider;
+  model?: string;
+  apiKey?: string;
+  baseUrl?: string | null;
+};
+
+export type AiConnectionTestResponse = {
+  success: true;
+  provider: AiProvider;
+  model: string;
+};
+
+export type MealInterpretationRequest = {
+  text: string;
+  locale?: "en" | "it";
+  timezone?: string;
+};
+
+export type MealDraftNutrition = {
+  calories: number | null;
+  proteinGrams: number | null;
+  carbohydratesGrams: number | null;
+  fatGrams: number | null;
+};
+
+export type MealDraftFood = {
+  sourceText: string;
+  normalizedName: string;
+  food: Food | null;
+  candidates: Array<Food>;
+  portionName: string;
+  quantity: number;
+  grams: number | null;
+  nutrition: MealDraftNutrition | null;
+  confidence: number;
+  resolutionStatus: "RESOLVED" | "AMBIGUOUS" | "UNRESOLVED" | "ESTIMATED";
+  reviewNote: string | null;
+};
+
+export type MealDraft = {
+  mealType: MealCategory | null;
+  mealName: string | null;
+  foods: Array<MealDraftFood>;
+  notes: string | null;
+  totals: MealDraftNutrition;
+  nutritionIncomplete: boolean;
+};
+
+export type MealDraftResponse = {
+  draft: MealDraft;
+};
+
+export type AdminAiUsage = {
+  id: string;
+  userId: string;
+  user: AdminAuditPrincipal | null;
+  feature: AiFeature;
+  provider: AiProvider;
+  model: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  latencyMs: number;
+  status: "succeeded" | "failed" | "cancelled";
+  errorCode: string | null;
+  providerRequestId: string | null;
+  createdAt: string;
+};
+
+export type AdminAiUsageResponse = {
+  usage: Array<AdminAiUsage>;
+  summary: AdminAiUsageSummary;
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+export type AdminAiUsageSummary = {
+  requestCount: number;
+  succeededCount: number;
+  failedCount: number;
+  cancelledCount: number;
+  averageLatencyMs: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  byProvider: Array<AdminAiUsageBreakdown>;
+  byModel: Array<AdminAiUsageBreakdown>;
+  byFeature: Array<AdminAiUsageBreakdown>;
+};
+
+export type AdminAiUsageBreakdown = {
+  key: string;
+  requests: number;
+};
+
+export type SavedMealItemInput = {
+  foodId: string;
+  portionName: string;
+  quantity: number;
+  grams: number;
+};
+
+export type SavedMealItem = {
+  id: string;
+  foodId: string | null;
+  foodName: string | null;
+  needsAttention: boolean;
+  portionName: string;
+  quantity: number;
+  grams: number;
+};
+
+export type SavedMealRoutineInput = {
+  mealType?: MealCategory;
+  weekdays: Array<number>;
+  localTime: string;
+  isReminderEnabled: boolean;
+};
+
+export type SavedMealRoutine = {
+  mealType: MealCategory;
+  weekdays: Array<number>;
+  localTime: string;
+  isReminderEnabled: boolean;
+};
+
+export type SavedMeal = {
+  id: string;
+  name: string;
+  defaultCategory: MealCategory;
+  items: Array<SavedMealItem>;
+  routine: SavedMealRoutine;
+  usageCount: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SavedMealResponse = {
+  savedMeal: SavedMeal;
+};
+
+export type SavedMealsResponse = {
+  savedMeals: Array<SavedMeal>;
+};
+
+export type SavedMealMutationResponse = {
+  success: true;
+};
+
+export type CreateSavedMealRequest = {
+  name: string;
+  defaultCategory?: MealCategory;
+  items: Array<SavedMealItemInput>;
+  routine?: SavedMealRoutineInput;
+};
+
+export type UpdateSavedMealRequest = {
+  name?: string;
+  defaultCategory?: MealCategory;
+  items?: Array<SavedMealItemInput>;
+};
+
+export type UseSavedMealRequest = {
+  mealId: string;
+};
+
+export type InsightsRange = "7d" | "30d" | "3m" | "1y";
+
+export type InsightsMetric = "calories" | "protein" | "carbs" | "fat";
+
+export type InsightPeriod = {
+  range: InsightsRange;
+  start: string;
+  end: string;
+  days: number;
+  granularity: "day" | "week" | "month";
+};
+
+export type InsightComparison = {
+  current: number | null;
+  previous: number | null;
+  delta: number | null;
+  deltaPercent: number | null;
+};
+
+export type InsightMetricSummary = InsightComparison & {
+  currentTotal: number | null;
+  previousTotal: number | null;
+};
+
+export type PersonalInsightBucket = {
+  key: string;
+  start: string;
+  calories: number | null;
+  proteinGrams: number | null;
+  carbohydratesGrams: number | null;
+  fatGrams: number | null;
+  meals: number;
+  loggedDays: number;
+  logged: boolean;
+};
+
+export type InsightMealType = {
+  category: MealCategory;
+  meals: number;
+  calories: number;
+  share: number;
+  calorieShare: number;
+};
+
+export type InsightFood = {
+  foodId: string;
+  name: string;
+  entries: number;
+  calories: number | null;
+  proteinGrams: number | null;
+  carbohydratesGrams: number | null;
+  fatGrams: number | null;
+  share: number | null;
+};
+
+export type PersonalHighlight = {
+  kind: "most_logged_food" | "most_logged_category" | "calorie_consistency";
+  value: string;
+  amount: number | null;
+};
+
+export type PersonalInsightsSummary = {
+  calories: InsightMetricSummary;
+  proteinGrams: InsightMetricSummary;
+  carbohydratesGrams: InsightMetricSummary;
+  fatGrams: InsightMetricSummary;
+  meals: InsightComparison;
+  loggedDays: InsightComparison;
+  periodDays: number;
+  incompleteMeals: number;
+};
+
+export type PersonalInsightsResponse = {
+  period: InsightPeriod;
+  targetCalories: number | null;
+  summary: PersonalInsightsSummary;
+  buckets: Array<PersonalInsightBucket>;
+  mealTypes: Array<InsightMealType>;
+  topFoods: Array<InsightFood>;
+  highlights: Array<PersonalHighlight>;
+};
+
+export type PersonalNutritionDetailBucket = {
+  key: string;
+  start: string;
+  value: number | null;
+  loggedDays: number;
+  logged: boolean;
+};
+
+export type PersonalNutritionDetail = {
+  metric: InsightsMetric;
+  period: InsightPeriod;
+  average: number | null;
+  total: number | null;
+  previousAverage: number | null;
+  delta: number | null;
+  deltaPercent: number | null;
+  buckets: Array<PersonalNutritionDetailBucket>;
+  topFoods: Array<InsightFood>;
+};
+
+export type AdminAnalyticsPeriod = {
+  range: "7d" | "30d" | "90d" | "custom";
+  start: string;
+  end: string;
+  days: number;
+  granularity: "day" | "week" | "month";
+  timezone: "UTC";
+};
+
+export type AdminAnalyticsMetric = {
+  current: number;
+  previous: number;
+  delta: number;
+  deltaPercent: number | null;
+};
+
+export type AdminOverviewBucket = {
+  key: string;
+  start: string;
+  newUsers: number;
+  meals: number;
+  foodEntries: number;
+  aiRequests: number;
+};
+
+export type AdminOverviewResponse = {
+  period: AdminAnalyticsPeriod;
+  totalUsers: number;
+  kpis: {
+    newUsers: AdminAnalyticsMetric;
+    activeUsers: AdminAnalyticsMetric;
+    meals: AdminAnalyticsMetric;
+    foodEntries: AdminAnalyticsMetric;
+    foodSubmissions: AdminAnalyticsMetric;
+    aiRequests: AdminAnalyticsMetric;
+  };
+  activity: Array<AdminOverviewBucket>;
+};
+
+export type AdminNutritionBucket = {
+  key: string;
+  start: string;
+  calories: number;
+  proteinGrams: number;
+  carbohydratesGrams: number;
+  fatGrams: number;
+  meals: number;
+};
+
+export type AdminNutritionResponse = {
+  period: AdminAnalyticsPeriod;
+  totals: {
+    meals: AdminAnalyticsMetric;
+    calories: AdminAnalyticsMetric;
+    proteinGrams: AdminAnalyticsMetric;
+    carbohydratesGrams: AdminAnalyticsMetric;
+    fatGrams: AdminAnalyticsMetric;
+    incompleteMeals: number;
+  };
+  activity: Array<AdminNutritionBucket>;
+  mealTypes: Array<InsightMealType>;
+  topFoods: Array<InsightFood>;
+};
+
+export type AdminCatalogGrowthBucket = {
+  key: string;
+  start: string;
+  foodsCreated: number;
+  submissions: number;
+  approved: number;
+  rejected: number;
+  merged: number;
+};
+
+export type AdminCatalogResponse = {
+  period: AdminAnalyticsPeriod;
+  catalog: {
+    total: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+    merged: number;
+  };
+  moderation: {
+    submissions: number;
+    approved: number;
+    rejected: number;
+    merged: number;
+    pending: number;
+    approvalRate: number | null;
+    averageReviewHours: number | null;
+  };
+  growth: Array<AdminCatalogGrowthBucket>;
+  popularFoods: Array<InsightFood>;
+};
+
+export type AdminAiAnalyticsBucket = {
+  key: string;
+  start: string;
+  requests: number;
+  succeeded: number;
+  failed: number;
+  averageLatencyMs: number | null;
+  totalTokens: number | null;
+};
+
+export type AdminAiAnalyticsResponse = {
+  period: AdminAnalyticsPeriod;
+  summary: {
+    requests: AdminAnalyticsMetric;
+    succeeded: AdminAnalyticsMetric;
+    failed: AdminAnalyticsMetric;
+    averageLatencyMs: number | null;
+    inputTokens: number | null;
+    outputTokens: number | null;
+    totalTokens: number | null;
+  };
+  activity: Array<AdminAiAnalyticsBucket>;
+  byProvider: Array<{
+    key: string;
+    requests: number;
+  }>;
+  byModel: Array<{
+    key: string;
+    requests: number;
+  }>;
+  byFeature: Array<{
+    key: string;
+    requests: number;
+  }>;
+};
+
+export type AdminAnalyticsRange = "7d" | "30d" | "90d" | "custom";
+
+export type AdminAnalyticsFrom = string;
+
+export type AdminAnalyticsTo = string;
+
 export type GetHealthData = {
   body?: never;
   path?: never;
@@ -487,6 +1001,219 @@ export type GetCurrentUserResponses = {
 };
 
 export type GetCurrentUserResponse = GetCurrentUserResponses[keyof GetCurrentUserResponses];
+
+export type GetAiSettingsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/me/ai/settings";
+};
+
+export type GetAiSettingsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type GetAiSettingsError = GetAiSettingsErrors[keyof GetAiSettingsErrors];
+
+export type GetAiSettingsResponses = {
+  /**
+   * AI settings without secret values
+   */
+  200: AiSettingsResponse;
+};
+
+export type GetAiSettingsResponse = GetAiSettingsResponses[keyof GetAiSettingsResponses];
+
+export type UpdateAiSettingsData = {
+  body: UpdateAiSettingsRequest;
+  path?: never;
+  query?: never;
+  url: "/api/me/ai/settings";
+};
+
+export type UpdateAiSettingsErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  503: ErrorResponse;
+};
+
+export type UpdateAiSettingsError = UpdateAiSettingsErrors[keyof UpdateAiSettingsErrors];
+
+export type UpdateAiSettingsResponses = {
+  /**
+   * Updated AI settings without secret values
+   */
+  200: AiSettingsResponse;
+};
+
+export type UpdateAiSettingsResponse = UpdateAiSettingsResponses[keyof UpdateAiSettingsResponses];
+
+export type DeleteAiApiKeyData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/me/ai/settings/api-key";
+};
+
+export type DeleteAiApiKeyErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type DeleteAiApiKeyError = DeleteAiApiKeyErrors[keyof DeleteAiApiKeyErrors];
+
+export type DeleteAiApiKeyResponses = {
+  /**
+   * Updated AI settings without secret values
+   */
+  200: AiSettingsResponse;
+};
+
+export type DeleteAiApiKeyResponse = DeleteAiApiKeyResponses[keyof DeleteAiApiKeyResponses];
+
+export type GetAiModelsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    refresh?: boolean;
+  };
+  url: "/api/me/ai/models";
+};
+
+export type GetAiModelsErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  429: ErrorResponse;
+  /**
+   * API error
+   */
+  502: ErrorResponse;
+  /**
+   * API error
+   */
+  503: ErrorResponse;
+  /**
+   * API error
+   */
+  504: ErrorResponse;
+};
+
+export type GetAiModelsError = GetAiModelsErrors[keyof GetAiModelsErrors];
+
+export type GetAiModelsResponses = {
+  /**
+   * Normalized provider models without secret values
+   */
+  200: AiModelsResponse;
+};
+
+export type GetAiModelsResponse = GetAiModelsResponses[keyof GetAiModelsResponses];
+
+export type TestAiConnectionData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/me/ai/test-connection";
+};
+
+export type TestAiConnectionErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  429: ErrorResponse;
+  /**
+   * API error
+   */
+  502: ErrorResponse;
+  /**
+   * API error
+   */
+  503: ErrorResponse;
+};
+
+export type TestAiConnectionError = TestAiConnectionErrors[keyof TestAiConnectionErrors];
+
+export type TestAiConnectionResponses = {
+  /**
+   * Provider connection succeeded
+   */
+  200: AiConnectionTestResponse;
+};
+
+export type TestAiConnectionResponse = TestAiConnectionResponses[keyof TestAiConnectionResponses];
+
+export type InterpretMealWithAiData = {
+  body: MealInterpretationRequest;
+  path?: never;
+  query?: never;
+  url: "/api/me/ai/interpret-meal";
+};
+
+export type InterpretMealWithAiErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  429: ErrorResponse;
+  /**
+   * API error
+   */
+  502: ErrorResponse;
+  /**
+   * API error
+   */
+  503: ErrorResponse;
+  /**
+   * API error
+   */
+  504: ErrorResponse;
+};
+
+export type InterpretMealWithAiError = InterpretMealWithAiErrors[keyof InterpretMealWithAiErrors];
+
+export type InterpretMealWithAiResponses = {
+  /**
+   * Reviewable meal draft; no meal is created
+   */
+  200: MealDraftResponse;
+};
+
+export type InterpretMealWithAiResponse =
+  InterpretMealWithAiResponses[keyof InterpretMealWithAiResponses];
 
 export type GetDailyTargetsData = {
   body?: never;
@@ -602,6 +1329,76 @@ export type CreateMealResponses = {
 };
 
 export type CreateMealResponse = CreateMealResponses[keyof CreateMealResponses];
+
+export type GetMealDiaryData = {
+  body?: never;
+  path?: never;
+  query: {
+    /**
+     * Exclusive local calendar-date upper bound.
+     */
+    before: string;
+    limit?: number;
+    /**
+     * Return only meals containing this catalog food identifier.
+     */
+    foodId?: string;
+  };
+  url: "/api/me/diary";
+};
+
+export type GetMealDiaryErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type GetMealDiaryError = GetMealDiaryErrors[keyof GetMealDiaryErrors];
+
+export type GetMealDiaryResponses = {
+  /**
+   * Populated meal days, newest first
+   */
+  200: DiaryResponse;
+};
+
+export type GetMealDiaryResponse = GetMealDiaryResponses[keyof GetMealDiaryResponses];
+
+export type GetCalendarMonthData = {
+  body?: never;
+  path?: never;
+  query: {
+    month: string;
+  };
+  url: "/api/me/calendar";
+};
+
+export type GetCalendarMonthErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type GetCalendarMonthError = GetCalendarMonthErrors[keyof GetCalendarMonthErrors];
+
+export type GetCalendarMonthResponses = {
+  /**
+   * Dates with logged meals in the requested month
+   */
+  200: CalendarMonthResponse;
+};
+
+export type GetCalendarMonthResponse = GetCalendarMonthResponses[keyof GetCalendarMonthResponses];
 
 export type RemoveMealData = {
   body?: never;
@@ -759,6 +1556,60 @@ export type CreateFoodSubmissionResponses = {
 
 export type CreateFoodSubmissionResponse =
   CreateFoodSubmissionResponses[keyof CreateFoodSubmissionResponses];
+
+export type ListSavedMealsData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: "/api/me/saved-meals";
+};
+
+export type ListSavedMealsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type ListSavedMealsError = ListSavedMealsErrors[keyof ListSavedMealsErrors];
+
+export type ListSavedMealsResponses = {
+  /**
+   * Saved meal templates ranked for quick reuse
+   */
+  200: SavedMealsResponse;
+};
+
+export type ListSavedMealsResponse = ListSavedMealsResponses[keyof ListSavedMealsResponses];
+
+export type CreateSavedMealData = {
+  body: CreateSavedMealRequest;
+  path?: never;
+  query?: never;
+  url: "/api/me/saved-meals";
+};
+
+export type CreateSavedMealErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type CreateSavedMealError = CreateSavedMealErrors[keyof CreateSavedMealErrors];
+
+export type CreateSavedMealResponses = {
+  /**
+   * Created saved meal
+   */
+  200: SavedMealResponse;
+};
+
+export type CreateSavedMealResponse = CreateSavedMealResponses[keyof CreateSavedMealResponses];
 
 export type ListAdminMealsData = {
   body?: never;
@@ -1116,6 +1967,207 @@ export type MergeFoodSubmissionResponses = {
 
 export type MergeFoodSubmissionResponse =
   MergeFoodSubmissionResponses[keyof MergeFoodSubmissionResponses];
+
+export type RemoveSavedMealData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/me/saved-meals/{id}";
+};
+
+export type RemoveSavedMealErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type RemoveSavedMealError = RemoveSavedMealErrors[keyof RemoveSavedMealErrors];
+
+export type RemoveSavedMealResponses = {
+  /**
+   * Saved meal removed
+   */
+  200: SavedMealMutationResponse;
+};
+
+export type RemoveSavedMealResponse = RemoveSavedMealResponses[keyof RemoveSavedMealResponses];
+
+export type GetSavedMealData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/me/saved-meals/{id}";
+};
+
+export type GetSavedMealErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type GetSavedMealError = GetSavedMealErrors[keyof GetSavedMealErrors];
+
+export type GetSavedMealResponses = {
+  /**
+   * Saved meal template with current catalog nutrition
+   */
+  200: SavedMealResponse;
+};
+
+export type GetSavedMealResponse = GetSavedMealResponses[keyof GetSavedMealResponses];
+
+export type UpdateSavedMealData = {
+  body: UpdateSavedMealRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/me/saved-meals/{id}";
+};
+
+export type UpdateSavedMealErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type UpdateSavedMealError = UpdateSavedMealErrors[keyof UpdateSavedMealErrors];
+
+export type UpdateSavedMealResponses = {
+  /**
+   * Updated saved meal
+   */
+  200: SavedMealResponse;
+};
+
+export type UpdateSavedMealResponse = UpdateSavedMealResponses[keyof UpdateSavedMealResponses];
+
+export type DeleteSavedMealRoutineData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/me/saved-meals/{id}/routine";
+};
+
+export type DeleteSavedMealRoutineErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type DeleteSavedMealRoutineError =
+  DeleteSavedMealRoutineErrors[keyof DeleteSavedMealRoutineErrors];
+
+export type DeleteSavedMealRoutineResponses = {
+  /**
+   * Saved meal without routine
+   */
+  200: SavedMealResponse;
+};
+
+export type DeleteSavedMealRoutineResponse =
+  DeleteSavedMealRoutineResponses[keyof DeleteSavedMealRoutineResponses];
+
+export type PutSavedMealRoutineData = {
+  body: SavedMealRoutineInput;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/me/saved-meals/{id}/routine";
+};
+
+export type PutSavedMealRoutineErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type PutSavedMealRoutineError = PutSavedMealRoutineErrors[keyof PutSavedMealRoutineErrors];
+
+export type PutSavedMealRoutineResponses = {
+  /**
+   * Saved meal with upserted routine
+   */
+  200: SavedMealResponse;
+};
+
+export type PutSavedMealRoutineResponse =
+  PutSavedMealRoutineResponses[keyof PutSavedMealRoutineResponses];
+
+export type UseSavedMealData = {
+  body: UseSavedMealRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/api/me/saved-meals/{id}/use";
+};
+
+export type UseSavedMealErrors = {
+  /**
+   * API error
+   */
+  400: ErrorResponse;
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  404: ErrorResponse;
+};
+
+export type UseSavedMealError = UseSavedMealErrors[keyof UseSavedMealErrors];
+
+export type UseSavedMealResponses = {
+  /**
+   * Updated usage metadata
+   */
+  200: SavedMealResponse;
+};
+
+export type UseSavedMealResponse = UseSavedMealResponses[keyof UseSavedMealResponses];
 
 export type ListAdminUsersData = {
   body?: never;
@@ -1754,3 +2806,240 @@ export type ListAdminAuditLogsResponses = {
 
 export type ListAdminAuditLogsResponse =
   ListAdminAuditLogsResponses[keyof ListAdminAuditLogsResponses];
+
+export type ListAdminAiUsageData = {
+  body?: never;
+  path?: never;
+  query?: {
+    feature?: AiFeature;
+    provider?: AiProvider;
+    status?: "succeeded" | "failed" | "cancelled";
+    limit?: number;
+    offset?: number;
+  };
+  url: "/api/admin/ai/usage";
+};
+
+export type ListAdminAiUsageErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type ListAdminAiUsageError = ListAdminAiUsageErrors[keyof ListAdminAiUsageErrors];
+
+export type ListAdminAiUsageResponses = {
+  /**
+   * AI usage records
+   */
+  200: AdminAiUsageResponse;
+};
+
+export type ListAdminAiUsageResponse = ListAdminAiUsageResponses[keyof ListAdminAiUsageResponses];
+
+export type GetPersonalInsightsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    range?: InsightsRange;
+    /**
+     * The user's local calendar date, used as the period end.
+     */
+    today?: string;
+  };
+  url: "/api/me/insights";
+};
+
+export type GetPersonalInsightsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type GetPersonalInsightsError = GetPersonalInsightsErrors[keyof GetPersonalInsightsErrors];
+
+export type GetPersonalInsightsResponses = {
+  /**
+   * Aggregated personal insights
+   */
+  200: PersonalInsightsResponse;
+};
+
+export type GetPersonalInsightsResponse =
+  GetPersonalInsightsResponses[keyof GetPersonalInsightsResponses];
+
+export type GetPersonalNutritionDetailData = {
+  body?: never;
+  path?: never;
+  query?: {
+    range?: InsightsRange;
+    today?: string;
+    metric?: InsightsMetric;
+  };
+  url: "/api/me/insights/nutrition";
+};
+
+export type GetPersonalNutritionDetailErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+};
+
+export type GetPersonalNutritionDetailError =
+  GetPersonalNutritionDetailErrors[keyof GetPersonalNutritionDetailErrors];
+
+export type GetPersonalNutritionDetailResponses = {
+  /**
+   * Aggregated nutrient detail
+   */
+  200: PersonalNutritionDetail;
+};
+
+export type GetPersonalNutritionDetailResponse =
+  GetPersonalNutritionDetailResponses[keyof GetPersonalNutritionDetailResponses];
+
+export type GetAdminAnalyticsOverviewData = {
+  body?: never;
+  path?: never;
+  query?: {
+    range?: "7d" | "30d" | "90d" | "custom";
+    from?: string;
+    to?: string;
+  };
+  url: "/api/admin/analytics/overview";
+};
+
+export type GetAdminAnalyticsOverviewErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type GetAdminAnalyticsOverviewError =
+  GetAdminAnalyticsOverviewErrors[keyof GetAdminAnalyticsOverviewErrors];
+
+export type GetAdminAnalyticsOverviewResponses = {
+  /**
+   * Product activity analytics
+   */
+  200: AdminOverviewResponse;
+};
+
+export type GetAdminAnalyticsOverviewResponse =
+  GetAdminAnalyticsOverviewResponses[keyof GetAdminAnalyticsOverviewResponses];
+
+export type GetAdminAnalyticsNutritionData = {
+  body?: never;
+  path?: never;
+  query?: {
+    range?: "7d" | "30d" | "90d" | "custom";
+    from?: string;
+    to?: string;
+  };
+  url: "/api/admin/analytics/nutrition";
+};
+
+export type GetAdminAnalyticsNutritionErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type GetAdminAnalyticsNutritionError =
+  GetAdminAnalyticsNutritionErrors[keyof GetAdminAnalyticsNutritionErrors];
+
+export type GetAdminAnalyticsNutritionResponses = {
+  /**
+   * Product-wide nutrition analytics
+   */
+  200: AdminNutritionResponse;
+};
+
+export type GetAdminAnalyticsNutritionResponse =
+  GetAdminAnalyticsNutritionResponses[keyof GetAdminAnalyticsNutritionResponses];
+
+export type GetAdminAnalyticsFoodsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    range?: "7d" | "30d" | "90d" | "custom";
+    from?: string;
+    to?: string;
+  };
+  url: "/api/admin/analytics/foods";
+};
+
+export type GetAdminAnalyticsFoodsErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type GetAdminAnalyticsFoodsError =
+  GetAdminAnalyticsFoodsErrors[keyof GetAdminAnalyticsFoodsErrors];
+
+export type GetAdminAnalyticsFoodsResponses = {
+  /**
+   * Food catalog analytics
+   */
+  200: AdminCatalogResponse;
+};
+
+export type GetAdminAnalyticsFoodsResponse =
+  GetAdminAnalyticsFoodsResponses[keyof GetAdminAnalyticsFoodsResponses];
+
+export type GetAdminAnalyticsAiData = {
+  body?: never;
+  path?: never;
+  query?: {
+    range?: "7d" | "30d" | "90d" | "custom";
+    from?: string;
+    to?: string;
+  };
+  url: "/api/admin/analytics/ai";
+};
+
+export type GetAdminAnalyticsAiErrors = {
+  /**
+   * API error
+   */
+  401: ErrorResponse;
+  /**
+   * API error
+   */
+  403: ErrorResponse;
+};
+
+export type GetAdminAnalyticsAiError = GetAdminAnalyticsAiErrors[keyof GetAdminAnalyticsAiErrors];
+
+export type GetAdminAnalyticsAiResponses = {
+  /**
+   * AI analytics without prompts or secrets
+   */
+  200: AdminAiAnalyticsResponse;
+};
+
+export type GetAdminAnalyticsAiResponse =
+  GetAdminAnalyticsAiResponses[keyof GetAdminAnalyticsAiResponses];

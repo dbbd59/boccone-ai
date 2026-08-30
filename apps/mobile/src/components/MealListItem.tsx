@@ -1,19 +1,23 @@
-import { forwardRef } from "react";
-import { Pressable, StyleSheet, type PressableProps, type View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { forwardRef, type ComponentProps } from "react";
+import { Pressable, StyleSheet, View, type PressableProps } from "react-native";
 
-import { borderWidths, minTouchTarget, opacities, shape, spacing } from "@boccone/design-tokens";
+import type { MealCategory } from "@boccone/contracts";
+import { borderWidths, minTouchTarget, opacities, spacing } from "@boccone/design-tokens";
 import { Inline, Stack, Text, useThemeColors } from "@boccone/ui-mobile";
 
 export interface MealListItemProps extends Omit<PressableProps, "children" | "style"> {
   title: string;
   meta: string;
+  kind?: MealCategory;
 }
 
 export const MealListItem = forwardRef<View, MealListItemProps>(function MealListItem(
-  { title, meta, accessibilityLabel, ...pressableProps },
+  { title, meta, kind = "snack", accessibilityLabel, ...pressableProps },
   ref,
 ) {
   const colors = useThemeColors();
+  const icon = mealIcon(kind);
 
   return (
     <Pressable
@@ -23,14 +27,14 @@ export const MealListItem = forwardRef<View, MealListItemProps>(function MealLis
       accessibilityRole={pressableProps.accessibilityRole ?? "button"}
       style={({ pressed }) => [
         styles.item,
-        {
-          backgroundColor: colors.background.elevated,
-          borderColor: colors.border.subtle,
-        },
+        { borderBottomColor: colors.border.subtle },
         pressed && styles.pressed,
       ]}
     >
-      <Inline align="center" gap="md" justify="between">
+      <Inline align="center" gap="md">
+        <View style={[styles.icon, { backgroundColor: colors.background.subtle }]}>
+          <MaterialCommunityIcons color={colors.interactive.default} name={icon} size={20} />
+        </View>
         <Stack gap="xs" style={styles.copy}>
           <Text numberOfLines={2} variant="headingSm">
             {title}
@@ -39,9 +43,12 @@ export const MealListItem = forwardRef<View, MealListItemProps>(function MealLis
             {meta}
           </Text>
         </Stack>
-        <Text accessibilityElementsHidden variant="headingMd" tone="brand">
-          ›
-        </Text>
+        <MaterialCommunityIcons
+          accessibilityElementsHidden
+          color={colors.foreground.subtle}
+          name="chevron-right"
+          size={24}
+        />
       </Inline>
     </Pressable>
   );
@@ -50,10 +57,15 @@ export const MealListItem = forwardRef<View, MealListItemProps>(function MealLis
 const styles = StyleSheet.create({
   item: {
     minHeight: minTouchTarget,
-    borderRadius: shape.surface,
-    borderWidth: borderWidths.hairline,
-    paddingHorizontal: spacing[4],
+    borderBottomWidth: borderWidths.hairline,
     paddingVertical: spacing[3],
+  },
+  icon: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: spacing[10],
+    height: spacing[10],
+    borderRadius: spacing[10],
   },
   copy: {
     flex: 1,
@@ -64,3 +76,18 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.99 }],
   },
 });
+
+type MealIconName = ComponentProps<typeof MaterialCommunityIcons>["name"];
+
+function mealIcon(category: MealCategory): MealIconName {
+  switch (category) {
+    case "breakfast":
+      return "coffee-outline";
+    case "lunch":
+      return "silverware-fork-knife";
+    case "dinner":
+      return "food-variant";
+    default:
+      return "fruit-cherries";
+  }
+}

@@ -42,4 +42,11 @@ describe("admin navigation", () => {
     expect(parseAdminRoute("/users/u-1/unknown")).toEqual({ kind: "not-found" });
     expect(parseAdminRoute("/meals/m-1/extra")).toEqual({ kind: "not-found" });
   });
+
+  test("parses analytics workspace routes", () => {
+    expect(parseAdminRoute("/analytics")).toEqual({ kind: "analytics-overview" });
+    expect(parseAdminRoute("/analytics/nutrition")).toEqual({ kind: "analytics-nutrition" });
+    expect(parseAdminRoute("/analytics/foods")).toEqual({ kind: "analytics-foods" });
+    expect(parseAdminRoute("/analytics/ai")).toEqual({ kind: "analytics-ai" });
+  });
 });

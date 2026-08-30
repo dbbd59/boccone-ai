@@ -71,6 +71,41 @@
       "when": 1788031832586,
       "tag": "0009_spicy_carnage",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788081565299,
+      "tag": "0010_windy_jack_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788082042408,
+      "tag": "0011_cold_aqueduct",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788098121641,
+      "tag": "0012_ai_model_optional",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1788098623000,
+      "tag": "0013_analytics_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1788099123000,
+      "tag": "0014_saved_meal_routine_category",
+      "breakpoints": true
     }
   ]
 }

@@ -27,6 +27,9 @@
   --bc-status-danger-subtle: #fbeeee;
   --bc-status-info: #3a6ea5;
   --bc-status-info-subtle: #eaf2f7;
+  --bc-nutrition-protein: #367b45;
+  --bc-nutrition-carbs: #a66b21;
+  --bc-nutrition-fat: #3a6ea5;
   --bc-focus: #4f8f5b;
   --bc-glass-regular: #ffffff;
   --bc-glass-clear: #fffaf3;
@@ -61,6 +64,9 @@
   --bc-status-danger-subtle: #7f2424;
   --bc-status-info: #3a6ea5;
   --bc-status-info-subtle: #274a70;
+  --bc-nutrition-protein: #6fb278;
+  --bc-nutrition-carbs: #a66b21;
+  --bc-nutrition-fat: #3a6ea5;
   --bc-focus: #9dcda2;
   --bc-glass-regular: #2e3a33;
   --bc-glass-clear: #1c2620;

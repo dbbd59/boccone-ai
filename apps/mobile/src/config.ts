@@ -4,10 +4,10 @@ interface ExpoConfigShape {
   scheme?: string | string[] | null;
 }
 
-const configuredApiUrl = readStringProperty(
-  readProperty(readProperty(globalThis, "process"), "env"),
-  "EXPO_PUBLIC_API_URL",
-);
+// Keep this direct so Expo's Metro transform embeds EXPO_PUBLIC_API_URL in
+// native and web bundles at build time.
+const configuredApiUrl: string | undefined =
+  typeof process.env.EXPO_PUBLIC_API_URL === "string" ? process.env.EXPO_PUBLIC_API_URL : undefined;
 const expoConfig: unknown = Constants.expoConfig;
 const configuredScheme =
   typeof expoConfig === "object" && expoConfig !== null
@@ -17,13 +17,3 @@ const configuredScheme =
 export const apiUrl = (configuredApiUrl ?? "http://localhost:3000").replace(/\/$/, "");
 export const appScheme =
   typeof configuredScheme === "string" ? configuredScheme : (configuredScheme?.[0] ?? "boccone");
-
-function readProperty(value: unknown, key: string): unknown {
-  if (typeof value !== "object" || value === null) return undefined;
-  return (value as Record<string, unknown>)[key];
-}
-
-function readStringProperty(value: unknown, key: string): string | undefined {
-  const result = readProperty(value, key);
-  return typeof result === "string" ? result : undefined;
-}

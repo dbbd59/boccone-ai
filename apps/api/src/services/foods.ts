@@ -144,6 +144,25 @@ export async function searchFoods(
   return foodSearchResponseSchema.parse({ foods: result, recent, frequent });
 }
 
+/** Read one catalog entry through the same visibility boundary as the user API. */
+export async function getVisibleFood(
+  db: Database,
+  userId: string,
+  foodId: string,
+): Promise<Food | null> {
+  const visible = or(
+    eq(foods.status, "APPROVED"),
+    and(eq(foods.ownerUserId, userId), ne(foods.status, "MERGED")),
+  );
+  const [row] = await db
+    .select()
+    .from(foods)
+    .where(and(visible, eq(foods.id, foodId)))
+    .limit(1);
+  const [food] = row ? await hydrateFoods(db, [row], userId) : [];
+  return food ?? null;
+}
+
 function searchTextScore(value: string, query: string): number {
   if (!query) return 0;
   const queryTokens = query.split(" ").filter(Boolean);
@@ -247,9 +266,7 @@ export async function listAdminFoods(
   query: AdminFoodsQuery,
 ): Promise<AdminFoodsResponse> {
   const filters = [
-    query.search
-      ? foodSearchCondition(normalizeFoodName(query.search))
-      : undefined,
+    query.search ? foodSearchCondition(normalizeFoodName(query.search)) : undefined,
     query.status ? eq(foods.status, query.status) : undefined,
     query.sourceType ? eq(foods.sourceType, query.sourceType) : undefined,
   ].filter((value): value is NonNullable<typeof value> => value !== undefined);
@@ -747,13 +764,62 @@ function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, "\\$&");
 }
 
-function searchTextCondition(
+const searchTermAlternatesMap: Record<string, string[]> = {
+  bevanda: ["bevanda", "bevande", "beverage", "beverages"],
+  bevande: ["bevanda", "bevande", "beverage", "beverages"],
+  carne: ["carne", "carni", "meat"],
+  cereale: ["cereale", "cereali", "cereal", "cereals"],
+  cereali: ["cereale", "cereali", "cereal", "cereals"],
+  frutta: ["frutta", "frutto", "frutti", "fruit", "fruits"],
+  frutto: ["frutta", "frutto", "frutti", "fruit", "fruits"],
+  frutti: ["frutta", "frutto", "frutti", "fruit", "fruits"],
+  latticino: ["latticino", "latticini", "dairy"],
+  latticini: ["latticino", "latticini", "dairy"],
+  ortaggio: ["ortaggio", "ortaggi", "verdura", "vegetable", "vegetables"],
+  ortaggi: ["ortaggio", "ortaggi", "verdura", "vegetable", "vegetables"],
+  pesce: ["pesce", "fish"],
+  verdura: ["verdura", "verdure", "ortaggio", "ortaggi", "vegetable", "vegetables"],
+  verdure: ["verdura", "verdure", "ortaggio", "ortaggi", "vegetable", "vegetables"],
+};
+
+function searchTermAlternates(token: string): string[] {
+  return unique(searchTermAlternatesMap[token] ?? [token]);
+}
+
+function searchQueryCondition(
   column: typeof foods.normalizedName | typeof foodAliases.normalizedName,
+  query: string,
+) {
+  const tokens = query.split(" ").filter(Boolean);
+  return and(
+    ...tokens.map((token) =>
+      or(...searchTermAlternates(token).map((term) => searchTextCondition(column, term))),
+    ),
+  );
+}
+
+function foodSearchCondition(query: string) {
+  const tokens = query.split(" ").filter(Boolean);
+  return and(
+    ...tokens.map((token) =>
+      or(
+        ...searchTermAlternates(token).flatMap((term) => [
+          searchTextCondition(foods.normalizedName, term),
+          searchTextCondition(foods.category, term),
+        ]),
+      ),
+    ),
+  );
+}
+
+function searchTextCondition(
+  column: typeof foods.normalizedName | typeof foods.category | typeof foodAliases.normalizedName,
   query: string,
 ) {
   const escaped = escapeLike(query);
   const tokenBoundary = or(
     eq(column, query),
+    ilike(column, escaped),
     ilike(column, `${escaped} %`),
     ilike(column, `% ${escaped} %`),
     ilike(column, `% ${escaped}`),

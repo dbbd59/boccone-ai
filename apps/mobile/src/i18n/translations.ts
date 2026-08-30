@@ -1,7 +1,18 @@
 import type { MealCategory } from "@boccone/contracts";
+import type { AiProvider } from "@boccone/api-client";
 
 export const supportedLocales = ["en", "it"] as const;
 export type Locale = (typeof supportedLocales)[number];
+
+export interface AiProviderGuideCopy {
+  title: string;
+  intro: string;
+  steps: string[];
+  customNeeds?: string;
+  billing?: string;
+  security: string;
+  openLabel: string;
+}
 
 export interface TranslationCopy {
   appName: string;
@@ -120,7 +131,61 @@ export interface TranslationCopy {
     emptyBody: string;
     loadError: string;
     retry: string;
+    insightsTitle: string;
+    insightsBody: (average: string, days: number) => string;
+    insightsOpen: string;
     categoryLabels: Record<MealCategory, string>;
+  };
+  insights: {
+    title: string;
+    subtitle: string;
+    range7d: string;
+    range30d: string;
+    range3m: string;
+    range1y: string;
+    overview: string;
+    averagePerLoggedDay: string;
+    daysLogged: (current: number, total: number) => string;
+    mealsLogged: (count: number) => string;
+    mealTypeShare: (percent: string, count: number) => string;
+    caloriesTrend: string;
+    nutritionTitle: string;
+    macroComposition: string;
+    mealTypes: string;
+    topFoods: string;
+    foodEntries: (count: number) => string;
+    foodBackedNote: string;
+    currentTarget: (value: number) => string;
+    noDataTitle: string;
+    noDataBody: string;
+    noRangeTitle: string;
+    noRangeBody: string;
+    noRangeData: string;
+    loadError: string;
+    retry: string;
+    openDetail: (label: string) => string;
+    openFood: (food: string) => string;
+    detailTitle: (label: string) => string;
+    detailAverage: string;
+    detailTotal: string;
+    detailCompared: (value: string) => string;
+    contributors: string;
+    noContributors: string;
+    highlightTitle: string;
+    mostLoggedFood: (food: string, count: number) => string;
+    mostLoggedCategory: (category: string, count: number) => string;
+    calorieVariation: (value: number) => string;
+    periodChange: (value: string) => string;
+    metricLabels: { calories: string; protein: string; carbs: string; fat: string };
+    categoryLabels: Record<MealCategory, string>;
+    chartAccessibility: (
+      metric: string,
+      average: string,
+      highest: string,
+      lowest: string,
+      target?: string,
+    ) => string;
+    noTarget: string;
   };
   meals: {
     title: string;
@@ -141,28 +206,64 @@ export interface TranslationCopy {
   calendar: {
     title: string;
     subtitle: string;
-    previousWeek: string;
-    nextWeek: string;
+    previousMonth: string;
+    nextMonth: string;
+    chooseMonth: string;
+    monthPickerTitle: string;
+    closePicker: string;
+    previousYear: string;
+    nextYear: string;
+    gridLabel: string;
     today: string;
+    todaySelected: string;
     selectedDate: string;
-    loadingWeek: string;
+    loadingActivity: string;
+    activityError: string;
     loadingDay: string;
     loadError: string;
     retry: string;
-    emptyTitle: string;
+    emptyPastTitle: string;
+    emptyTodayTitle: string;
     emptyBody: string;
+    emptyTodayBody: string;
     total: string;
-    dayAccessibility: (date: string, mealCount: number) => string;
+    addMeal: string;
+    viewDiary: string;
+    loggedMeals: (count: number) => string;
+    dayAccessibility: (
+      date: string,
+      mealCount: number,
+      selected: boolean,
+      today: boolean,
+      future: boolean,
+    ) => string;
   };
   diary: {
     title: string;
     subtitle: string;
-    comingSoonTitle: string;
-    comingSoonMessage: string;
+    today: string;
+    yesterday: string;
+    previousDay: string;
+    nextDay: string;
+    openCalendar: string;
+    loading: string;
+    loadError: string;
+    retry: string;
+    emptyTitle: string;
+    emptyBody: string;
+    addMeal: string;
+    loadMore: string;
+    endOfHistory: string;
+    dayTotal: string;
+    openMeal: (name: string) => string;
+    foodFilter: (food: string) => string;
+    clearFoodFilter: string;
   };
   meal: {
     detailEyebrow: string;
-    detailDate: (category: string, date: string) => string;
+    detailDate: (category: string, date: string, time?: string) => string;
+    notFoundTitle: string;
+    notFoundBody: string;
     editAction: string;
     retry: string;
     addTitle: string;
@@ -194,16 +295,72 @@ export interface TranslationCopy {
     loadError: string;
     loading: string;
   };
+  saved: {
+    title: string;
+    subtitle: string;
+    tabRecent: string;
+    tabSaved: string;
+    routinesTitle: string;
+    savedTitle: string;
+    use: string;
+    useNow: string;
+    edit: string;
+    delete: string;
+    newSavedMeal: string;
+    saveFromMeal: string;
+    saveAsSavedTitle: string;
+    saveAsSavedBody: string;
+    nameLabel: string;
+    namePlaceholder: string;
+    routineSection: string;
+    routineOff: string;
+    mealTypeLabel: string;
+    daysLabel: string;
+    timeLabel: string;
+    reminderLabel: string;
+    reminderHint: string;
+    presetEveryday: string;
+    presetWeekdays: string;
+    presetWeekends: string;
+    presetCustom: string;
+    save: string;
+    cancel: string;
+    deleteTitle: string;
+    deleteBody: string;
+    loadError: string;
+    saveError: string;
+    emptyTitle: string;
+    emptyBody: string;
+    needsAttention: string;
+    attentionBody: string;
+    schedulePreview: (days: string, time: string) => string;
+    everyDay: string;
+    usage: (count: number) => string;
+    kcalApprox: (kcal: number) => string;
+    draftFromTemplate: (name: string) => string;
+    updateSavedAction: string;
+    reminderPermissionTitle: string;
+    reminderPermissionBody: string;
+    reminderDenied: string;
+    openSystemSettings: string;
+    reminderUnavailable: string;
+  };
   food: {
     title: string;
+    searchLabel: string;
     searchPlaceholder: string;
     searchHint: string;
+    clearSearch: string;
+    quickSearchesLabel: string;
+    quickSearches: string[];
     recent: string;
     frequent: string;
     suggestions: string;
     possibleMatches: string;
-    results: string;
-    noResults: string;
+    resultsFor: (query: string) => string;
+    noResultsFor: (query: string) => string;
+    tryShorter: (query: string) => string;
+    per100g: string;
     notFoundTitle: string;
     propose: (name: string) => string;
     addFood: string;
@@ -212,6 +369,19 @@ export interface TranslationCopy {
     quantityLabel: string;
     gramsLabel: string;
     customGrams: string;
+    quickAdd: string;
+    quality: {
+      authoritative: string;
+      branded: string;
+      community: string;
+      personal: string;
+      estimated: string;
+      verified: string;
+    };
+    decrement: string;
+    increment: string;
+    portionStep: string;
+    gramsStep: string;
     addToMeal: string;
     editEntry: string;
     updateEntry: string;
@@ -240,6 +410,33 @@ export interface TranslationCopy {
     error: string;
     validation: string;
     approximate: string;
+    dilloEstimate: string;
+    dilloTitle: string;
+    dilloHint: string;
+    dilloPlaceholder: string;
+    dilloSubmit: string;
+    dilloReviewTitle: string;
+    dilloReviewBody: string;
+    dilloReviewCount: (count: number) => string;
+    dilloAmbiguous: string;
+    dilloUnresolved: string;
+    dilloUseCandidate: string;
+    dilloSearchCatalog: string;
+    dilloSwitchManual: string;
+    dilloNoNutrition: string;
+    dilloAddCustomFood: string;
+    dilloRemoveItem: string;
+    dilloSaveAfterReview: string;
+    dilloRetry: string;
+    dilloCancel: string;
+    dilloProcessing: string;
+    dilloConfigure: string;
+    dilloInvalidCredentials: string;
+    dilloRateLimited: string;
+    dilloUnavailable: string;
+    dilloTimeout: string;
+    dilloInvalidResponse: string;
+    dilloGenericError: string;
   };
   settings: {
     title: string;
@@ -279,6 +476,58 @@ export interface TranslationCopy {
     signedInTitle: string;
     signedInAs: (email: string | undefined) => string;
     signOut: string;
+    aiTitle: string;
+    aiBody: string;
+    aiWhy: string;
+    aiProviderLabel: string;
+    aiProviderHint: string;
+    aiModelLabel: string;
+    aiModelPlaceholder: string;
+    aiSelectModel: string;
+    aiSearchModels: string;
+    aiRecommended: string;
+    aiAllModels: string;
+    aiLoadingModels: string;
+    aiModelsError: string;
+    aiModelsStale: string;
+    aiRefreshModels: string;
+    aiNoModels: string;
+    aiManualFallbackTitle: string;
+    aiManualFallbackBody: string;
+    aiManualAction: string;
+    aiManualModelLabel: string;
+    aiManualModelPlaceholder: string;
+    aiManualSave: string;
+    aiManualCancel: string;
+    aiModelNotListed: string;
+    aiModelContext: (value: number) => string;
+    aiApiKeyLabel: string;
+    aiApiKeyPlaceholder: string;
+    aiGetApiKey: string;
+    aiKeyStored: string;
+    aiShowKey: string;
+    aiHideKey: string;
+    aiBaseUrlLabel: string;
+    aiBaseUrlHint: string;
+    aiBaseUrlPlaceholder: string;
+    aiSave: string;
+    aiTest: string;
+    aiDeleteKey: string;
+    aiKeyDeleted: string;
+    aiSaved: string;
+    aiTestSuccess: string;
+    aiLoadError: string;
+    aiSaveError: string;
+    aiTestError: string;
+    aiLoading: string;
+    aiInvalidCredentials: string;
+    aiModelNotFound: string;
+    aiModelNotAccessible: string;
+    aiModelNotSelected: string;
+    aiProviderUnavailable: string;
+    aiRateLimited: string;
+    aiTimeout: string;
+    aiGuides: Record<AiProvider, AiProviderGuideCopy>;
   };
 }
 
@@ -385,7 +634,7 @@ export const translations: Record<Locale, TranslationCopy> = {
       mealsTitle: "Meals",
       addMeal: "Add meal",
       editMeal: "Edit meal",
-      viewMeals: "See all",
+      viewMeals: "View diary",
       openMeal: (name) => `Open ${name}`,
       moreMeals: (count) => `+${count} more today`,
       mealSummary: (name, calories) =>
@@ -396,7 +645,64 @@ export const translations: Record<Locale, TranslationCopy> = {
       emptyBody: "Add your first meal manually. You can review it here anytime.",
       loadError: "Could not load today's meals. Try again later.",
       retry: "Try again",
+      insightsTitle: "Your week at a glance",
+      insightsBody: (average, days) => `${average} average across ${days} logged days`,
+      insightsOpen: "Open insights",
       categoryLabels: { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" },
+    },
+    insights: {
+      title: "Insights",
+      subtitle: "A calm view of how you have been eating.",
+      range7d: "7D",
+      range30d: "30D",
+      range3m: "3M",
+      range1y: "1Y",
+      overview: "Overview",
+      averagePerLoggedDay: "Average per logged day",
+      daysLogged: (current, total) => `${current} of ${total} days logged`,
+      mealsLogged: (count) => `${count} meals logged`,
+      mealTypeShare: (percent, count) => `${percent}% of logged calories · ${count} meals`,
+      caloriesTrend: "Calories over time",
+      nutritionTitle: "Nutrition",
+      macroComposition: "Average macros per logged day",
+      mealTypes: "Meal types",
+      topFoods: "Most logged foods",
+      foodEntries: (count) => `${count} catalog entries`,
+      foodBackedNote:
+        "Based on food entries with catalog nutrition. Manual meals stay in the totals.",
+      currentTarget: (value) => `Current target · ${value.toLocaleString()} kcal`,
+      noDataTitle: "Your insights will appear here",
+      noDataBody: "Log a few meals to start seeing patterns in your food history.",
+      noRangeTitle: "Nothing logged in this period",
+      noRangeBody: "Try another range or keep logging meals to extend this view.",
+      noRangeData: "Nothing logged in this period.",
+      loadError: "Could not load your insights. Try again later.",
+      retry: "Try again",
+      openDetail: (label) => `Open ${label} details`,
+      openFood: (food) => `Show meals with ${food}`,
+      detailTitle: (label) => `${label} details`,
+      detailAverage: "Average per logged day",
+      detailTotal: "Period total",
+      detailCompared: (value) => `${value} vs previous period`,
+      contributors: "Top contributors",
+      noContributors: "Food contributors will appear when catalog entries are logged.",
+      highlightTitle: "A few things your log shows",
+      mostLoggedFood: (food, count) => `${food} appeared ${count} times.`,
+      mostLoggedCategory: (category, count) =>
+        `${category} was your most logged meal type (${count}).`,
+      calorieVariation: (value) =>
+        `Calories varied by ${value.toLocaleString()} kcal across logged days.`,
+      periodChange: (value) => `Change vs previous period · ${value}`,
+      metricLabels: {
+        calories: "Calories",
+        protein: "Protein",
+        carbs: "Carbohydrates",
+        fat: "Fat",
+      },
+      categoryLabels: { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner", snack: "Snack" },
+      chartAccessibility: (metric, average, highest, lowest, target) =>
+        `${metric}. Average ${average}. Highest ${highest}. Lowest ${lowest}.${target ? ` ${target}.` : ""}`,
+      noTarget: "No calorie target set",
     },
     meals: {
       title: "Meals",
@@ -419,30 +725,121 @@ export const translations: Record<Locale, TranslationCopy> = {
     calendar: {
       title: "Calendar",
       subtitle: "Choose a day to see what you logged.",
-      previousWeek: "Previous week",
-      nextWeek: "Next week",
+      previousMonth: "Previous month",
+      nextMonth: "Next month",
+      chooseMonth: "Choose a month",
+      monthPickerTitle: "Choose a month",
+      closePicker: "Close month picker",
+      previousYear: "Previous year",
+      nextYear: "Next year",
+      gridLabel: "Calendar month",
       today: "Back to today",
+      todaySelected: "Today",
       selectedDate: "Selected day",
-      loadingWeek: "Checking this week…",
+      loadingActivity: "Checking logged days…",
+      activityError: "Could not load logged days. Try again.",
       loadingDay: "Loading this day…",
       loadError: "Could not load this day. Try again later.",
       retry: "Try again",
-      emptyTitle: "Nothing logged for this day",
+      emptyPastTitle: "Nothing logged this day",
+      emptyTodayTitle: "Nothing logged yet",
       emptyBody: "When you add a meal for this date, it will appear here.",
+      emptyTodayBody: "Add a meal whenever you are ready.",
       total: "Day total",
-      dayAccessibility: (date, mealCount) =>
-        `${date}, ${mealCount} ${mealCount === 1 ? "meal" : "meals"}`,
+      addMeal: "Add meal",
+      viewDiary: "View diary",
+      loggedMeals: (count) => `${count} ${count === 1 ? "meal" : "meals"} logged on this day.`,
+      dayAccessibility: (date, mealCount, selected, today, future) =>
+        [
+          date,
+          selected ? "selected" : null,
+          today ? "today" : null,
+          future ? "future date unavailable" : null,
+          mealCount > 0
+            ? `${mealCount} ${mealCount === 1 ? "meal" : "meals"} logged`
+            : "no meals logged",
+        ]
+          .filter(Boolean)
+          .join(", "),
     },
     diary: {
       title: "Diary",
-      subtitle: "Your longer view of meals and food memories.",
-      comingSoonTitle: "Your history is taking shape",
-      comingSoonMessage:
-        "A calm chronological view of your meals is coming soon. Your logged meals already live in Meals and Calendar.",
+      subtitle: "Browse the meals you have logged over time.",
+      today: "Today",
+      yesterday: "Yesterday",
+      previousDay: "Previous day",
+      nextDay: "Next day",
+      openCalendar: "Open calendar",
+      loading: "Loading your history…",
+      loadError: "Could not load your history. Try again.",
+      retry: "Try again",
+      emptyTitle: "Your history is still quiet",
+      emptyBody: "Log a meal and it will stay here as part of your food story.",
+      addMeal: "Log a meal",
+      loadMore: "Show older days",
+      endOfHistory: "That’s the beginning of your history.",
+      dayTotal: "Day total",
+      openMeal: (name) => `Open ${name}`,
+      foodFilter: (food) => `Showing meals with ${food}`,
+      clearFoodFilter: "Show all meals",
+    },
+    saved: {
+      title: "Saved meals",
+      subtitle: "Reusable meals and routines. Tap Use to start pre-filled.",
+      tabRecent: "Today",
+      tabSaved: "Saved",
+      routinesTitle: "Routines",
+      savedTitle: "Saved meals",
+      use: "Use",
+      useNow: "Use now",
+      edit: "Edit",
+      delete: "Delete",
+      newSavedMeal: "New saved meal",
+      saveFromMeal: "Save meal",
+      saveAsSavedTitle: "Save this meal",
+      saveAsSavedBody: "Name it and it becomes a reusable template.",
+      nameLabel: "Name",
+      namePlaceholder: "e.g. Work breakfast",
+      routineSection: "Routine",
+      routineOff: "No routine — just a saved meal",
+      mealTypeLabel: "Typical meal",
+      daysLabel: "Days",
+      timeLabel: "Time",
+      reminderLabel: "Reminder",
+      reminderHint: "Boccone can remind you at the time you pick.",
+      presetEveryday: "Every day",
+      presetWeekdays: "Weekdays",
+      presetWeekends: "Weekends",
+      presetCustom: "Custom",
+      save: "Save",
+      cancel: "Cancel",
+      deleteTitle: "Delete this saved meal?",
+      deleteBody: "Meals you already logged are not affected.",
+      loadError: "Could not load saved meals. Try again later.",
+      saveError: "Could not save. Try again.",
+      emptyTitle: "Nothing saved yet",
+      emptyBody:
+        "Save the meals you eat often and reuse them in a tap. Open a meal and choose Save meal.",
+      needsAttention: "Needs attention",
+      attentionBody: "A food in this template is no longer in the catalog. Edit and replace it.",
+      schedulePreview: (days, time) => `${days} · ${time}`,
+      everyDay: "Every day",
+      usage: (count) => (count === 1 ? "used once" : `used ${count} times`),
+      kcalApprox: (kcal) => `≈ ${kcal} kcal`,
+      draftFromTemplate: (name) => `${name} (from saved meal)`,
+      updateSavedAction: "Update saved meal",
+      reminderPermissionTitle: "Reminders need permission",
+      reminderPermissionBody:
+        "Boccone can remind you at the time you choose. Allow notifications to enable this.",
+      reminderDenied: "Notifications are off in device settings.",
+      openSystemSettings: "Open Settings",
+      reminderUnavailable: "Reminder unavailable",
     },
     meal: {
       detailEyebrow: "MEAL DETAIL",
-      detailDate: (category, date) => `${category} · ${date}`,
+      detailDate: (category, date, time) => `${category} · ${date}${time ? ` · ${time}` : ""}`,
+      notFoundTitle: "This meal is no longer available",
+      notFoundBody: "It may have been removed. You can return to your diary.",
       editAction: "Edit meal",
       retry: "Try again",
       addTitle: "Add a meal",
@@ -476,14 +873,20 @@ export const translations: Record<Locale, TranslationCopy> = {
     },
     food: {
       title: "Add food",
-      searchPlaceholder: "Search food…",
-      searchHint: "Search by name, like apple or pasta.",
+      searchLabel: "Food",
+      searchPlaceholder: "Try apple or apple fruit…",
+      searchHint: "Search by name, brand, or category. You can combine words, like apple fruit.",
+      clearSearch: "Clear",
+      quickSearchesLabel: "Quick picks",
+      quickSearches: ["Apple", "Pasta", "Coffee"],
       recent: "Recent",
       frequent: "Frequent",
       suggestions: "Try these",
       possibleMatches: "Possible matches",
-      results: "Results",
-      noResults: "No matching food yet.",
+      resultsFor: (query) => `Results for “${query}”`,
+      noResultsFor: (query) => `Nothing found for “${query}”. Try fewer words or add it yourself.`,
+      tryShorter: (query) => `Try “${query}”`,
+      per100g: "per 100 g",
       notFoundTitle: "Can’t find it?",
       propose: (name) => `Add “${name}” to your foods`,
       addFood: "Add food",
@@ -492,6 +895,19 @@ export const translations: Record<Locale, TranslationCopy> = {
       quantityLabel: "Quantity",
       gramsLabel: "Grams",
       customGrams: "Custom grams",
+      quickAdd: "Add default portion",
+      quality: {
+        authoritative: "Verified source",
+        branded: "Package label",
+        community: "Community checked",
+        personal: "Your food",
+        estimated: "Estimated",
+        verified: "Boccone checked",
+      },
+      decrement: "Decrease quantity",
+      increment: "Increase quantity",
+      portionStep: "Use 0.5 steps or type a value",
+      gramsStep: "Use 10 g steps or type a value",
       addToMeal: "Add to meal",
       editEntry: "Edit",
       updateEntry: "Update entry",
@@ -520,10 +936,39 @@ export const translations: Record<Locale, TranslationCopy> = {
       error: "Could not load foods. Try again.",
       validation: "Enter a name, portion grams, and valid nutrition values.",
       approximate: "Approximate",
+      dilloEstimate: "AI estimate",
+      dilloTitle: "Dillo a Boccone",
+      dilloHint: "Write what you ate. Boccone will prepare a draft for you to review.",
+      dilloPlaceholder: "e.g. 80 g of pasta with tomato and a coffee",
+      dilloSubmit: "Prepare meal draft",
+      dilloReviewTitle: "Review the draft",
+      dilloReviewBody:
+        "Check each suggestion before saving. You can use a catalog match, add a private food, or remove it from the meal.",
+      dilloReviewCount: (count) =>
+        count === 1 ? "1 food needs your review" : `${count} foods need your review`,
+      dilloAmbiguous: "This food has more than one possible catalog match.",
+      dilloUnresolved: "This food is not in the catalog yet. Add it manually below.",
+      dilloUseCandidate: "Use this match",
+      dilloSearchCatalog: "Search the catalog",
+      dilloSwitchManual: "Search the catalog instead",
+      dilloNoNutrition: "Nutrition is incomplete and needs your review.",
+      dilloAddCustomFood: "Review and add private food",
+      dilloRemoveItem: "Remove from meal",
+      dilloSaveAfterReview: "Review the suggestions before saving this meal.",
+      dilloRetry: "Try again",
+      dilloCancel: "Cancel",
+      dilloProcessing: "Preparing your draft…",
+      dilloConfigure: "Configure an AI provider in Settings to use Dillo a Boccone.",
+      dilloInvalidCredentials: "The AI provider key seems invalid. Check it in Settings.",
+      dilloRateLimited: "The AI provider is busy. Try again in a little while.",
+      dilloUnavailable: "The AI provider is temporarily unavailable. Try again.",
+      dilloTimeout: "That took too long. Your text is still here; try again.",
+      dilloInvalidResponse: "Boccone could not prepare a safe draft. Try again.",
+      dilloGenericError: "Could not prepare the meal draft. Try again.",
     },
     settings: {
-      title: "Your space",
-      subtitle: "A few quiet choices, kept close.",
+      title: "Settings",
+      subtitle: "Keep your account and preferences close.",
       appearanceTitle: "Appearance",
       appearanceBody: "Choose how Boccone looks on this device.",
       system: "System",
@@ -562,6 +1007,122 @@ export const translations: Record<Locale, TranslationCopy> = {
       signedInTitle: "Signed in",
       signedInAs: (email) => `Signed in as ${email ?? "your account"}`,
       signOut: "Log out",
+      aiTitle: "AI provider",
+      aiBody: "Bring your own provider key. Boccone stores it encrypted and never shows it again.",
+      aiWhy: "Boccone uses your AI provider account. Usage is billed directly by that provider.",
+      aiProviderLabel: "Provider",
+      aiProviderHint: "Choose where your AI usage should run.",
+      aiModelLabel: "Model",
+      aiModelPlaceholder: "e.g. gpt-5-mini",
+      aiSelectModel: "Choose a model",
+      aiSearchModels: "Search models…",
+      aiRecommended: "Recommended",
+      aiAllModels: "All available models",
+      aiLoadingModels: "Loading available models…",
+      aiModelsError: "Couldn’t load models. You can try again or enter a model ID manually.",
+      aiModelsStale: "Showing your last available list. It may be out of date.",
+      aiRefreshModels: "Refresh models",
+      aiNoModels: "No usable models were returned by this provider.",
+      aiManualFallbackTitle: "Can’t find your model?",
+      aiManualFallbackBody: "Enter the model ID exactly as your provider documents it.",
+      aiManualAction: "Enter model ID manually",
+      aiManualModelLabel: "Model ID",
+      aiManualModelPlaceholder: "e.g. my-private-model",
+      aiManualSave: "Use this model",
+      aiManualCancel: "Cancel",
+      aiModelNotListed: "This model is not currently listed by the provider.",
+      aiModelContext: (value) => `Context: ${value.toLocaleString()} tokens`,
+      aiApiKeyLabel: "API key",
+      aiApiKeyPlaceholder: "Paste a key to store it securely",
+      aiGetApiKey: "How do I get an API key?",
+      aiKeyStored: "A key is stored. Leave blank to keep it unchanged.",
+      aiShowKey: "Show key",
+      aiHideKey: "Hide key",
+      aiBaseUrlLabel: "Base URL (optional)",
+      aiBaseUrlHint: "Required only for OpenAI-compatible providers.",
+      aiBaseUrlPlaceholder: "https://api.example.com/v1",
+      aiSave: "Save & load models",
+      aiTest: "Test connection",
+      aiDeleteKey: "Delete stored key",
+      aiKeyDeleted: "Stored key deleted.",
+      aiSaved: "AI provider saved.",
+      aiTestSuccess: "Connection successful.",
+      aiLoadError: "Could not load AI settings. Try again later.",
+      aiSaveError: "Could not save AI settings.",
+      aiTestError: "The AI connection test failed.",
+      aiLoading: "Loading AI settings…",
+      aiInvalidCredentials: "This API key was rejected. Check it with your provider.",
+      aiModelNotFound: "This model ID was not found by the provider.",
+      aiModelNotAccessible: "This model is not accessible with the current key.",
+      aiModelNotSelected: "Choose or enter a model before testing the connection.",
+      aiProviderUnavailable: "The provider is temporarily unavailable. Try again later.",
+      aiRateLimited: "The provider is busy. Try again in a little while.",
+      aiTimeout: "The provider took too long to respond. Try again.",
+      aiGuides: {
+        openai: {
+          title: "How to get an OpenAI API key",
+          intro: "Create a key in the OpenAI API Platform, then paste it here.",
+          steps: [
+            "Open the OpenAI API Platform.",
+            "Sign in or create an account.",
+            "Open API Keys and choose Create secret key.",
+            "Copy the key immediately and paste it into Boccone.",
+          ],
+          billing: "ChatGPT and OpenAI API billing are separate products.",
+          security: "Treat API keys like passwords. The full key is shown only when you create it.",
+          openLabel: "Open OpenAI API Keys",
+        },
+        anthropic: {
+          title: "How to get an Anthropic API key",
+          intro: "Create a key in the Claude Platform, not in the consumer Claude chat app.",
+          steps: [
+            "Open the Claude Platform Console.",
+            "Sign in or create an account.",
+            "Open Settings, then API keys.",
+            "Create a key, choose its workspace or expiration if asked, and copy it into Boccone.",
+          ],
+          billing:
+            "API access and billing are managed in the Claude Platform Console, not the consumer Claude app.",
+          security: "Treat API keys like passwords. Don’t share them publicly.",
+          openLabel: "Open Anthropic API Keys",
+        },
+        gemini: {
+          title: "How to get a Gemini API key",
+          intro: "Google AI Studio can create a project and key for you when you get started.",
+          steps: [
+            "Open Google AI Studio.",
+            "Open the API keys page and choose Create API key.",
+            "Select or create the Google Cloud project for the key.",
+            "Copy the key and paste it into Boccone.",
+          ],
+          billing: "Higher limits may require Google Cloud billing on the selected project.",
+          security: "Treat API keys like passwords. Don’t share them publicly.",
+          openLabel: "Open Google AI Studio API Keys",
+        },
+        openrouter: {
+          title: "How to get an OpenRouter API key",
+          intro: "One OpenRouter key can give Boccone access to models from multiple providers.",
+          steps: [
+            "Open OpenRouter and sign in or create an account.",
+            "Open API Keys and choose Create key.",
+            "Set a spending limit or expiration if you want one.",
+            "Copy the key and paste it into Boccone.",
+          ],
+          billing:
+            "Review your OpenRouter credits, limits, and model pricing before using the connection.",
+          security: "Treat API keys like passwords. Don’t share them publicly.",
+          openLabel: "Open OpenRouter API Keys",
+        },
+        "openai-compatible": {
+          title: "Custom provider",
+          intro: "There is no universal key-creation flow for a custom provider.",
+          steps: [],
+          customNeeds:
+            "You’ll need an API base URL, an API key or token if required, and a model ID. Check your provider’s documentation for these values.",
+          security: "Treat API keys and tokens like passwords. Don’t share them publicly.",
+          openLabel: "Open provider documentation",
+        },
+      },
     },
   },
   it: {
@@ -666,7 +1227,7 @@ export const translations: Record<Locale, TranslationCopy> = {
       mealsTitle: "Pasti",
       addMeal: "Aggiungi pasto",
       editMeal: "Modifica pasto",
-      viewMeals: "Vedi tutti",
+      viewMeals: "Vedi diario",
       openMeal: (name) => `Apri ${name}`,
       moreMeals: (count) => `+${count} altri oggi`,
       mealSummary: (name, calories) =>
@@ -677,12 +1238,75 @@ export const translations: Record<Locale, TranslationCopy> = {
       emptyBody: "Aggiungi il tuo primo pasto manualmente. Potrai rivederlo quando vuoi.",
       loadError: "Impossibile caricare i pasti di oggi. Riprova più tardi.",
       retry: "Riprova",
+      insightsTitle: "La tua settimana in breve",
+      insightsBody: (average, days) => `${average} di media su ${days} giorni registrati`,
+      insightsOpen: "Apri analisi",
       categoryLabels: {
         breakfast: "Colazione",
         lunch: "Pranzo",
         dinner: "Cena",
         snack: "Spuntino",
       },
+    },
+    insights: {
+      title: "Analisi",
+      subtitle: "Una vista calma di come hai mangiato.",
+      range7d: "7G",
+      range30d: "30G",
+      range3m: "3M",
+      range1y: "1A",
+      overview: "Panoramica",
+      averagePerLoggedDay: "Media per giorno registrato",
+      daysLogged: (current, total) => `${current} giorni su ${total} registrati`,
+      mealsLogged: (count) => `${count} pasti registrati`,
+      mealTypeShare: (percent, count) => `${percent}% delle calorie registrate · ${count} pasti`,
+      caloriesTrend: "Calorie nel tempo",
+      nutritionTitle: "Nutrizione",
+      macroComposition: "Media dei macro per giorno registrato",
+      mealTypes: "Tipi di pasto",
+      topFoods: "Alimenti più registrati",
+      foodEntries: (count) => `${count} voci da catalogo`,
+      foodBackedNote:
+        "Basato sugli alimenti con valori nutrizionali in catalogo. I pasti manuali restano nei totali.",
+      currentTarget: (value) => `Obiettivo attuale · ${value.toLocaleString()} kcal`,
+      noDataTitle: "Le tue analisi appariranno qui",
+      noDataBody:
+        "Registra alcuni pasti per iniziare a vedere gli schemi della tua storia alimentare.",
+      noRangeTitle: "Nessun dato in questo periodo",
+      noRangeBody: "Prova un altro intervallo o continua a registrare pasti per ampliare la vista.",
+      noRangeData: "Nessun pasto registrato in questo periodo.",
+      loadError: "Impossibile caricare le analisi. Riprova più tardi.",
+      retry: "Riprova",
+      openDetail: (label) => `Apri i dettagli di ${label}`,
+      openFood: (food) => `Mostra i pasti con ${food}`,
+      detailTitle: (label) => `Dettagli ${label}`,
+      detailAverage: "Media per giorno registrato",
+      detailTotal: "Totale del periodo",
+      detailCompared: (value) => `${value} rispetto al periodo precedente`,
+      contributors: "Principali alimenti",
+      noContributors: "Gli alimenti compariranno quando registrerai voci dal catalogo.",
+      highlightTitle: "Cosa mostra il tuo diario",
+      mostLoggedFood: (food, count) => `${food} è comparso ${count} volte.`,
+      mostLoggedCategory: (category, count) =>
+        `${category} è il tipo di pasto più registrato (${count}).`,
+      calorieVariation: (value) =>
+        `Le calorie sono variate di ${value.toLocaleString()} kcal nei giorni registrati.`,
+      periodChange: (value) => `Variazione rispetto al periodo precedente · ${value}`,
+      metricLabels: {
+        calories: "Calorie",
+        protein: "Proteine",
+        carbs: "Carboidrati",
+        fat: "Grassi",
+      },
+      categoryLabels: {
+        breakfast: "Colazione",
+        lunch: "Pranzo",
+        dinner: "Cena",
+        snack: "Spuntino",
+      },
+      chartAccessibility: (metric, average, highest, lowest, target) =>
+        `${metric}. Media ${average}. Massimo ${highest}. Minimo ${lowest}.${target ? ` ${target}.` : ""}`,
+      noTarget: "Nessun obiettivo calorico impostato",
     },
     meals: {
       title: "Pasti",
@@ -705,30 +1329,123 @@ export const translations: Record<Locale, TranslationCopy> = {
     calendar: {
       title: "Calendario",
       subtitle: "Scegli un giorno per vedere cosa hai registrato.",
-      previousWeek: "Settimana precedente",
-      nextWeek: "Settimana successiva",
+      previousMonth: "Mese precedente",
+      nextMonth: "Mese successivo",
+      chooseMonth: "Scegli un mese",
+      monthPickerTitle: "Scegli un mese",
+      closePicker: "Chiudi la scelta del mese",
+      previousYear: "Anno precedente",
+      nextYear: "Anno successivo",
+      gridLabel: "Mese del calendario",
       today: "Torna a oggi",
+      todaySelected: "Oggi",
       selectedDate: "Giorno selezionato",
-      loadingWeek: "Controllo la settimana…",
+      loadingActivity: "Controllo i giorni registrati…",
+      activityError: "Impossibile caricare i giorni registrati. Riprova.",
       loadingDay: "Caricamento del giorno…",
       loadError: "Impossibile caricare questo giorno. Riprova più tardi.",
       retry: "Riprova",
-      emptyTitle: "Nessun dato per questo giorno",
+      emptyPastTitle: "Nessun dato per questo giorno",
+      emptyTodayTitle: "Nessun dato ancora",
       emptyBody: "Quando aggiungerai un pasto per questa data, apparirà qui.",
+      emptyTodayBody: "Aggiungi un pasto quando vuoi.",
       total: "Totale del giorno",
-      dayAccessibility: (date, mealCount) =>
-        `${date}, ${mealCount} ${mealCount === 1 ? "pasto" : "pasti"}`,
+      addMeal: "Aggiungi pasto",
+      viewDiary: "Vedi diario",
+      loggedMeals: (count) =>
+        `${count} ${count === 1 ? "pasto" : "pasti"} registrati in questo giorno.`,
+      dayAccessibility: (date, mealCount, selected, today, future) =>
+        [
+          date,
+          selected ? "selezionato" : null,
+          today ? "oggi" : null,
+          future ? "data futura non disponibile" : null,
+          mealCount > 0
+            ? `${mealCount} ${mealCount === 1 ? "pasto" : "pasti"} registrati`
+            : "nessun pasto registrato",
+        ]
+          .filter(Boolean)
+          .join(", "),
     },
     diary: {
       title: "Diario",
-      subtitle: "Una visione nel tempo dei tuoi pasti e dei tuoi ricordi.",
-      comingSoonTitle: "La tua storia sta prendendo forma",
-      comingSoonMessage:
-        "Una vista cronologica e calma dei tuoi pasti arriverà presto. Quelli che hai registrato sono già in Pasti e Calendario.",
+      subtitle: "Rivedi nel tempo i pasti che hai registrato.",
+      today: "Oggi",
+      yesterday: "Ieri",
+      previousDay: "Giorno precedente",
+      nextDay: "Giorno successivo",
+      openCalendar: "Apri calendario",
+      loading: "Caricamento della tua cronologia…",
+      loadError: "Impossibile caricare la cronologia. Riprova.",
+      retry: "Riprova",
+      emptyTitle: "La tua cronologia è ancora vuota",
+      emptyBody: "Registra un pasto: resterà qui come parte della tua storia alimentare.",
+      addMeal: "Registra un pasto",
+      loadMore: "Mostra giorni precedenti",
+      endOfHistory: "Questo è l’inizio della tua cronologia.",
+      dayTotal: "Totale del giorno",
+      openMeal: (name) => `Apri ${name}`,
+      foodFilter: (food) => `Pasti con ${food}`,
+      clearFoodFilter: "Mostra tutti i pasti",
+    },
+    saved: {
+      title: "Pasti salvati",
+      subtitle: "Pasti riutilizzabili e routine. Tocca Usa per partire già pronto.",
+      tabRecent: "Oggi",
+      tabSaved: "Salvati",
+      routinesTitle: "Routine",
+      savedTitle: "Pasti salvati",
+      use: "Usa",
+      useNow: "Usa ora",
+      edit: "Modifica",
+      delete: "Elimina",
+      newSavedMeal: "Nuovo pasto salvato",
+      saveFromMeal: "Salva pasto",
+      saveAsSavedTitle: "Salva questo pasto",
+      saveAsSavedBody: "Dai un nome: diventerà un modello riutilizzabile.",
+      nameLabel: "Nome",
+      namePlaceholder: "es. Colazione ufficio",
+      routineSection: "Routine",
+      routineOff: "Nessuna routine — solo pasto salvato",
+      mealTypeLabel: "Pasto tipico",
+      daysLabel: "Giorni",
+      timeLabel: "Ora",
+      reminderLabel: "Promemoria",
+      reminderHint: "Boccone può ricordartelo all’ora che scegli.",
+      presetEveryday: "Tutti i giorni",
+      presetWeekdays: "Feriali",
+      presetWeekends: "Weekend",
+      presetCustom: "Personalizzato",
+      save: "Salva",
+      cancel: "Annulla",
+      deleteTitle: "Eliminare questo pasto salvato?",
+      deleteBody: "I pasti già registrati non vengono toccati.",
+      loadError: "Impossibile caricare i pasti salvati. Riprova più tardi.",
+      saveError: "Impossibile salvare. Riprova.",
+      emptyTitle: "Ancora nessun salvataggio",
+      emptyBody:
+        "Salva i pasti che mangi spesso e riusali in un attimo. Apri un pasto e scegli Salva pasto.",
+      needsAttention: "Da controllare",
+      attentionBody:
+        "Un alimento di questo modello non è più nel catalogo. Modifica e sostituiscilo.",
+      schedulePreview: (days, time) => `${days} · ${time}`,
+      everyDay: "Tutti i giorni",
+      usage: (count) => (count === 1 ? "usato una volta" : `usato ${count} volte`),
+      kcalApprox: (kcal) => `≈ ${kcal} kcal`,
+      draftFromTemplate: (name) => `${name} (da pasto salvato)`,
+      updateSavedAction: "Aggiorna pasto salvato",
+      reminderPermissionTitle: "Serve il permesso notifiche",
+      reminderPermissionBody:
+        "Boccone può ricordartelo all’ora che scegli. Consenti le notifiche per attivarlo.",
+      reminderDenied: "Le notifiche sono disattivate nelle impostazioni del dispositivo.",
+      openSystemSettings: "Apri Impostazioni",
+      reminderUnavailable: "Promemoria non disponibile",
     },
     meal: {
       detailEyebrow: "DETTAGLIO PASTO",
-      detailDate: (category, date) => `${category} · ${date}`,
+      detailDate: (category, date, time) => `${category} · ${date}${time ? ` · ${time}` : ""}`,
+      notFoundTitle: "Questo pasto non è più disponibile",
+      notFoundBody: "Potrebbe essere stato eliminato. Puoi tornare al diario.",
       editAction: "Modifica pasto",
       retry: "Riprova",
       addTitle: "Aggiungi un pasto",
@@ -762,14 +1479,22 @@ export const translations: Record<Locale, TranslationCopy> = {
     },
     food: {
       title: "Aggiungi alimento",
-      searchPlaceholder: "Cerca un alimento…",
-      searchHint: "Cerca per nome, ad esempio mela o pasta.",
+      searchLabel: "Alimento",
+      searchPlaceholder: "Prova mela o mela frutto…",
+      searchHint:
+        "Cerca per nome, marca o categoria. Puoi unire le parole, ad esempio mela frutto.",
+      clearSearch: "Pulisci",
+      quickSearchesLabel: "Scelte rapide",
+      quickSearches: ["Mela", "Pasta", "Caffè"],
       recent: "Recenti",
       frequent: "Più usati",
       suggestions: "Puoi provare",
       possibleMatches: "Possibili corrispondenze",
-      results: "Risultati",
-      noResults: "Nessun alimento trovato.",
+      resultsFor: (query) => `Risultati per “${query}”`,
+      noResultsFor: (query) =>
+        `Nessun risultato per “${query}”. Prova con meno parole o aggiungilo tu.`,
+      tryShorter: (query) => `Prova “${query}”`,
+      per100g: "per 100 g",
       notFoundTitle: "Non lo trovi?",
       propose: (name) => `Aggiungi “${name}” ai tuoi alimenti`,
       addFood: "Aggiungi alimento",
@@ -778,6 +1503,19 @@ export const translations: Record<Locale, TranslationCopy> = {
       quantityLabel: "Quantità",
       gramsLabel: "Grammi",
       customGrams: "Grammi personalizzati",
+      quickAdd: "Aggiungi porzione predefinita",
+      quality: {
+        authoritative: "Fonte verificata",
+        branded: "Etichetta confezione",
+        community: "Controllato dalla community",
+        personal: "Il tuo alimento",
+        estimated: "Stima",
+        verified: "Verificato da Boccone",
+      },
+      decrement: "Diminuisci quantità",
+      increment: "Aumenta quantità",
+      portionStep: "Usa passi da 0,5 o scrivi un valore",
+      gramsStep: "Usa passi da 10 g o scrivi un valore",
       addToMeal: "Aggiungi al pasto",
       editEntry: "Modifica",
       updateEntry: "Aggiorna voce",
@@ -807,10 +1545,40 @@ export const translations: Record<Locale, TranslationCopy> = {
       error: "Impossibile caricare gli alimenti. Riprova.",
       validation: "Inserisci nome, grammi della porzione e valori nutrizionali validi.",
       approximate: "Valore approssimativo",
+      dilloEstimate: "Stima AI",
+      dilloTitle: "Dillo a Boccone",
+      dilloHint: "Scrivi cosa hai mangiato. Boccone preparerà una bozza da controllare.",
+      dilloPlaceholder: "es. 80 g di pasta al pomodoro e un caffè",
+      dilloSubmit: "Prepara bozza pasto",
+      dilloReviewTitle: "Controlla la bozza",
+      dilloReviewBody:
+        "Controlla ogni suggerimento prima di salvare. Puoi usare una corrispondenza, aggiungere un alimento privato o rimuoverlo dal pasto.",
+      dilloReviewCount: (count) =>
+        count === 1 ? "1 alimento richiede una scelta" : `${count} alimenti richiedono una scelta`,
+      dilloAmbiguous: "Questo alimento ha più corrispondenze possibili nel catalogo.",
+      dilloUnresolved: "Questo alimento non è ancora nel catalogo. Aggiungilo manualmente sotto.",
+      dilloUseCandidate: "Usa questa corrispondenza",
+      dilloSearchCatalog: "Cerca nel catalogo",
+      dilloSwitchManual: "Cerca invece nel catalogo",
+      dilloNoNutrition: "I valori nutrizionali sono incompleti e richiedono una verifica.",
+      dilloAddCustomFood: "Controlla e aggiungi alimento privato",
+      dilloRemoveItem: "Rimuovi dal pasto",
+      dilloSaveAfterReview: "Controlla i suggerimenti prima di salvare il pasto.",
+      dilloRetry: "Riprova",
+      dilloCancel: "Annulla",
+      dilloProcessing: "Preparo la tua bozza…",
+      dilloConfigure: "Configura un provider AI nelle Impostazioni per usare Dillo a Boccone.",
+      dilloInvalidCredentials:
+        "La chiave del provider AI non sembra valida. Controllala nelle Impostazioni.",
+      dilloRateLimited: "Il provider AI è occupato. Riprova tra poco.",
+      dilloUnavailable: "Il provider AI non è momentaneamente disponibile. Riprova.",
+      dilloTimeout: "Ci è voluto troppo tempo. Il testo è ancora qui: riprova.",
+      dilloInvalidResponse: "Boccone non è riuscito a preparare una bozza sicura. Riprova.",
+      dilloGenericError: "Impossibile preparare la bozza del pasto. Riprova.",
     },
     settings: {
-      title: "Il tuo spazio",
-      subtitle: "Poche scelte tranquille, sempre a portata di mano.",
+      title: "Impostazioni",
+      subtitle: "Gestisci account e preferenze.",
       appearanceTitle: "Aspetto",
       appearanceBody: "Scegli come appare Boccone su questo dispositivo.",
       system: "Sistema",
@@ -849,6 +1617,126 @@ export const translations: Record<Locale, TranslationCopy> = {
       signedInTitle: "Account attivo",
       signedInAs: (email) => `Accesso effettuato come ${email ?? "il tuo account"}`,
       signOut: "Esci",
+      aiTitle: "Provider AI",
+      aiBody: "Usa la chiave del tuo provider. Boccone la salva cifrata e non la mostra più.",
+      aiWhy:
+        "Boccone usa il tuo account del provider AI. L’utilizzo viene addebitato direttamente dal provider.",
+      aiProviderLabel: "Provider",
+      aiProviderHint: "Scegli dove eseguire l’utilizzo AI.",
+      aiModelLabel: "Modello",
+      aiModelPlaceholder: "es. gpt-5-mini",
+      aiSelectModel: "Scegli un modello",
+      aiSearchModels: "Cerca modelli…",
+      aiRecommended: "Consigliati",
+      aiAllModels: "Tutti i modelli disponibili",
+      aiLoadingModels: "Caricamento dei modelli disponibili…",
+      aiModelsError: "Impossibile caricare i modelli. Puoi riprovare o inserire manualmente un ID.",
+      aiModelsStale: "Mostro l’ultimo elenco disponibile. Potrebbe non essere aggiornato.",
+      aiRefreshModels: "Aggiorna modelli",
+      aiNoModels: "Il provider non ha restituito modelli utilizzabili.",
+      aiManualFallbackTitle: "Non trovi il modello?",
+      aiManualFallbackBody: "Inserisci l’ID esattamente come indicato dal provider.",
+      aiManualAction: "Inserisci ID manualmente",
+      aiManualModelLabel: "ID modello",
+      aiManualModelPlaceholder: "es. mio-modello-privato",
+      aiManualSave: "Usa questo modello",
+      aiManualCancel: "Annulla",
+      aiModelNotListed: "Questo modello non è attualmente elencato dal provider.",
+      aiModelContext: (value) => `Contesto: ${value.toLocaleString()} token`,
+      aiApiKeyLabel: "Chiave API",
+      aiApiKeyPlaceholder: "Incolla una chiave da salvare in sicurezza",
+      aiGetApiKey: "Come ottengo una chiave API?",
+      aiKeyStored: "Una chiave è salvata. Lascia vuoto per mantenerla.",
+      aiShowKey: "Mostra chiave",
+      aiHideKey: "Nascondi chiave",
+      aiBaseUrlLabel: "URL base (facoltativo)",
+      aiBaseUrlHint: "Obbligatorio solo per provider compatibili con OpenAI.",
+      aiBaseUrlPlaceholder: "https://api.esempio.com/v1",
+      aiSave: "Salva e carica modelli",
+      aiTest: "Prova connessione",
+      aiDeleteKey: "Elimina chiave salvata",
+      aiKeyDeleted: "Chiave salvata eliminata.",
+      aiSaved: "Provider AI salvato.",
+      aiTestSuccess: "Connessione riuscita.",
+      aiLoadError: "Impossibile caricare le impostazioni AI. Riprova più tardi.",
+      aiSaveError: "Impossibile salvare le impostazioni AI.",
+      aiTestError: "La prova di connessione AI non è riuscita.",
+      aiLoading: "Caricamento impostazioni AI…",
+      aiInvalidCredentials: "Il provider ha rifiutato questa chiave API. Controllala.",
+      aiModelNotFound: "Il provider non ha trovato questo ID modello.",
+      aiModelNotAccessible: "Questo modello non è accessibile con la chiave attuale.",
+      aiModelNotSelected: "Scegli o inserisci un modello prima di provare la connessione.",
+      aiProviderUnavailable: "Il provider non è momentaneamente disponibile. Riprova più tardi.",
+      aiRateLimited: "Il provider è occupato. Riprova tra poco.",
+      aiTimeout: "Il provider ha impiegato troppo tempo a rispondere. Riprova.",
+      aiGuides: {
+        openai: {
+          title: "Come ottenere una chiave API OpenAI",
+          intro: "Crea una chiave nella Piattaforma API OpenAI, poi incollala qui.",
+          steps: [
+            "Apri la Piattaforma API OpenAI.",
+            "Accedi o crea un account.",
+            "Apri API Keys e scegli Create secret key.",
+            "Copia subito la chiave e incollala in Boccone.",
+          ],
+          billing: "La fatturazione ChatGPT e quella dell’API OpenAI sono separate.",
+          security:
+            "Tratta le chiavi API come password. La chiave completa appare solo quando la crei.",
+          openLabel: "Apri le API Keys OpenAI",
+        },
+        anthropic: {
+          title: "Come ottenere una chiave API Anthropic",
+          intro: "Crea la chiave nella Claude Platform, non nell’app consumer Claude.",
+          steps: [
+            "Apri la Console Claude Platform.",
+            "Accedi o crea un account.",
+            "Apri Settings, poi API keys.",
+            "Crea una chiave, scegli workspace o scadenza se richiesto e incollala in Boccone.",
+          ],
+          billing:
+            "Accesso e fatturazione API sono gestiti nella Console Claude Platform, non nell’app consumer Claude.",
+          security: "Tratta le chiavi API come password. Non condividerle pubblicamente.",
+          openLabel: "Apri le API Keys Anthropic",
+        },
+        gemini: {
+          title: "Come ottenere una chiave API Gemini",
+          intro: "Google AI Studio può creare un progetto e una chiave durante il primo accesso.",
+          steps: [
+            "Apri Google AI Studio.",
+            "Apri la pagina API keys e scegli Create API key.",
+            "Seleziona o crea il progetto Google Cloud della chiave.",
+            "Copia la chiave e incollala in Boccone.",
+          ],
+          billing:
+            "Limiti più alti possono richiedere la fatturazione Google Cloud sul progetto scelto.",
+          security: "Tratta le chiavi API come password. Non condividerle pubblicamente.",
+          openLabel: "Apri le API Keys Google AI Studio",
+        },
+        openrouter: {
+          title: "Come ottenere una chiave API OpenRouter",
+          intro: "Una chiave OpenRouter può dare a Boccone accesso a modelli di più provider.",
+          steps: [
+            "Apri OpenRouter e accedi o crea un account.",
+            "Apri API Keys e scegli Create key.",
+            "Imposta un limite di spesa o una scadenza se vuoi.",
+            "Copia la chiave e incollala in Boccone.",
+          ],
+          billing:
+            "Controlla crediti, limiti e prezzi dei modelli OpenRouter prima di usare la connessione.",
+          security: "Tratta le chiavi API come password. Non condividerle pubblicamente.",
+          openLabel: "Apri le API Keys OpenRouter",
+        },
+        "openai-compatible": {
+          title: "Provider personalizzato",
+          intro:
+            "Non esiste un flusso universale per creare una chiave con un provider personalizzato.",
+          steps: [],
+          customNeeds:
+            "Ti servono un URL base API, una chiave o un token se richiesto e un ID modello. Cerca questi valori nella documentazione del provider.",
+          security: "Tratta chiavi e token come password. Non condividerli pubblicamente.",
+          openLabel: "Apri la documentazione del provider",
+        },
+      },
     },
   },
 };

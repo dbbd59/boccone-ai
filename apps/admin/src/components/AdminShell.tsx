@@ -9,8 +9,13 @@ import { ThemeToggle } from "./ThemeToggle";
 import { OverviewPage } from "../features/overview/OverviewPage";
 import { MealsPage, GlobalMealDetailPage } from "../features/meals/MealsPage";
 import { NutritionPage } from "../features/nutrition/NutritionPage";
+import { AnalyticsAiPage } from "../features/analytics/AnalyticsAiPage";
+import { AnalyticsCatalogPage } from "../features/analytics/AnalyticsCatalogPage";
+import { AnalyticsNutritionPage } from "../features/analytics/AnalyticsNutritionPage";
+import { AnalyticsOverviewPage } from "../features/analytics/AnalyticsOverviewPage";
 import { AuditPage } from "../features/system/AuditPage";
 import { SettingsPage } from "../features/system/SettingsPage";
+import { AiUsagePage } from "../features/system/AiUsagePage";
 import { UserContextPage } from "../features/users/UserContextPage";
 import { UsersPage } from "../features/users/UsersPage";
 import {
@@ -51,12 +56,6 @@ const NAVIGATION: {
         active: (route) => route.kind === "meals" || route.kind === "meal",
       },
       {
-        label: "Nutrition",
-        path: "/nutrition",
-        icon: "nutrition",
-        active: (route) => route.kind === "nutrition",
-      },
-      {
         label: "Food catalog",
         path: "/foods",
         icon: "foods",
@@ -71,6 +70,35 @@ const NAVIGATION: {
     ],
   },
   {
+    label: "Analytics",
+    items: [
+      {
+        label: "Overview",
+        path: "/analytics",
+        icon: "overview",
+        active: (route) => route.kind === "analytics-overview",
+      },
+      {
+        label: "Nutrition",
+        path: "/analytics/nutrition",
+        icon: "nutrition",
+        active: (route) => route.kind === "analytics-nutrition",
+      },
+      {
+        label: "Catalog",
+        path: "/analytics/foods",
+        icon: "foods",
+        active: (route) => route.kind === "analytics-foods",
+      },
+      {
+        label: "AI",
+        path: "/analytics/ai",
+        icon: "ai",
+        active: (route) => route.kind === "analytics-ai",
+      },
+    ],
+  },
+  {
     label: "System",
     items: [
       {
@@ -78,6 +106,12 @@ const NAVIGATION: {
         path: "/audit-log",
         icon: "audit",
         active: (route) => route.kind === "audit",
+      },
+      {
+        label: "AI usage",
+        path: "/ai-usage",
+        icon: "ai",
+        active: (route) => route.kind === "ai-usage",
       },
       {
         label: "Settings",
@@ -308,8 +342,18 @@ function RouteView({
       );
     case "nutrition":
       return <NutritionPage />;
+    case "analytics-overview":
+      return <AnalyticsOverviewPage key={locationKey} />;
+    case "analytics-nutrition":
+      return <AnalyticsNutritionPage key={locationKey} />;
+    case "analytics-foods":
+      return <AnalyticsCatalogPage key={locationKey} />;
+    case "analytics-ai":
+      return <AnalyticsAiPage key={locationKey} />;
     case "audit":
       return <AuditPage />;
+    case "ai-usage":
+      return <AiUsagePage />;
     case "settings":
       return <SettingsPage email={email} />;
     case "not-found":
@@ -336,8 +380,18 @@ function routeTitle(route: AdminRoute): string {
       return "Food review";
     case "nutrition":
       return "Nutrition";
+    case "analytics-overview":
+      return "Analytics overview";
+    case "analytics-nutrition":
+      return "Nutrition analytics";
+    case "analytics-foods":
+      return "Catalog analytics";
+    case "analytics-ai":
+      return "AI analytics";
     case "audit":
       return "Audit log";
+    case "ai-usage":
+      return "AI usage";
     case "settings":
       return "Settings";
     case "not-found":
